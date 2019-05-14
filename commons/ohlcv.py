@@ -7,7 +7,7 @@ import pandas as pd
 from google.oauth2.service_account import Credentials
 from google.cloud import storage
 
-from lib import utils
+from commons import utils
 
 
 class OHLCV:
