@@ -1,0 +1,13 @@
+env:
+  APP_NAME: 'research-notebooks'
+  TEST_IMAGE_NAME: '${APP_NAME}--test'
+
+steps:
+  - label: 'Build docker image'
+    command:
+      - docker build -t ${TEST_IMAGE_NAME} -f .packaging/Dockerfile ./
+  - wait
+
+  - label: ':hammer: Tests'
+    command:
+      - docker run --rm ${TEST_IMAGE_NAME}:latest bash -c "flake8 . && pytest"
