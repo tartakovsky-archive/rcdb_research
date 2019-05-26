@@ -1,14 +1,19 @@
 import pandas as pd
+import numpy as np
 
-OPEN = 0
-HIGH = 1
-LOW = 2
-CLOSE = 3
-VOLUME = 4
-VOLUME_SELL = 5
-TICKS = 6
-TICKS_SELL = 7
-BAR_COLUMNS = ['open', 'high', 'low', 'close', 'volume',
+TIME = 0
+OPEN = 1
+HIGH = 2
+LOW = 3
+CLOSE = 4
+VOLUME = 5
+VOLUME_SELL = 6
+TICKS = 7
+TICKS_SELL = 8
+UPPER_LIMIT = 9
+LOWER_LIMIT = 10
+
+BAR_COLUMNS = ['time', 'open', 'high', 'low', 'close', 'volume',
                'volume_sell', 'ticks', 'ticks_sell']
 
 
@@ -25,31 +30,45 @@ def update(current_bar, bar):
 
 
 def min_pct_bars(ohlc, pct):
+    if 'time' not in ohlc:
+        ohlc['time'] = ohlc.index.copy()
+
     if len(ohlc.columns) < len(BAR_COLUMNS):
         raise AttributeError(
             f"Input DataFrame must have "
             f"{', '.join([f'`{c}`' for c in BAR_COLUMNS])} columns.")
 
+    ohlc = ohlc[BAR_COLUMNS]
+
     if not 0 < pct:
         raise AttributeError(f'Percentage must be greater than zero.')
 
-    consolidated_bars = pd.DataFrame(columns=BAR_COLUMNS)
-    consolidated_bars.index.name = 'time'
+    consolidated_bars = []
     current_bar = None
 
-    for time, bar in ohlc.iterrows():
+    for bar in ohlc.values:
         if current_bar is None:
-            current_bar = bar
-            current_bar.open_time = time
+            current_bar = list(bar)
+
+            close_prev = current_bar[OPEN]
+            if consolidated_bars:
+                close_prev = consolidated_bars[-1][CLOSE]
+
+            current_bar += [
+                close_prev * (1 + pct), # UPPER_LIMIT
+                close_prev * (1 - pct), # LOWER_LIMIT
+            ]
+
         else:
             update(current_bar, bar)
 
-        delta = current_bar[OPEN] * pct
-        upper_limit = current_bar[OPEN] + delta
-        lower_limit = current_bar[OPEN] - delta
-        if (current_bar[CLOSE] >= upper_limit
-                or current_bar[CLOSE] <= lower_limit):
-            consolidated_bars.loc[current_bar.open_time] = current_bar
+        if (current_bar[CLOSE] >= current_bar[UPPER_LIMIT]
+                or current_bar[CLOSE] <= current_bar[LOWER_LIMIT]):
+            consolidated_bars.append(current_bar)
             current_bar = None
 
-    return consolidated_bars
+
+    df = pd.DataFrame(consolidated_bars, columns=BAR_COLUMNS + ["UPPER_LIMIT", "LOWER_LIMIT"])
+    df = df[BAR_COLUMNS]
+    df = df.set_index("time")
+    return df

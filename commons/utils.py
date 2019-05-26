@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def store_df_to_hdf_bytes(df: pd.DataFrame, key: str = "ohlcv") -> bytes:
+def store_df_to_hdf_bytes(df: pd.DataFrame, key: str = "table") -> bytes:
     with pd.HDFStore(
         "hdfs.tmp",
         mode="w",
@@ -13,7 +13,7 @@ def store_df_to_hdf_bytes(df: pd.DataFrame, key: str = "ohlcv") -> bytes:
         return out._handle.get_file_image()
 
 
-def get_df_from_hdf_bytes(hdf_bytes: bytes, key: str = "ohlcv") -> pd.DataFrame:
+def get_df_from_hdf_bytes(hdf_bytes: bytes, key: str = "table") -> pd.DataFrame:
     with pd.HDFStore(
         "hdfs.tmp",
         mode="r",
