@@ -1,7 +1,6 @@
 ##Installing
 
-`# pip install -r requirements.txt` - install requirements  
-`# python3 setup.py develop` - install common lib  
+`# pip install -e .` - install requirements  
 `# jupyter notebook` - start jupyter  
 
 See examples at `./notebooks/alex_o/`

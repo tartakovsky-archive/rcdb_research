@@ -1,12 +1,13 @@
 FROM python:3.7.0-slim-stretch
 ENV PYTHONUNBUFFERED 1
 
-COPY ./requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+COPY ./requirements /requirements
+
+RUN pip install -r /requirements/requirements.txt  -r /requirements/requirements.dev.txt
 
 COPY ./ /code
 WORKDIR /code
-RUN python3 setup.py develop
+RUN pip install -e .
 
 EXPOSE 8888
 
