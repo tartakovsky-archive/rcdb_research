@@ -1,5 +1,5 @@
 import pandas as pd
-import numpy as np
+import numpy as np  # noqa
 
 TIME = 0
 OPEN = 1
@@ -55,15 +55,15 @@ def min_pct_bars(ohlc, pct):
                 close_prev = consolidated_bars[-1][CLOSE]
 
             current_bar += [
-                close_prev * (1 + pct), # UPPER_LIMIT
-                close_prev * (1 - pct), # LOWER_LIMIT
+                close_prev * (1 + pct),  # UPPER_LIMIT
+                close_prev * (1 - pct),  # LOWER_LIMIT
             ]
 
         else:
             update(current_bar, bar)
 
-        if (current_bar[CLOSE] >= current_bar[UPPER_LIMIT]
-                or current_bar[CLOSE] <= current_bar[LOWER_LIMIT]):
+        if current_bar[CLOSE] >= current_bar[UPPER_LIMIT] \
+                or current_bar[CLOSE] <= current_bar[LOWER_LIMIT]:
             consolidated_bars.append(current_bar)
             current_bar = None
 
