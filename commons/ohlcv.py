@@ -46,7 +46,8 @@ class OHLCV:
         for fetch_func in [
             self.fetch_from_local_cache,
             self.fetch_from_local_file_cache,
-            self.fetch_remote]:
+            self.fetch_remote
+        ]:
             logging.debug(f"Try fetch by {fetch_func.__name__}")
             df = fetch_func(ohlcv_config)
 
@@ -176,7 +177,7 @@ class OHLCV:
         base: str,
         quote: str,
         exchange: str,
-        timeframe: Optional[str] = None, # deprecated?
+        timeframe: Optional[str] = None,  # deprecated?
         start: Optional[str] = None,
         end: Optional[str] = None,
         ohlcv_api_url: Optional[str] = None,
