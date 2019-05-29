@@ -30,10 +30,11 @@ class WalkForwardCV(BaseCrossValidator):
         n_test = int(n_sample * self.test_size)
         n_gap = int(n_sample * self.gap_size)
 
-        n_train = n_sample - n_test - n_gap
 
         train_start = 0
         train_end = n_samples - self.n_splits * (n_test + n_gap)  # needs to use all dataset
+
+        n_train = train_end
 
         for split_number in range(1, self.n_splits + 1):
             test_start = train_end + n_gap
