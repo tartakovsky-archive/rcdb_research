@@ -22,8 +22,8 @@ class OHLCV:
         "OHLCVConfig", ["base", "quote", "exchange", "timeframe", "start", "end", "is_whole_period"]
     )
 
-    REMOTE_PATH_TEMPLATE = "{exchange}/{base}/{quote}/{timeframe}.hdf"
-    LOCAL_CACHE_FILENAME = "{exchange}__{base}_{quote}_{timeframe}.hdf"
+    REMOTE_PATH_TEMPLATE = "{exchange}/{base}/{quote}.hdf"
+    LOCAL_CACHE_FILENAME = "{exchange}__{base}_{quote}.hdf"
 
     def __init__(self, ohlcv_api_url: str, local_cache_path: str):
         """
@@ -43,7 +43,10 @@ class OHLCV:
         :return: dataframe with ohlcv data
         :rtype: None or pd.DataFrame
         """
-        for fetch_func in [self.fetch_from_local_cache, self.fetch_from_local_file_cache, self.fetch_remote]:
+        for fetch_func in [
+            self.fetch_from_local_cache,
+            self.fetch_from_local_file_cache,
+            self.fetch_remote]:
             logging.debug(f"Try fetch by {fetch_func.__name__}")
             df = fetch_func(ohlcv_config)
 
@@ -79,10 +82,12 @@ class OHLCV:
         :return: path to gcs file
         :rtype: str
         """
-        path = self.REMOTE_PATH_TEMPLATE.format(
-            **ohlcv_config._asdict()
-        )
-        return f"{self.ohlcv_api_url}/{path}"
+        # path = self.REMOTE_PATH_TEMPLATE.format(
+        #     **ohlcv_config._asdict()
+        # )
+        exchange = getattr(ohlcv_config, 'exchange')
+        symbol = (getattr(ohlcv_config, 'base') + getattr(ohlcv_config, 'quote')).lower()
+        return f"{self.ohlcv_api_url}?exchange={exchange}&symbol={symbol}"
 
     def fetch_from_local_cache(self, ohlcv_config: OHLCV.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
         """
@@ -171,7 +176,7 @@ class OHLCV:
         base: str,
         quote: str,
         exchange: str,
-        timeframe: str,
+        timeframe: Optional[str] = None, # deprecated?
         start: Optional[str] = None,
         end: Optional[str] = None,
         ohlcv_api_url: Optional[str] = None,
@@ -195,7 +200,6 @@ class OHLCV:
 
         ohlcv_config = cls.OHLCVConfig(
             base, quote, exchange, timeframe, start, end, is_whole_period=(not start and not end))
-
         logging.debug(f"Fetch by params: {ohlcv_config._asdict()}")
 
         if cls._instance is None:

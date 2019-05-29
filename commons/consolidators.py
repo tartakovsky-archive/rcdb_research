@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np  # noqa
 
+
 TIME = 0
 OPEN = 1
 HIGH = 2
@@ -12,6 +13,7 @@ TICKS = 7
 TICKS_SELL = 8
 UPPER_LIMIT = 9
 LOWER_LIMIT = 10
+
 
 BAR_COLUMNS = ['time', 'open', 'high', 'low', 'close', 'volume',
                'volume_sell', 'ticks', 'ticks_sell']
@@ -71,4 +73,5 @@ def min_pct_bars(ohlc, pct):
     df = pd.DataFrame(consolidated_bars, columns=BAR_COLUMNS + ["UPPER_LIMIT", "LOWER_LIMIT"])
     df = df[BAR_COLUMNS]
     df = df.set_index("time")
+
     return df

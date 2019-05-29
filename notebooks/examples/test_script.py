@@ -11,13 +11,18 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     from commons.ohlcv import OHLCV
 
-    df = OHLCV.fetch("BTC", "USD", "bitfinex", "1s",
-                     ohlcv_api_url="https://storage.googleapis.com/")
+    df = OHLCV.fetch("BTC", "UST", "bitfinex",
+                     ohlcv_api_url="https://europe-west1-rcdb-prod.cloudfunctions.net/kaiko")
 
-    df = df[df.index >= "2019-04-01"]
+    # df = df[df.index >= "2019-04-01"]
 
-    now = time.time()
-    bars = min_pct_bars(df, 0.02)
-    print(time.time() - now)
-    print(bars.close.pct_change())
+    print(df.head())
+    print(df.tail())
+    print(df.columns)
+
+    # now = time.time()
+    # bars = min_pct_bars(df, 0.02)
+    #
+    # print(time.time() - now)
+    # print(bars.close.pct_change())
 
