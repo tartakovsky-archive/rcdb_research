@@ -10,8 +10,4 @@ steps:
 
   - label: ':hammer: Tests'
     command:
-      - docker run --rm ${TEST_IMAGE_NAME}:latest bash -c "pytest"
-
-  - label: ':hammer: Flake8 linting'
-    command:
-      - docker run --rm ${TEST_IMAGE_NAME}:latest bash -c "flake8"
+      - docker run --rm ${TEST_IMAGE_NAME}:latest bash -c "flake8 . && pytest"

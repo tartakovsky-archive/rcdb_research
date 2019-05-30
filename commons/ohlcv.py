@@ -44,9 +44,9 @@ class OHLCV:
         :rtype: None or pd.DataFrame
         """
         for fetch_func in [
-            self.fetch_from_local_cache,
             self.fetch_from_local_file_cache,
-            self.fetch_remote]:
+            self.fetch_remote
+        ]:
             logging.debug(f"Try fetch by {fetch_func.__name__}")
             df = fetch_func(ohlcv_config)
 
@@ -89,16 +89,16 @@ class OHLCV:
         symbol = (getattr(ohlcv_config, 'base') + getattr(ohlcv_config, 'quote')).lower()
         return f"{self.ohlcv_api_url}?exchange={exchange}&symbol={symbol}"
 
-    def fetch_from_local_cache(self, ohlcv_config: OHLCV.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
-        """
-        Returns dataframe from dict
-        :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
-        :return: dataframe with ohlcv data
-        :rtype: pd.DataFrame or None
-        """
-        return self._local_cache.get(
-            self.get_local_path(ohlcv_config)
-        )
+    # def fetch_from_local_cache(self, ohlcv_config: OHLCV.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
+    #     """
+    #     Returns dataframe from dict
+    #     :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
+    #     :return: dataframe with ohlcv data
+    #     :rtype: pd.DataFrame or None
+    #     """
+    #     return self._local_cache.get(
+    #         self.get_local_path(ohlcv_config)
+    #     )
 
     def fetch_from_local_file_cache(self, ohlcv_config: OHLCV.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
         """
@@ -107,6 +107,7 @@ class OHLCV:
         :return: dataframe with ohlcv data
         :rtype: pd.DataFrame or None
         """
+        logging.debug(f"-> fetch_from_local_file_cache")
         local_path = self.get_local_path(ohlcv_config)
         if not os.path.exists(local_path):
             return None
@@ -114,7 +115,7 @@ class OHLCV:
         with open(local_path, "rb") as file:
             df = utils.get_df_from_hdf_bytes(file.read())
 
-        self._cache_write_local(ohlcv_config, df)
+        # self._cache_write_local(ohlcv_config, df)
         return df
 
     @retrying.retry(
@@ -129,6 +130,7 @@ class OHLCV:
         :return: dataframe with ohlcv data
         :rtype: pd.DataFrame or None
         """
+        logging.debug(f"-> fetch_remote")
         resp = requests.get(
             self.get_ohlcv_url(ohlcv_config)
         )
@@ -138,14 +140,14 @@ class OHLCV:
         self._cache_write(ohlcv_config, df)
         return df
 
-    def _cache_write_local(self, ohlcv_config: OHLCV.OHLCVConfig, df: pd.DataFrame):  # noqa
-        """
-        Write df to dict cache
-        :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
-        :param df: source df
-        :return:
-        """
-        self._local_cache[self.get_local_path(ohlcv_config)] = df
+    # def _cache_write_local(self, ohlcv_config: OHLCV.OHLCVConfig, df: pd.DataFrame):  # noqa
+    #     """
+    #     Write df to dict cache
+    #     :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
+    #     :param df: source df
+    #     :return:
+    #     """
+    #     self._local_cache[self.get_local_path(ohlcv_config)] = df
 
     def _cache_write(self, ohlcv_config: OHLCV.OHLCVConfig, df: pd.DataFrame):  # noqa
         """
@@ -154,7 +156,7 @@ class OHLCV:
         :param df: source df
         :return:
         """
-        self._cache_write_local(ohlcv_config, df)
+        # self._cache_write_local(ohlcv_config, df)
         self._cache_write_local_file(ohlcv_config, df)
 
     def _cache_write_local_file(self, ohlcv_config: OHLCV.OHLCVConfig, df: pd.DataFrame):  # noqa
@@ -176,7 +178,7 @@ class OHLCV:
         base: str,
         quote: str,
         exchange: str,
-        timeframe: Optional[str] = None, # deprecated?
+        timeframe: Optional[str] = None,
         start: Optional[str] = None,
         end: Optional[str] = None,
         ohlcv_api_url: Optional[str] = None,
@@ -200,6 +202,7 @@ class OHLCV:
 
         ohlcv_config = cls.OHLCVConfig(
             base, quote, exchange, timeframe, start, end, is_whole_period=(not start and not end))
+
         logging.debug(f"Fetch by params: {ohlcv_config._asdict()}")
 
         if cls._instance is None:
