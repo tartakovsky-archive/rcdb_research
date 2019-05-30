@@ -4,7 +4,7 @@ from sklearn.model_selection._validation import indexable, _num_samples
 
 
 class WalkForwardCV(BaseCrossValidator):
-    def __init__(self, n_splits, test_size, gap_size=.0, expanding=True):
+    def __init__(self, n_splits, test_size, gap_size=.0, expanding=False):
         self.n_splits = int(n_splits)
         assert 0 < gap_size + test_size < 1 and test_size > 0, "Not enough train part"
         self.test_size = test_size
@@ -43,7 +43,8 @@ class WalkForwardCV(BaseCrossValidator):
 
         rest = n_samples - int(n_wf_split) - (n_test * (self.n_splits - 1))
 
-        # print(f"rest={rest} n_samples={n_samples} n_wf_split={n_wf_split}, n_test={n_test}, n_gap={n_gap}, n_train={n_train}")
+        # print(f"rest={rest} n_samples={n_samples} n_wf_split="
+        #       f"{n_wf_split}, n_test={n_test}, n_gap={n_gap}, n_train={n_train}")
 
         train_start = 0
         for split_number in range(1, self.n_splits + 1):
