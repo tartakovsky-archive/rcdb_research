@@ -42,9 +42,8 @@ class WalkForwardCV(BaseCrossValidator):
         n_train = int(n_wf_split - n_test - n_gap)
 
         rest = n_samples - int(n_wf_split) - (n_test * (self.n_splits - 1))
-        print("rest", rest)
 
-        print(f"n_samples={n_samples} n_wf_split={n_wf_split}, n_test={n_test}, n_gap={n_gap}, n_train={n_train}")
+        # print(f"rest={rest} n_samples={n_samples} n_wf_split={n_wf_split}, n_test={n_test}, n_gap={n_gap}, n_train={n_train}")
 
         train_start = 0
         for split_number in range(1, self.n_splits + 1):
