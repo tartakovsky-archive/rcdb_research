@@ -14,6 +14,11 @@ class WalkForwardCV(BaseCrossValidator):
     def get_n_splits(self, X=None, y=None, groups=None):
         return self.n_splits
 
+    @staticmethod
+    def get_n_wf_split(n_samples, offset_pct, n_splits):
+        a = offset_pct * (n_splits - 1)
+        return (n_samples / a) / (1.0 + 1.0 / a)
+
     def split(self, X, y=None, groups=None):
         X, y, groups = indexable(X, y, groups)
         n_samples = _num_samples(X)
@@ -25,27 +30,27 @@ class WalkForwardCV(BaseCrossValidator):
 
         indices = np.arange(n_samples)
 
-        n_sample = n_samples // self.n_splits
+        n_wf_split = self.get_n_wf_split(
+            n_samples, self.test_size, self.n_splits
+        )
 
-        n_test = int(n_sample * self.test_size)
-        n_gap = int(n_sample * self.gap_size)
+        n_test = int(n_wf_split * self.test_size)
+        n_gap = int(n_wf_split * self.gap_size)
+        n_train = int(n_wf_split - n_test - n_gap)
 
+        # print(f"n_wf_split={n_wf_split}, n_test={n_test}, n_gap={n_gap}, n_train={n_train}")
 
         train_start = 0
-        train_end = n_samples - self.n_splits * (n_test + n_gap)  # needs to use all dataset
-
-        n_train = train_end
-
         for split_number in range(1, self.n_splits + 1):
+            train_end = train_start + n_train
             test_start = train_end + n_gap
 
             if split_number == self.n_splits:
-                test_end = n_samples
+                test_end = n_samples - 1
             else:
                 test_end = test_start + n_test
 
-            yield indices[train_start:train_end], indices[test_start:test_end]
-            train_end = test_end
+            print(train_start, train_end, test_start, test_end)
+            yield indices[0 if self.expanding else train_start:train_end], indices[test_start:test_end]
 
-            if not self.expanding:
-                train_start = train_end - n_train
+            train_start = train_start + n_test
