@@ -44,9 +44,9 @@ def test_WalkForwardCV_get_n_split(walk_forward_cv):
 )
 def test_WalkForwardCV_split_expanding(expanding, n_splits=10, test_X=range(100)):
     cv = WalkForwardCV(
-     n_splits=n_splits,
-     test_size=0.3,
-     expanding=expanding
+        n_splits=n_splits,
+        test_size=0.3,
+        expanding=expanding
     )
 
     splits = list(cv.split(test_X))
