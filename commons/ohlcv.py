@@ -178,7 +178,7 @@ class OHLCV:
         base: str,
         quote: str,
         exchange: str,
-        timeframe: Optional[str] = None,
+        timeframe: Optional[str] = None,  # deprecated?
         start: Optional[str] = None,
         end: Optional[str] = None,
         ohlcv_api_url: Optional[str] = None,
