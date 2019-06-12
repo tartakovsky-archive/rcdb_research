@@ -6,10 +6,10 @@ if __name__ == "__main__":
     import time
 
     logging.basicConfig(level=logging.DEBUG)
-    from commons.ohlcv import OHLCV
+    from commons.rcdb_data import RcdbData
 
-    df = OHLCV.fetch("BTC", "UST", "bitfinex",
-                     ohlcv_api_url="https://europe-west1-rcdb-prod.cloudfunctions.net/kaiko")
+    df = RcdbData.fetch("BTC", "UST", "bitfinex",
+                        ohlcv_api_url="https://europe-west1-rcdb-prod.cloudfunctions.net/kaiko")
 
     df = df[df.index >= "2019-04-01"]
 

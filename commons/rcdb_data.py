@@ -12,11 +12,11 @@ import requests
 from commons import utils
 
 
-class OHLCV:
+class RcdbData:
     """
     Class which helps to access ohlcv data
     """
-    _instance: OHLCV = None  # noqa
+    _instance: RcdbData = None  # noqa
 
     OHLCVConfig = namedtuple(
         "OHLCVConfig", ["base", "quote", "exchange", "timeframe", "start", "end", "is_whole_period"]
@@ -36,7 +36,7 @@ class OHLCV:
         self.local_cache_path = local_cache_path
         self._local_cache = {}
 
-    def fetch_df(self, ohlcv_config: OHLCV.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
+    def fetch_df(self, ohlcv_config: RcdbData.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
         """
         Fetch dataframe with ohlcv data
         :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
@@ -61,7 +61,7 @@ class OHLCV:
 
         return df[(df.index >= ohlcv_config.start) & (df.index < ohlcv_config.end)]
 
-    def get_local_path(self, ohlcv_config: OHLCV.OHLCVConfig) -> str:  # noqa
+    def get_local_path(self, ohlcv_config: RcdbData.OHLCVConfig) -> str:  # noqa
         """
         Format local path template. Concatenate paths to local cache
         :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
@@ -75,7 +75,7 @@ class OHLCV:
             )
         )
 
-    def get_ohlcv_url(self, ohlcv_config: OHLCV.OHLCVConfig) -> str:  # noqa
+    def get_ohlcv_url(self, ohlcv_config: RcdbData.OHLCVConfig) -> str:  # noqa
         """
         Format gcs path template
         :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
@@ -100,7 +100,7 @@ class OHLCV:
     #         self.get_local_path(ohlcv_config)
     #     )
 
-    def fetch_from_local_file_cache(self, ohlcv_config: OHLCV.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
+    def fetch_from_local_file_cache(self, ohlcv_config: RcdbData.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
         """
         Check file with df bytes and read df from it
         :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
@@ -123,7 +123,7 @@ class OHLCV:
         wait_exponential_multiplier=1000,
         stop_max_attempt_number=3
     )
-    def fetch_remote(self, ohlcv_config: OHLCV.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
+    def fetch_remote(self, ohlcv_config: RcdbData.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
         """
         Try to download df data.
         :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
@@ -149,7 +149,7 @@ class OHLCV:
     #     """
     #     self._local_cache[self.get_local_path(ohlcv_config)] = df
 
-    def _cache_write(self, ohlcv_config: OHLCV.OHLCVConfig, df: pd.DataFrame):  # noqa
+    def _cache_write(self, ohlcv_config: RcdbData.OHLCVConfig, df: pd.DataFrame):  # noqa
         """
         Write df to cache
         :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
@@ -159,7 +159,7 @@ class OHLCV:
         # self._cache_write_local(ohlcv_config, df)
         self._cache_write_local_file(ohlcv_config, df)
 
-    def _cache_write_local_file(self, ohlcv_config: OHLCV.OHLCVConfig, df: pd.DataFrame):  # noqa
+    def _cache_write_local_file(self, ohlcv_config: RcdbData.OHLCVConfig, df: pd.DataFrame):  # noqa
         """
         Write df to local file
         :param OHLCV.OHLCVConfig ohlcv_config: ohlcv data config
@@ -206,7 +206,7 @@ class OHLCV:
         logging.debug(f"Fetch by params: {ohlcv_config._asdict()}")
 
         if cls._instance is None:
-            cls._instance = OHLCV(
+            cls._instance = RcdbData(
                 ohlcv_api_url or os.environ.get("OHLCV_API_URL"),
                 local_cache_path
             )

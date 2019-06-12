@@ -5,7 +5,7 @@ from importlib import resources
 import pytest
 
 
-from commons.ohlcv import OHLCV
+from commons.rcdb_data import RcdbData
 
 TEST_OHLCV_API_URL = "https://storage.com"
 
@@ -20,7 +20,7 @@ def local_cache_path(tmp_path):
 @pytest.fixture
 def clean_ohlcv():
     yield
-    OHLCV.clean_up()
+    RcdbData.clean_up()
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def mock_storage_url(requests_mock):
 
 
 def test_init(test_url="test_url", test_cache_path="test_cache_path"):
-    ohlcv = OHLCV(ohlcv_api_url=test_url, local_cache_path=test_cache_path)
+    ohlcv = RcdbData(ohlcv_api_url=test_url, local_cache_path=test_cache_path)
     assert ohlcv.ohlcv_api_url == test_url
     assert ohlcv.local_cache_path == test_cache_path
 
@@ -43,7 +43,7 @@ def test_init(test_url="test_url", test_cache_path="test_cache_path"):
 )
 def test_fail_init(args):
     with pytest.raises(AssertionError):
-        OHLCV(*args)
+        RcdbData(*args)
 
 
 @pytest.fixture
@@ -60,11 +60,11 @@ def fetch_params(local_cache_path):
 
 class TestFetch:
     def test_fetch_remote(self, fetch_params, mock_storage_url):
-        res = OHLCV.fetch(**fetch_params)
+        res = RcdbData.fetch(**fetch_params)
 
         assert not res.empty
         assert mock_storage_url.called
-        assert len(os.listdir(OHLCV._instance.local_cache_path)) == 1
+        assert len(os.listdir(RcdbData._instance.local_cache_path)) == 1
 
     def test_fetch_local_cache_file(self, fetch_params, mock_storage_url, local_cache_path):
         with resources.open_binary("tests.datasets", "bitfinex__BTC_USD.hdf") as f:
@@ -73,6 +73,6 @@ class TestFetch:
                     f.read()
                 )
 
-            res = OHLCV.fetch(**fetch_params)
+            res = RcdbData.fetch(**fetch_params)
             assert not res.empty
             assert not mock_storage_url.called
