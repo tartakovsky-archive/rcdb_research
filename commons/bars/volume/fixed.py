@@ -1,32 +1,25 @@
-import pandas as pd
-
 from commons import bars
 
 
-def fixed(ohlc, threshold, by_quote=True):
-    bars.base.idx_to_column(ohlc)
-    bars.base.validate_columns(ohlc)
-
-    if not 0 < threshold:
-        raise AttributeError(f'Volume threshold must be greater than zero.')
-
-    ohlc = ohlc[bars.COLUMNS]
-    consolidated_bars = []
-    current_bar = None
-
-    for bar in ohlc.values:
-        if current_bar is None:
-            current_bar = list(bar)
+class VolumeFixedConsolidator(bars.base.BaseConsolidator):
+    def __init__(self, ohlc, threshold, by_quote, timestamp_close):
+        if not 0 < threshold:
+            raise AttributeError('Volume threshold must be greater than zero.')
+        self.threshold = threshold
+        if by_quote:
+            self.volume_sell_id = self.VOLUME_QUOTE_SELL
+            self.volume_buy_id = self.VOLUME_QUOTE_BUY
         else:
-            bars.base.update(current_bar, bar)
+            self.volume_sell_id = self.VOLUME_SELL
+            self.volume_buy_id = self.VOLUME_BUY
+        super().__init__(ohlc, timestamp_close)
 
-        volume_sum = (
-            current_bar[bars.VOLUME_QUOTE_SELL] + current_bar[bars.VOLUME_QUOTE_BUY]
-            if by_quote else
-            current_bar[bars.VOLUME_SELL] + current_bar[bars.VOLUME_BUY])
+    def bar_is_close_condition(self, bar):
+        volume_sum = (self.current_bar[self.volume_buy_id] +
+                      self.current_bar[self.volume_sell_id])
+        return volume_sum >= self.threshold
 
-        if volume_sum >= threshold:
-            consolidated_bars.append(current_bar)
-            current_bar = None
 
-    return bars.base.output_format(consolidated_bars)
+def fixed(ohlc, threshold, by_quote=True, timestamp_close=False):
+    return VolumeFixedConsolidator(
+        ohlc, threshold, by_quote, timestamp_close).get()

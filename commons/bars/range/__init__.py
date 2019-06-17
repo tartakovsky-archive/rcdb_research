@@ -1,1 +1,1 @@
-from .fixed import fixed
+from .fixed import fixed, RangeFixedConsolidator

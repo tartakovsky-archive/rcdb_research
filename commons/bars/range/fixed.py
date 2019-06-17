@@ -1,47 +1,44 @@
-import pandas as pd
-
 from commons import bars
-
-UPPER_LIMIT = 11
-LOWER_LIMIT = 12
+import numpy as np
 
 
-def fixed(ohlc, threshold, absolute=False):
-    bars.base.idx_to_column(ohlc)
-    bars.base.validate_columns(ohlc)
+class RangeFixedConsolidator(bars.base.BaseConsolidator):
+    UPPER_LIMIT = 12
+    LOWER_LIMIT = 13
 
-    if not 0 < threshold:
-        raise AttributeError(
-            f"{'Price' if absolute else 'Percentage'} "
-            f"threshold must be greater than zero.")
-
-    ohlc = ohlc[bars.COLUMNS]
-    consolidated_bars = []
-    current_bar = None
-
-    for bar in ohlc.to_numpy():
-        if current_bar is None:
-            current_bar = list(bar)
-            close_prev = consolidated_bars[-1][bars.CLOSE] \
-                if consolidated_bars else current_bar[bars.OPEN]
-
-            # Setting upper and lower limit
-            if absolute:
-                current_bar += [
-                    close_prev + threshold,
-                    close_prev - threshold,
-                ]
-            else:
-                current_bar += [
-                    close_prev * (1 + threshold),
-                    close_prev * (1 - threshold),
-                ]
+    def __init__(self, ohlc, threshold, threshold_is_absolute, timestamp_close):
+        if not 0 < threshold:
+            raise AttributeError(
+                f"{'Price' if threshold_is_absolute else 'Percentage'} "
+                f"threshold must be greater than zero.")
+        self.threshold = threshold
+        if threshold_is_absolute:
+            self.upper_limit = lambda x: x + self.threshold
+            self.lower_limit = lambda x: x - self.threshold
         else:
-            bars.base.update(current_bar, bar)
+            self.upper_limit = lambda x: x * (1 + self.threshold)
+            self.lower_limit = lambda x: x * (1 - self.threshold)
+        super().__init__(ohlc, timestamp_close)
 
-        if (current_bar[bars.CLOSE] >= current_bar[UPPER_LIMIT]
-                or current_bar[bars.CLOSE] <= current_bar[LOWER_LIMIT]):
-            consolidated_bars.append(current_bar)
-            current_bar = None
+    def prepare(self):
+        super().prepare()
+        self.ohlc.loc[:, 'upper_limit'] = np.nan
+        self.ohlc.loc[:, 'lower_limit'] = np.nan
 
-    return bars.base.output_format(consolidated_bars)
+    def bar_create(self, bar):
+        super().bar_create(bar)
+        close_prev = self.consolidated_bars[-1][self.CLOSE] \
+            if self.consolidated_bars else self.current_bar[self.OPEN]
+
+        # Setting upper and lower limit
+        self.current_bar[self.UPPER_LIMIT] = self.upper_limit(close_prev)
+        self.current_bar[self.LOWER_LIMIT] = self.lower_limit(close_prev)
+
+    def bar_is_close_condition(self, bar):
+        return (self.current_bar[self.CLOSE] >= self.current_bar[self.UPPER_LIMIT] or
+                self.current_bar[self.CLOSE] <= self.current_bar[self.LOWER_LIMIT])
+
+
+def fixed(ohlc, threshold, threshold_is_absolute=False, timestamp_close=False):
+    return RangeFixedConsolidator(
+        ohlc, threshold, threshold_is_absolute, timestamp_close).get()

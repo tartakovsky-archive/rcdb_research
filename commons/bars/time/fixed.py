@@ -1,28 +1,41 @@
-import pandas as pd
+import numpy as np
 
 from commons import bars
 
-# def fixed(ohlc, period):
-#     bars.base.idx_to_column(ohlc)
-#     bars.base.validate_columns(ohlc)
-#
-#     if not 0 < period:
-#         raise AttributeError(f"Period must be greater than zero.")
-#
-#     ohlc = ohlc[bars.COLUMNS]
-#     consolidated_bars = []
-#     current_bar = None
-#
-#     for bar in ohlc.to_numpy():
-#         if current_bar is None:
-#             current_bar = list(bar)
-#             count = 1
-#         else:
-#             bars.base.update(current_bar, bar)
-#             count += 1
-#
-#         if (count == period):
-#             consolidated_bars.append(current_bar)
-#             current_bar = None
-#
-#     return bars.base.output_format(consolidated_bars)
+
+class TimeFixedConsolidator(bars.base.BaseConsolidator):
+    def __init__(self, ohlc, period, timestamp_close):
+        if period <= 0:
+            raise AttributeError('Time period must be greater than zero.')
+        self.period = period
+        super().__init__(ohlc, timestamp_close)
+
+    def prepare(self):
+        self.ohlc = self.ohlc.resample(f"{self.period}{self.FREQUENCY}").agg({
+            'open': 'first',
+            'high': 'max',
+            'low': 'min',
+            'close': 'last',
+            'volume_buy': 'sum',
+            'volume_sell': 'sum',
+            'volume_quote_buy': 'sum',
+            'volume_quote_sell': 'sum',
+            'ticks_buy': 'sum',
+            'ticks_sell': 'sum'
+        }).dropna()
+
+    def get(self):
+        if self.timestamp_close:
+            self.ohlc.loc[:, 'timestamp_close'] = np.asarray(
+                self.ohlc.index.copy().shift(self.period, freq=self.FREQUENCY),
+                dtype=object
+            )
+            return self.ohlc[self.COLUMNS[1:]]
+        return self.ohlc[self.COLUMNS[2:]]
+
+    def bar_is_close_condition(self, bar):
+        pass
+
+
+def fixed(ohlc, period, timestamp_close=False):
+    return TimeFixedConsolidator(ohlc, period, timestamp_close).get()

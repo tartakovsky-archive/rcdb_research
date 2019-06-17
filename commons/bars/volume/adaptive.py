@@ -1,38 +1,42 @@
-import pandas as pd
 import numpy as np
 
 from commons import bars
 
-VOLUME_SUM = 11
-ROLLING_VOLUME = 12
+
+class AdaptiveVolumeConsolidator(bars.base.BaseConsolidator):
+    VOLUME_SUM = 12
+    VOLUME_AVG = 13
+
+    def __init__(self, ohlc, avg_per, window, timestamp_close):
+        if avg_per >= window:
+            raise AttributeError(
+                f"Average per source bar period must be "
+                f"greater than window period")
+        self.avg_per = avg_per
+        self.window = window
+        super().__init__(ohlc, timestamp_close)
+
+    def prepare(self):
+        super().prepare()
+        self.ohlc.loc[:, 'volume_sum'] = (
+                self.ohlc.iloc[:, self.VOLUME_BUY] +
+                self.ohlc.iloc[:, self.VOLUME_SELL])
+        timeframe = (self.window / self.avg_per)
+        self.ohlc.loc[:, 'volume_avg'] = self.ohlc.volume_sum.asfreq(
+            self.FREQUENCY).fillna(0).rolling(self.window).sum() / timeframe
+        self.ohlc.dropna(subset=['volume_avg'], inplace=True)
+
+    def bar_update(self, bar):
+        if super().bar_update(bar):
+            self.current_bar[self.VOLUME_SUM] += bar[self.VOLUME_SUM]
+            self.current_bar[self.VOLUME_AVG] = bar[self.VOLUME_AVG]
+
+    def bar_is_close_condition(self, bar):
+        return (not np.isnan(self.current_bar[self.VOLUME_AVG]) and
+                self.current_bar[self.VOLUME_SUM] >=
+                self.current_bar[self.VOLUME_AVG])
 
 
-def adaptive(ohlc, avg_per, window):
-    bars.base.idx_to_column(ohlc)
-    bars.base.validate_columns(ohlc)
-
-    if avg_per >= window:
-        raise AttributeError(
-            f"Average per source bar period must be greater than window period")
-
-    ohlc = ohlc[bars.COLUMNS]
-    ohlc.loc[:, 'volume_sum'] = (ohlc.iloc[:, bars.VOLUME_BUY] +
-                                 ohlc.iloc[:, bars.VOLUME_SELL])
-    ohlc.loc[:, 'rolling_volume'] = ohlc.volume.rolling(
-        window, min_periods=window).sum() / (window / avg_per)
-    consolidated_bars = []
-    current_bar = None
-
-    for bar in ohlc.to_numpy():
-        if current_bar is None:
-            current_bar = list(bar)
-        else:
-            bars.base.update(current_bar, bar)
-            current_bar[ROLLING_VOLUME] = bar[ROLLING_VOLUME]
-
-        if (current_bar[VOLUME_SUM] > current_bar[ROLLING_VOLUME]
-                and not np.isnan(current_bar[ROLLING_VOLUME])):
-            consolidated_bars.append(current_bar)
-            current_bar = None
-
-    return bars.base.output_format(consolidated_bars)
+def adaptive(ohlc, avg_per, window, timestamp_close=False):
+    return AdaptiveVolumeConsolidator(
+        ohlc, avg_per, window, timestamp_close).get()

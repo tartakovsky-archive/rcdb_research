@@ -4,14 +4,23 @@ import pandas as pd
 
 from commons import bars
 
+ERROR = 1e-7
 DATASET = os.path.abspath(
     os.path.join(os.path.dirname(__file__),
                  "../datasets/bitfinex__BTC_USD.hdf"))
 
 
+def _volume_sum(df):
+    return df.volume_buy.sum() + df.volume_sell.sum()
+
+
+def _ticks_sum(df):
+    return df.ticks_buy.sum() + df.ticks_sell.sum()
+
+
 @pytest.fixture
 def test_dataset():
-    yield pd.read_hdf(DATASET, key='table')[bars.COLUMNS[1:]]
+    yield pd.read_hdf(DATASET, key='table')[bars.base.BaseConsolidator.COLUMNS[2:]]
 
 
 @pytest.fixture
@@ -27,16 +36,18 @@ def synthetic_ohlc():
         'volume_quote_sell': [50000, 20000, 15000],
         'ticks_buy': [3000, 5000, 5000],
         'ticks_sell': [1000, 3000, 2000]
-    })
+    }, index=[pd.Timestamp(100 + i, unit='s') for i in range(3)])
 
 
-@pytest.mark.skip("failed")
+# @pytest.mark.skip("failed")
 @pytest.mark.parametrize(
     "args", [
-        (bars.range.fixed, 1.5),
-        (bars.range.fixed, 150, True),
-        (bars.volume.fixed, 5500, False),
-        (bars.ticks.fixed, 19000)]
+        (bars.volume.fixed, 5500, False, True),
+        (bars.time.fixed, 4, True),
+        (bars.tick.fixed, 19000, True),
+        (bars.range.fixed, 1.5, False, True),
+        (bars.range.fixed, 150, True, True),
+    ]
 )
 def test_bar_calculation(args, synthetic_ohlc):
     func, *params = args
@@ -52,19 +63,51 @@ def test_bar_calculation(args, synthetic_ohlc):
     assert bar['volume_quote_sell'] == df['volume_quote_sell'].sum()
     assert bar['ticks_buy'] == df['ticks_buy'].sum()
     assert bar['ticks_sell'] == df['ticks_sell'].sum()
+    if func == bars.time.fixed:
+        assert bar['timestamp_close'] == pd.Timestamp(104, unit='s')
+    else:
+        assert bar['timestamp_close'] == pd.Timestamp(103, unit='s')
 
 
-@pytest.mark.skip("failed")
+@pytest.mark.parametrize(
+    "args", [
+        (bars.volume.fixed, 100, False, True),
+        (bars.volume.adaptive, 2, 30, True),
+        (bars.time.fixed, 3, True),
+        (bars.tick.fixed, 1000, True),
+        (bars.range.fixed, 0.01, False, True),
+        (bars.range.fixed, 50, True, True),
+    ]
+)
+def test_missing_leaks(args, test_dataset):
+    source = test_dataset
+    func, *params = args
+    df = func(source, *params)
+    assert not df.empty
+    first_open = df.index[0]
+    last_close = df.iloc[-1].timestamp_close
+    reached_source = source.loc[first_open: last_close]
+    assert abs(_volume_sum(df) - _volume_sum(reached_source)) < ERROR
+    assert _ticks_sum(df) == _ticks_sum(reached_source)
+
+
+def test_source_data_does_not_mutate(test_dataset):
+    source = test_dataset
+    copy = source.copy()
+    bars.volume.fixed(source, 5500, False)
+    assert source.equals(copy)
+
+
 class TestRangeFixedBars:
     def test_missing_lesser_pct_threshold(self, test_dataset):
-        df = bars.range.fixed(test_dataset, 0.05)
+        df = bars.range.fixed(test_dataset, 0.01)
         df["price_change"] = df.close.pct_change()
-        lesser_pct = df[abs(df.price_change) < 0.05]
+        lesser_pct = df[abs(df.price_change) < 0.01]
         assert not df.empty
         assert lesser_pct.empty
 
     def test_missing_lesser_abs_threshold(self, test_dataset):
-        df = bars.range.fixed(test_dataset, 100, absolute=True)
+        df = bars.range.fixed(test_dataset, 100, threshold_is_absolute=True)
         df["price_diff"] = df.close.diff()
         lesser_abs = df[abs(df.price_diff) < 100]
         assert not df.empty
@@ -78,38 +121,78 @@ class TestVolumeFixedBars:
         assert df[df.volume_buy + df.volume_sell < 500].empty
 
     def test_missing_lesser_quote_threshold(self, test_dataset):
-        df = bars.volume.fixed(test_dataset, 10**7)
+        df = bars.volume.fixed(test_dataset, 10**6)
         assert not df.empty
-        assert df[df.volume_quote_buy + df.volume_quote_sell < 10**7].empty
+        assert df[df.volume_quote_buy + df.volume_quote_sell < 10**6].empty
 
 
 class TestTicksFixedBars:
     def test_missing_lesser_threshold(self, test_dataset):
-        df = bars.ticks.fixed(test_dataset, 5000)
+        df = bars.tick.fixed(test_dataset, 5000)
         assert not df.empty
         assert df[df.ticks_buy + df.ticks_sell < 5000].empty
 
 
-@pytest.mark.skip("failed")
+class TestTimeFixedBar:
+    def test_bar_periods(self, test_dataset):
+        period = 5
+        df = bars.time.fixed(test_dataset, period, timestamp_close=True)
+        assert not df.empty
+        for bar in df.itertuples():
+            ts_open = bar.timestamp_close - pd.Timedelta(seconds=period)
+            assert ts_open == bar.Index
+
+
+class TestVolumeAdaptiveBars:
+    def test_volume_bars(self, test_dataset):
+        window_size = 60 * 60 * 2
+        avg_per = 60
+        df = bars.volume.adaptive(
+            ohlc=test_dataset,
+            avg_per=avg_per,
+            window=window_size,
+            timestamp_close=True
+        )
+        assert not df.empty
+        for bar in df.itertuples():
+            window_start = bar.timestamp_close - pd.Timedelta(
+                seconds=window_size)
+            window_end = bar.timestamp_close
+            avg_volume_source = test_dataset.loc[window_start: window_end]
+            volume_sum = _volume_sum(avg_volume_source)
+            avg_volume = volume_sum / window_size / avg_per
+            assert bar.volume_sell + bar.volume_buy >= avg_volume
+
+
 class TestHybridFixedRangeAdaptiveVolumeBars:
     def test_missing_lesser_pct_threshold_and_avg(self, test_dataset):
+        window_size = 60 * 60 * 2
+        avg_per = 60
         df = bars.hybrid.range_fixed_volume_adaptive(
             ohlc=test_dataset,
-            pct_threshold=0.05,
-            avg_per=2,
-            window=30
+            range_threshold=0.01,
+            avg_per=avg_per,
+            window=window_size,
+            timestamp_close=True
         )
         df['price_change'] = df.close.pct_change()
         assert not df.empty
-        assert df[abs(df.price_change) < 0.05].empty
+        assert df[abs(df.price_change) < 0.01].empty
+        for bar in df.itertuples():
+            window_start = bar.timestamp_close - pd.Timedelta(
+                seconds=window_size)
+            window_end = bar.timestamp_close
+            avg_volume_source = test_dataset.loc[window_start: window_end]
+            volume_sum = _volume_sum(avg_volume_source)
+            avg_volume = volume_sum / window_size / avg_per
+            assert bar.volume_sell + bar.volume_buy >= avg_volume
 
 
-@pytest.mark.skip("failed")
 class TestHybridFixedRangeFixedTicks:
     def test_missing_lesser_thresholds(self, test_dataset):
         df = bars.hybrid.range_fixed_ticks_fixed(
             ohlc=test_dataset,
-            pct_threshold=0.05,
+            range_threshold=0.01,
             ticks_threshold=5000
         )
         df['price_change'] = df.close.pct_change()
