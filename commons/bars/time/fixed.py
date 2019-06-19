@@ -26,11 +26,10 @@ class TimeFixedConsolidator(bars.base.BaseConsolidator):
 
     def get(self):
         if self.timestamp_close:
-            self.ohlc.loc[:, 'timestamp_close'] = np.asarray(
-                self.ohlc.index.copy().shift(self.period, freq=self.FREQUENCY),
-                dtype=object
-            )
+            self.ohlc.loc[:, 'timestamp_close'] = self.ohlc.index.copy().shift(
+                self.period, freq=self.FREQUENCY)
             return self.ohlc[self.COLUMNS[1:]]
+          
         return self.ohlc[self.COLUMNS[2:]]
 
     def bar_is_close_condition(self, bar):

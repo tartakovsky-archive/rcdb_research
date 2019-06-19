@@ -14,11 +14,9 @@ if __name__ == "__main__":
     df = df[df.index >= "2019-04-01"]
 
     now = time.time()
-    df_bars = bars.hybrid.range_fixed_volume_adaptive(
+    df_bars = bars.range.fixed(
         ohlc=df,
-        pct_threshold=0.1,
-        avg_per=3,
-        window=6
+        threshold=0.1,
     )
     print(time.time() - now)
     print(df_bars)

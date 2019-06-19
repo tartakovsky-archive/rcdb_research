@@ -44,8 +44,8 @@ class BaseConsolidator(ABC):
 
     def prepare(self):
         if 'timestamp' not in self.ohlc:
-            self.ohlc.loc[:, 'timestamp'] = np.asarray(
-                self.ohlc.index.copy(), dtype=object)
+            self.ohlc.loc[:, 'timestamp'] = self.ohlc.index.copy()
+
         self.ohlc.loc[:, 'timestamp_close'] = np.nan
         self.ohlc = self.ohlc[self.COLUMNS]
 
@@ -74,7 +74,8 @@ class BaseConsolidator(ABC):
         self.ohlc = None
 
     def get(self):
-        for bar in self.ohlc.to_numpy():
+        for bar in self.ohlc.values:
+
             self.bar_update(bar)
 
             if self.bar_is_close_condition(bar):
