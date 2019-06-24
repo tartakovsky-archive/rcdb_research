@@ -1,10 +1,11 @@
 import os
 import pytest
 import pandas as pd
+import numpy as np
 
 from commons import bars
 
-ERROR = 1e-7
+ERROR = 1e-9
 DATASET = os.path.abspath(
     os.path.join(os.path.dirname(__file__),
                  "../datasets/bitfinex__BTC_USD.hdf"))
@@ -20,7 +21,8 @@ def _ticks_sum(df):
 
 @pytest.fixture
 def test_dataset():
-    yield pd.read_hdf(DATASET, key='table')[bars.base.BaseConsolidator.COLUMNS[2:]]
+    yield pd.read_hdf(
+        DATASET, key='table')[bars.base.BaseConsolidator.COLUMNS[2:]]
 
 
 @pytest.fixture
@@ -39,7 +41,6 @@ def synthetic_ohlc():
     }, index=[pd.Timestamp(100 + i, unit='s') for i in range(3)])
 
 
-# @pytest.mark.skip("failed")
 @pytest.mark.parametrize(
     "args", [
         (bars.volume.fixed, 5500, False, True),
@@ -77,6 +78,7 @@ def test_bar_calculation(args, synthetic_ohlc):
         (bars.tick.fixed, 1000, True),
         (bars.range.fixed, 0.01, False, True),
         (bars.range.fixed, 50, True, True),
+        (bars.cusum.fixed, 0.001, True),
     ]
 )
 def test_missing_leaks(args, test_dataset):
@@ -133,7 +135,7 @@ class TestTicksFixedBars:
         assert df[df.ticks_buy + df.ticks_sell < 5000].empty
 
 
-class TestTimeFixedBar:
+class TestTimeFixedBars:
     def test_bar_periods(self, test_dataset):
         period = 5
         df = bars.time.fixed(test_dataset, period, timestamp_close=True)
@@ -188,7 +190,7 @@ class TestHybridFixedRangeAdaptiveVolumeBars:
             assert bar.volume_sell + bar.volume_buy >= avg_volume
 
 
-class TestHybridFixedRangeFixedTicks:
+class TestHybridFixedRangeFixedTicksBars:
     def test_missing_lesser_thresholds(self, test_dataset):
         df = bars.hybrid.range_fixed_ticks_fixed(
             ohlc=test_dataset,
@@ -199,3 +201,29 @@ class TestHybridFixedRangeFixedTicks:
         assert not df.empty
         assert df[abs(df.price_change) < 0.01].empty
         assert df[df.ticks_buy + df.ticks_sell < 50].empty
+
+
+class TestCusumFixedBars:
+    def test_missing_lesser_thresholds(self, test_dataset):
+        source = test_dataset
+        threshold = 0.001
+        df = bars.cusum.fixed(
+            ohlc=test_dataset,
+            threshold=threshold,
+            timestamp_close=True
+        )
+        assert not df.empty
+        source.loc[:, 'log_close_diff'] = np.log(
+            source.loc[:, 'close']).diff().fillna(0)
+        for bar in df.itertuples():
+            bar_source = test_dataset.loc[bar.Index:bar.timestamp_close]
+            s_pos, s_neg = 0, 0
+            for i in bar_source.index:
+                pos = float(s_pos + source.loc[i, 'log_close_diff'])
+                neg = float(s_neg + source.loc[i, 'log_close_diff'])
+                s_pos = max(0.0, pos)
+                s_neg = min(0.0, neg)
+
+            s_neg_diff = abs(s_neg) - threshold
+            s_pos_diff = s_pos - threshold
+            assert s_neg_diff < ERROR or s_pos_diff < ERROR

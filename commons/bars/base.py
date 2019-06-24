@@ -75,7 +75,6 @@ class BaseConsolidator(ABC):
 
     def get(self):
         for bar in self.ohlc.values:
-
             self.bar_update(bar)
 
             if self.bar_is_close_condition(bar):
