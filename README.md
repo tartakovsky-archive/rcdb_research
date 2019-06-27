@@ -1,4 +1,4 @@
-##Installing
+## Installing
 
 `# pip install -e .` - install requirements  
 `# jupyter notebook` - start jupyter  
