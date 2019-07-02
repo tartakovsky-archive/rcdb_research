@@ -9,3 +9,6 @@ sklearn
 
 jupyter
 cufflinks
+workalendar
+pandas_market_calendars
+fastai
