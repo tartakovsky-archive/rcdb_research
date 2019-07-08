@@ -59,6 +59,12 @@ class RcdbData:
         if ohlcv_config.is_whole_period:
             return df
 
+        if ohlcv_config.start is None:
+            return df[df.index < ohlcv_config.end]
+
+        if ohlcv_config.end is None:
+            return df[df.index >= ohlcv_config.start]
+
         return df[(df.index >= ohlcv_config.start) & (df.index < ohlcv_config.end)]
 
     def get_local_path(self, ohlcv_config: RcdbData.OHLCVConfig) -> str:  # noqa
