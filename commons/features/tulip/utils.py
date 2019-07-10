@@ -48,7 +48,7 @@ def calc_all_helper(features_list, prefix):
                       if name in data_mapping else param_set[name]
                       for name in f_args])
                 postfix = ''.join([f"_{param}" for param in param_set.values()])
-                res[f"{prefix}_{f.__name__}{postfix}"] = feature
+                res[f"tulip_{prefix}_{f.__name__}{postfix}"] = feature
 
         return pd.DataFrame(res, index=data.index) if not inplace else None
 
