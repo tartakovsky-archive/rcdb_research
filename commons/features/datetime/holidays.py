@@ -4,10 +4,10 @@ from typing import List, Dict
 import pytz
 import pandas as pd
 import numpy as np
-from workalendar.registry import registry
-from workalendar.core import Calendar
 
 from . import utils
+
+PREFIX = "dt_holidays"
 
 
 def calc_all(data: pd.DataFrame, param_sets: List[Dict], column_names=None) -> pd.DataFrame:
@@ -22,10 +22,7 @@ def calc_all(data: pd.DataFrame, param_sets: List[Dict], column_names=None) -> p
     """
     df = data.copy()
 
-    df["date"] = df.index.date
-    years = df.date.map(lambda x: x.year).unique()
-
-    timestamp = data.index.to_pydatetime()
+    timestamps = data.index.to_pydatetime()
 
     supported_countries = utils.supported_countries()
     for ps in param_sets:
@@ -35,50 +32,44 @@ def calc_all(data: pd.DataFrame, param_sets: List[Dict], column_names=None) -> p
 
     for ps in param_sets:
         country_name = ps["country_name"]
-        calendar = registry.get_calendar_class(country_name)()
 
-        holidays = np.array([])
-        for year in years:
-            holidays = np.concatenate(
-                (holidays, np.array([x[0] for x in calendar.holidays(year)])),
-                axis=None
-            )
+        df[f"{PREFIX}_f1{country_name}"] = f1(timestamps, country_name)
+        df[f"{PREFIX}_f2{country_name}"] = f2(timestamps, country_name)
+        df[f"{PREFIX}_f3{country_name}"] = f3(timestamps, country_name)
+        df[f"{PREFIX}_f4{country_name}"] = f4(timestamps, country_name)
+        df[f"{PREFIX}_f5{country_name}"] = f5(timestamps, country_name)
 
-        df[f"f1{country_name}"] = f1(timestamp, calendar)
-        df[f"f2{country_name}"] = f2(timestamp, calendar)
-        df[f"f3{country_name}"] = f3(timestamp, holidays)
-        df[f"f4{country_name}"] = f4(timestamp, holidays)
-        df[f"f5{country_name}"] = f5(timestamp, holidays)
-
-    df["f6"] = f6(timestamp)
-    return df.drop("date", axis=1)
+    df[f"{PREFIX}_f6"] = f6(timestamps)
+    return df
 
 
-def f1(timestamp: np.array, calendar: Calendar) -> np.array:
+def f1(timestamps: np.array, country_name: str) -> np.array:
     """
     Check if the timestamps are holidays
-    :param np.array timestamp: array of datetime`s
-    :param workalendar.core.Calendar calendar: instance of workalendar calendar
+    :param np.array timestamps: array of datetime`s
+    :param str country_name: name of the country for get instance of workalendar calendar
     :return: array of 0 and 1 for each timestamp
     """
-    return np.vectorize(calendar.is_holiday)(timestamp) * 1
+    calendar = utils.get_holiday_calendar(country_name)
+    return np.vectorize(calendar.is_holiday)(timestamps) * 1
 
 
-def f2(timestamp: np.array, calendar: Calendar) -> np.array:
+def f2(timestamps: np.array, country_name: str) -> np.array:
     """
     Check if the timestamps are working days
-    :param np.array timestamp: array of datetime`s
-    :param workalendar.core.Calendar calendar: instance of workalendar calendar
+    :param np.array timestamps: array of datetime`s
+    :param str country_name: name of the country for get instance of workalendar calendar
     :return: array of 0 and 1 for each timestamp
     """
-    return np.vectorize(calendar.is_working_day)(timestamp) * 1
+    calendar = utils.get_holiday_calendar(country_name)
+    return np.vectorize(calendar.is_working_day)(timestamps) * 1
 
 
-def f3(timestamp: np.array, holidays: np.array) -> np.array:
+def f3(timestamps: np.array, country_name: str) -> np.array:
     """
     Calculate distance to the holiday in seconds
-    :param np.array timestamp: array of datetime`s
-    :param np.array holidays: array of datetime.date`s
+    :param np.array timestamps: array of datetime`s
+    :param str country_name: name of the country for get instance of workalendar calendar
     :return: array with seconds for each timestamp
     """
     def prepare_timedelta_to_seconds(td):
@@ -87,8 +78,10 @@ def f3(timestamp: np.array, holidays: np.array) -> np.array:
             seconds = 0.0
         return seconds
 
+    holidays = utils.get_holidays(country_name, timestamps)
+
     idxs = holidays.searchsorted(
-        np.vectorize(datetime.date)(timestamp),
+        np.vectorize(datetime.date)(timestamps),
         side="left"
     )
 
@@ -96,34 +89,36 @@ def f3(timestamp: np.array, holidays: np.array) -> np.array:
         lambda d: datetime.combine(d, datetime.min.time()).replace(tzinfo=pytz.UTC)
     )
 
-    holidays_td = date_to_utcdatetime(holidays)[idxs] - timestamp
+    holidays_td = date_to_utcdatetime(holidays)[idxs] - timestamps
     return np.vectorize(prepare_timedelta_to_seconds)(holidays_td)
 
 
-def f4(timestamp: np.array, holidays: np.array) -> np.array:
+def f4(timestamps: np.array, country_name: str) -> np.array:
     """
     Check if the timestamps are day before the holidays
-    :param timestamp: array of datetime`s
-    :param holidays: array of datetime.date`s
+    :param timestamps: array of datetime`s
+    :param str country_name: name of the country for get instance of workalendar calendar
     :return: array of 0 and 1 for each timestamp
     """
-    return utils.is_date_in_timestamp(timestamp, holidays - timedelta(days=1))
+    holidays = utils.get_holidays(country_name, timestamps)
+    return utils.is_date_in_timestamp(timestamps, holidays - timedelta(days=1))
 
 
-def f5(timestamp: np.array, holidays: np.array) -> np.array:
+def f5(timestamps: np.array, country_name: str) -> np.array:
     """
     Check if the timestamps are day after the holidays
-    :param timestamp: array of datetime`s
-    :param holidays: array of datetime.date`s
+    :param timestamps: array of datetime`s
+    :param str country_name: name of the country for get instance of workalendar calendar
     :return: array of 0 and 1 for each timestamp
     """
-    return utils.is_date_in_timestamp(timestamp, holidays + timedelta(days=1))
+    holidays = utils.get_holidays(country_name, timestamps)
+    return utils.is_date_in_timestamp(timestamps, holidays + timedelta(days=1))
 
 
-def f6(timestamp: np.array) -> np.array:
+def f6(timestamps: np.array) -> np.array:
     """
     Check if the timestamps are weekend
-    :param timestamp: array of datetime`s
+    :param timestamps: array of datetime`s
     :return: array of 0 and 1 for each timestamp
     """
-    return np.vectorize(lambda x: int(x.weekday() > 4))(timestamp)
+    return np.vectorize(lambda x: int(x.weekday() > 4))(timestamps)

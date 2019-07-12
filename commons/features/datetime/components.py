@@ -3,6 +3,8 @@ from typing import List, Dict
 import pandas as pd
 from fastai.tabular.transform import add_datepart
 
+PREFIX = "dt_components"
+
 
 def calc_all(data: pd.DataFrame, param_sets: List[Dict] = None, column_names=None) -> pd.DataFrame:
     """
@@ -29,4 +31,7 @@ def calc_all(data: pd.DataFrame, param_sets: List[Dict] = None, column_names=Non
 
     df["timediff"] = (df[ts_col] - df[ts_col].shift()).fillna(0).apply(lambda x: x.total_seconds())
     df[df.dtypes[(df.dtypes == bool)].index] *= 1
-    return df.drop(ts_col, axis=1)
+
+    df = df.drop(ts_col, axis=1)
+    df.columns = [f"{PREFIX}_{cname}" for cname in df.columns]
+    return df

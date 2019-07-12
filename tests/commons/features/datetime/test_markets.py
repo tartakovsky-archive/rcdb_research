@@ -2,22 +2,11 @@ from datetime import datetime, timezone
 
 import pytest
 import numpy as np
-import pandas_market_calendars as mcal
 
 from commons.features.datetime import markets
 
 
-@pytest.fixture(scope="module")
-def nyse_market_calendar():
-    return mcal.get_calendar("NYSE")
-
-
-@pytest.fixture
-def nyse_schedule(nyse_market_calendar):
-    return nyse_market_calendar.schedule(
-        start_date=datetime(2019, 7, 2).date(),
-        end_date=datetime(2019, 7, 5).date()
-    )
+MARKET_NAME = "NYSE"
 
 
 @pytest.mark.parametrize(
@@ -30,25 +19,27 @@ def nyse_schedule(nyse_market_calendar):
 
     ]
 )
-def test_is_market_open(timestamp, check_val, nyse_schedule, nyse_market_calendar):
-    assert markets.f1(timestamp, nyse_market_calendar, nyse_schedule)[0] == check_val
+def test_is_market_open(timestamp, check_val):
+    assert markets.f1(timestamp, MARKET_NAME)[0] == check_val
 
 
 @pytest.mark.parametrize(
-    "feature, timestamp, market_timestamp, check_val",
+    "feature, timestamp, market_timestamp, check_val, is_open",
     [
         # Check if the timestamps are 1h before the market open
         (
             markets.f2,
             np.array([datetime(2019, 7, 2, 14, 30, tzinfo=timezone.utc)]),
             np.array([datetime(2019, 7, 2, 15, tzinfo=timezone.utc)]),
-            1
+            1,
+            True
         ),
         (
             markets.f2,
             np.array([datetime(2019, 7, 2, 14, 30, tzinfo=timezone.utc)]),
             np.array([datetime(2019, 7, 2, 16, tzinfo=timezone.utc)]),
-            0
+            0,
+            True
         ),
 
         # Check if the timestamps are 1h after the market open
@@ -56,13 +47,15 @@ def test_is_market_open(timestamp, check_val, nyse_schedule, nyse_market_calenda
             markets.f3,
             np.array([datetime(2019, 7, 2, 15, 30, tzinfo=timezone.utc)]),
             np.array([datetime(2019, 7, 2, 15, tzinfo=timezone.utc)]),
-            1
+            1,
+            True
         ),
         (
             markets.f3,
             np.array([datetime(2019, 7, 2, 17, 1, tzinfo=timezone.utc)]),
             np.array([datetime(2019, 7, 2, 16, tzinfo=timezone.utc)]),
-            0
+            0,
+            True
         ),
 
         # Check if the timestamps are 1h before the market close
@@ -70,13 +63,15 @@ def test_is_market_open(timestamp, check_val, nyse_schedule, nyse_market_calenda
             markets.f4,
             np.array([datetime(2019, 7, 2, 14, 30, tzinfo=timezone.utc)]),
             np.array([datetime(2019, 7, 2, 15, tzinfo=timezone.utc)]),
-            1
+            1,
+            False
         ),
         (
             markets.f4,
             np.array([datetime(2019, 7, 2, 14, 30, tzinfo=timezone.utc)]),
             np.array([datetime(2019, 7, 2, 16, tzinfo=timezone.utc)]),
-            0
+            0,
+            False
         ),
 
         # Check if the timestamps are 1h after the market close
@@ -84,13 +79,15 @@ def test_is_market_open(timestamp, check_val, nyse_schedule, nyse_market_calenda
             markets.f5,
             np.array([datetime(2019, 7, 2, 15, 30, tzinfo=timezone.utc)]),
             np.array([datetime(2019, 7, 2, 15, tzinfo=timezone.utc)]),
-            1
+            1,
+            False
         ),
         (
             markets.f5,
             np.array([datetime(2019, 7, 2, 17, 1, tzinfo=timezone.utc)]),
             np.array([datetime(2019, 7, 2, 16, tzinfo=timezone.utc)]),
-            0
+            0,
+            False
         ),
     ],
     ids=[
@@ -101,5 +98,7 @@ def test_is_market_open(timestamp, check_val, nyse_schedule, nyse_market_calenda
         "1h after the market close", "not 1h after the market close"
     ]
 )
-def test_is_hour_away_features(feature, timestamp, market_timestamp, check_val):
-    assert feature(timestamp, market_timestamp)[0] == check_val
+def test_is_hour_away_features(feature, timestamp, market_timestamp, check_val, is_open, mocker):
+    ret_value = (market_timestamp, None) if is_open else (None, market_timestamp)
+    mocker.patch("commons.features.datetime.utils.get_market_open_close", return_value=ret_value)
+    assert feature(timestamp, MARKET_NAME)[0] == check_val

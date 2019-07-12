@@ -7,6 +7,8 @@ from workalendar.registry import registry
 from commons.features.datetime import holidays
 
 
+COUNTRY_NAME = "US"
+
 @pytest.fixture(scope="module")
 def calendar():
     return registry.get_calendar_class("US")()
@@ -21,9 +23,9 @@ def calendar():
         )
     ]
 )
-def test_is_holidays(timestamp, is_holidays, calendar):
+def test_is_holidays(timestamp, is_holidays):
     assert np.array_equal(
-        holidays.f1(timestamp, calendar),
+        holidays.f1(timestamp, COUNTRY_NAME),
         is_holidays
     )
 
@@ -37,9 +39,9 @@ def test_is_holidays(timestamp, is_holidays, calendar):
         )
     ]
 )
-def test_is_working_day(timestamp, is_working, calendar):
+def test_is_working_day(timestamp, is_working):
     assert np.array_equal(
-        holidays.f2(timestamp, calendar),
+        holidays.f2(timestamp, COUNTRY_NAME),
         is_working
     )
 
@@ -60,9 +62,11 @@ def test_is_working_day(timestamp, is_working, calendar):
         )
     ]
 )
-def test_distance_to_holidays(timestamp, holidays_array, distances):
+def test_distance_to_holidays(timestamp, holidays_array, distances, mocker):
+    mocker.patch("commons.features.datetime.utils.get_holidays", return_value=holidays_array)
+
     assert np.array_equal(
-        holidays.f3(timestamp, holidays_array),
+        holidays.f3(timestamp, COUNTRY_NAME),
         distances
     )
 
@@ -83,9 +87,11 @@ def test_distance_to_holidays(timestamp, holidays_array, distances):
         )
     ]
 )
-def test_is_day_before_holidays(timestamp, holidays_array, check_arr):
+def test_is_day_before_holidays(timestamp, holidays_array, check_arr, mocker):
+    mocker.patch("commons.features.datetime.utils.get_holidays", return_value=holidays_array)
+
     assert np.array_equal(
-        holidays.f4(timestamp, holidays_array),
+        holidays.f4(timestamp, COUNTRY_NAME),
         check_arr
     )
 
@@ -106,9 +112,10 @@ def test_is_day_before_holidays(timestamp, holidays_array, check_arr):
         )
     ]
 )
-def test_is_day_after_holidays(timestamp, holidays_array, check_arr):
+def test_is_day_after_holidays(timestamp, holidays_array, check_arr, mocker):
+    mocker.patch("commons.features.datetime.utils.get_holidays", return_value=holidays_array)
     assert np.array_equal(
-        holidays.f5(timestamp, holidays_array),
+        holidays.f5(timestamp, COUNTRY_NAME),
         check_arr
     )
 

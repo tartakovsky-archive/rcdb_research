@@ -5,6 +5,7 @@ import pandas as pd
 
 from . import utils
 
+PREFIX = "highlow"
 
 def calc_all(
     data: pd.DataFrame,
@@ -25,11 +26,11 @@ def calc_all(
 
     df = pd.DataFrame(
         {
-            "f1": f1(high),
-            "f4": f4(high),
-            "f7": f7(close),
-            "f8": f8(close),
-            "f9": f9(high),
+            f"{PREFIX}_f1": f1(high),
+            f"{PREFIX}_f4": f4(high),
+            f"{PREFIX}_f7": f7(close),
+            f"{PREFIX}_f8": f8(close),
+            f"{PREFIX}_f9": f9(high),
         },
         index=data.index
     )
@@ -37,12 +38,12 @@ def calc_all(
     for ps in param_set:
         period = ps["period"]
 
-        df[f"f2{period}"] = f2(high, period)
-        df[f"f3{period}"] = f3(low, period)
-        df[f"f5{period}"] = f5(high, period)
-        df[f"f6{period}"] = f6(low, period)
-        df[f"f10{period}"] = f10(high, period)
-        df[f"f11{period}"] = f11(low, period)
+        df[f"{PREFIX}_f2{period}"] = f2(high, period)
+        df[f"{PREFIX}_f3{period}"] = f3(low, period)
+        df[f"{PREFIX}_f5{period}"] = f5(high, period)
+        df[f"{PREFIX}_f6{period}"] = f6(low, period)
+        df[f"{PREFIX}_f10{period}"] = f10(high, period)
+        df[f"{PREFIX}_f11{period}"] = f11(low, period)
 
     return df
 

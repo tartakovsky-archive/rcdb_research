@@ -3,9 +3,10 @@ from typing import List, Dict
 
 import pandas as pd
 import numpy as np
-import pandas_market_calendars as mcal
 
 from . import utils
+
+PREFIX = "dt_markets"
 
 
 def calc_all(data: pd.DataFrame, param_sets: List[Dict] = None, column_names=None):
@@ -36,78 +37,75 @@ def calc_all(data: pd.DataFrame, param_sets: List[Dict] = None, column_names=Non
     for ps in param_sets:
         market_name = ps["market"]
         if market_name not in markets:
-            raise ValueError("Unsupported market {market_name}. Choose from supported: {markets}")
+            raise ValueError(f"Unsupported market {market_name}. Choose from supported: {markets}")
 
     for ps in param_sets:
         market_name = ps["market"]
-        calendar = mcal.get_calendar(market_name)
-        calendar_schedule = calendar.schedule(
-            start_date=data.index[0].date(),
-            end_date=data.index[-1].date() + timedelta(days=2)
-        )
 
-        market_open = pd.DatetimeIndex(calendar_schedule.market_open.values).tz_localize(tz='UTC').to_pydatetime()
-        market_close = pd.DatetimeIndex(calendar_schedule.market_open.values).tz_localize(tz='UTC').to_pydatetime()
-
-        df[f"f1{market_name}"] = f1(timestamp, calendar, calendar_schedule)
-        df[f"f2{market_name}"] = f2(timestamp, market_open)
-        df[f"f3{market_name}"] = f3(timestamp, market_open)
-        df[f"f4{market_name}"] = f4(timestamp, market_close)
-        df[f"f5{market_name}"] = f5(timestamp, market_close)
+        df[f"{PREFIX}_f1{market_name}"] = f1(timestamp, market_name)
+        df[f"{PREFIX}_f2{market_name}"] = f2(timestamp, market_name)
+        df[f"{PREFIX}_f3{market_name}"] = f3(timestamp, market_name)
+        df[f"{PREFIX}_f4{market_name}"] = f4(timestamp, market_name)
+        df[f"{PREFIX}_f5{market_name}"] = f5(timestamp, market_name)
 
     return df
 
 
-def f1(timestamp: np.array, calendar: mcal.MarketCalendar, calendar_schedule: pd.DataFrame) -> np.array:
+def f1(timestamps: np.array, market_name: str) -> np.array:
     """
     Check if the timestamps at the open market
-    :param np.array timestamp: array of datetime`s
-    :param mcal.MarketCalendar calendar: instance of pandas_market_calendars MarketCalendar
-    :param pd.DataFrame calendar_schedule:
-        df[date index, market_open[datetime64], market_close[datetime64]] getted from mcal
+    :param np.array timestamps: array of datetime`s
+    :param str market_name: name of the market
     :return: array of 0 and 1 for each timestamp
     """
+    calendar = utils.get_market_calendar(market_name)
+    calendar_schedule = utils.get_market_calendar_schedule(market_name, timestamps)
+
     is_open = np.vectorize(
-        lambda dt: calendar.open_at_time(calendar_schedule, dt) * 1
+        lambda dt: calendar.open_at_time(calendar_schedule, dt)
     )
-    return is_open(timestamp)
+    return is_open(timestamps) * 1
 
 
-def f2(timestamp: np.array, market_open: np.array) -> np.array:
+def f2(timestamps: np.array, market_name: str) -> np.array:
     """
     Check if the timestamps are 1h before the market open
-    :param np.array timestamp: array of datetime`s
-    :param np.array market_open: array of datetime`s
+    :param np.array timestamps: array of datetime`s
+    :param str market_name: name of the market
     :return: array of 0 and 1 for each timestamp
     """
-    return utils.is_hour_away(timestamp, market_open)
+    market_open, _ = utils.get_market_open_close(market_name, timestamps)
+    return utils.is_hour_away(timestamps, market_open)
 
 
-def f3(timestamp: np.array, market_open: np.array) -> np.array:
+def f3(timestamps: np.array, market_name: str) -> np.array:
     """
     Check if the timestamps are 1h after the market open
-    :param np.array timestamp: array of datetime`s
-    :param np.array market_open: array of datetime`s
+    :param np.array timestamps: array of datetime`s
+    :param str market_name: name of the market
     :return: array of 0 and 1 for each timestamp
     """
-    return utils.is_hour_away(timestamp, market_open + timedelta(hours=1))
+    market_open, _ = utils.get_market_open_close(market_name, timestamps)
+    return utils.is_hour_away(timestamps, market_open + timedelta(hours=1))
 
 
-def f4(timestamp: np.array, market_close: np.array) -> np.array:
+def f4(timestamps: np.array, market_name: str) -> np.array:
     """
     Check if the timestamps are 1h before the market close
-    :param np.array timestamp: array of datetime`s
-    :param np.array market_close: array of datetime`s
+    :param np.array timestamps: array of datetime`s
+    :param str market_name: name of the market
     :return: array of 0 and 1 for each timestamp
     """
-    return utils.is_hour_away(timestamp, market_close)
+    _, market_close = utils.get_market_open_close(market_name, timestamps)
+    return utils.is_hour_away(timestamps, market_close)
 
 
-def f5(timestamp: np.array, market_close: np.array) -> np.array:
+def f5(timestamps: np.array, market_name: str) -> np.array:
     """
     Check if the timestamps are 1h after the market close
-    :param np.array timestamp: array of datetime`s
-    :param np.array market_close: array of datetime`s
+    :param np.array timestamps: array of datetime`s
+    :param str market_name: name of the market
     :return: array of 0 and 1 for each timestamp
     """
-    return utils.is_hour_away(timestamp, market_close + timedelta(hours=1))
+    _, market_close = utils.get_market_open_close(market_name, timestamps)
+    return utils.is_hour_away(timestamps, market_close + timedelta(hours=1))

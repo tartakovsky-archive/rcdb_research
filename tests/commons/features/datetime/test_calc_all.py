@@ -1,8 +1,6 @@
 from importlib import resources
 
-
 import pytest
-
 
 from commons.utils import get_df_from_hdf_bytes
 from commons.features.datetime import components, holidays, markets
