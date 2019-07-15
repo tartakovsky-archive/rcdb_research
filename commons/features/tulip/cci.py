@@ -2,7 +2,7 @@ from tulipindicators import ti
 import pandas as pd
 import numpy as np
 
-from .utils import cache, calc_all_helper
+from .utils import cache, calc_all_helper, get_inputs
 
 
 @cache
@@ -38,3 +38,4 @@ def f1(high: pd.Series, low: pd.Series, close: pd.Series, period: int) -> np.arr
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]
 calc_all = calc_all_helper(features_list, prefix='cci')
+inputs = get_inputs(features_list)

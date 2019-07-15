@@ -1,3 +1,4 @@
+# flake8: noqa  
 from commons import bars
 
 
@@ -13,10 +14,22 @@ if __name__ == "__main__":
 
     df = df[df.index >= "2019-04-01"]
 
-    now = time.time()
-    df_bars = bars.range.fixed(
-        ohlc=df,
-        threshold=0.1,
+    # now = time.time()
+    # df_bars = bars.range.fixed(
+    #     ohlc=df,
+    #     threshold=0.1,
+    # )
+    # print(time.time() - now)
+    # print(df_bars)
+
+    DATA_MAPPING = dict(
+        series='close',
+        open='open',
+        high='high',
+        low='low',
+        close='close',
+        volume='volume',
     )
-    print(time.time() - now)
-    print(df_bars)
+
+    from commons.features import tulip
+    features = tulip.adx.calc_all(df, DATA_MAPPING, [{'period': 10}])

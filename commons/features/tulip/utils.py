@@ -4,6 +4,7 @@ from typing import List, Dict
 from functools import wraps
 
 import pandas as pd
+import numpy as np
 
 Params = List[Dict]
 
@@ -53,3 +54,12 @@ def calc_all_helper(features_list, prefix):
         return pd.DataFrame(res, index=data.index) if not inplace else None
 
     return _calc_all
+
+
+def get_inputs(features_list):
+    inputs = set()
+    for f in features_list:
+        for name, param in inspect.signature(f).parameters.items():
+            if param.annotation in (np.array, pd.core.series.Series):
+                inputs.add(name)
+    return inputs
