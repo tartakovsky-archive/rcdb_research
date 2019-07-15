@@ -1,5 +1,5 @@
 import hashlib
-# import importlib
+import importlib
 import inspect
 from functools import wraps
 from typing import Dict, List
@@ -59,24 +59,24 @@ def calc_all_helper(features_list, prefix):
     return _calc_all
 
 
-# def calc_all(data: pd.DataFrame,
-#              data_mapping: Dict,
-#              param_sets_dict: Params = None,
-#              inplace: bool = False) -> pd.DataFrame or None:
-#     def _call(func, param_sets):
-#         return func(data, data_mapping, param_sets, inplace)
+def calc_all(data: pd.DataFrame,
+             data_mapping: Dict,
+             param_sets_dict: Params = None,
+             inplace: bool = False) -> pd.DataFrame or None:
+    def _call(func, param_sets):
+        return func(data, data_mapping, param_sets, inplace)
 
-#     results = []
-#     for namespace in namespaces:
-#         module = importlib.import_module(
-#             name=f".{namespace}", package='commons.features.tulip.utils')
-#         calc_all_func = getattr(module, 'calc_all')
-#         if inplace:
-#             _call(calc_all_func, param_sets_dict[namespace])
-#         else:
-#             results.append(_call(calc_all_func, param_sets_dict[namespace]))
+    results = []
+    for namespace in namespaces:
+        module = importlib.import_module(name=f".{namespace}",
+                                         package='commons.features.tulip')
+        calc_all_func = getattr(module, 'calc_all')
+        if inplace:
+            _call(calc_all_func, param_sets_dict[namespace])
+        else:
+            results.append(_call(calc_all_func, param_sets_dict[namespace]))
 
-#     if results:
-#         df = pd.concat(results, ignore_index=True).add_prefix('tulip_')
-#         df.index = data.index
-#         return df
+    if results:
+        df = pd.concat(results, axis='columns')
+        df.index = data.index
+        return df
