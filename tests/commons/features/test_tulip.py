@@ -38,6 +38,14 @@ def test_source_data_does_not_mutate(test_dataset):
     assert source.equals(copy)
 
 
+def test_tulip_namespaces():
+    assert len(tulip.namespaces) == 11
+
+
+# def test_global_calc_all(test_dataset):
+#     tulip
+
+
 def test_adx(test_dataset):
     features = tulip.adx.calc_all(test_dataset, DATA_MAPPING, [{'period': 10}])
     assert is_match_up(tulip.adx.inputs, ('low', 'high'))
