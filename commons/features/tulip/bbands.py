@@ -1,10 +1,11 @@
 from typing import NamedTuple
 
-from tulipindicators import ti
-import pandas as pd
 import numpy as np
+import pandas as pd
+from tulipindicators import ti
 
-from .utils import cache, calc_all_helper
+from commons.features.tulip.utils import cache, calc_all_helper
+from commons.features.utils import get_inputs
 
 
 @cache
@@ -249,3 +250,4 @@ def f18(close: pd.Series, period: int, stddev: float) -> pd.Series:
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]
 calc_all = calc_all_helper(features_list, prefix='bbands')
+inputs = get_inputs(features_list)

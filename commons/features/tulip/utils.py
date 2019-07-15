@@ -1,7 +1,7 @@
 import hashlib
 import inspect
-from typing import List, Dict
 from functools import wraps
+from typing import Dict, List
 
 import pandas as pd
 
