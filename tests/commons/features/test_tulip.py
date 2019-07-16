@@ -1,6 +1,7 @@
 import os
-import pytest
+
 import pandas as pd
+import pytest
 
 from commons.features import tulip
 
@@ -33,9 +34,61 @@ def test_dataset():
 def test_source_data_does_not_mutate(test_dataset):
     source = test_dataset
     copy = source.copy()
-    tulip.adx.calc_all(
-        test_dataset, DATA_MAPPING, [{'period': 10}], inplace=False)
+    tulip.adx.calc_all(test_dataset,
+                       DATA_MAPPING, [{
+                           'period': 10
+                       }],
+                       inplace=False)
     assert source.equals(copy)
+
+
+def test_tulip_namespaces():
+    assert len(tulip.namespaces) == 11
+
+
+def test_global_calc_all(test_dataset):
+    params_sets_by_indicator = {
+        'obv': [],
+        'bop': [],
+        'stoch': [{
+            'k_period': 10,
+            'k_slowing_period': 20,
+            'd_period': 12,
+        }],
+        'cci': [{
+            'period': 10,
+        }],
+        'adx': [{
+            'period': 10,
+        }],
+        'macd': [{
+            'short_period': 3,
+            'long_period': 6,
+            'signal_period': 5,
+        }],
+        'bbands': [{
+            'period': 10,
+            'stddev': 2,
+        }],
+        'willr': [{
+            'period': 10,
+        }],
+        'rsi': [{
+            'period': 10,
+        }],
+        'roc': [{
+            'period': 10,
+        }],
+        'psar': [{
+            'acceleration_factor_step': .2,
+            'acceleration_factor_maximum': 2,
+        }],
+    }
+    features = tulip.calc_all(test_dataset, DATA_MAPPING,
+                              params_sets_by_indicator)
+    split_names = [c.split('_') for c in features.columns]
+    assert all(n[0] == 'tulip' for n in split_names)
+    assert all(n[1] in params_sets_by_indicator.keys() for n in split_names)
 
 
 def test_adx(test_dataset):
@@ -46,8 +99,10 @@ def test_adx(test_dataset):
 
 
 def test_bbands(test_dataset):
-    features = tulip.bbands.calc_all(
-        test_dataset, DATA_MAPPING, [{'period': 10, 'stddev': 2}])
+    features = tulip.bbands.calc_all(test_dataset, DATA_MAPPING, [{
+        'period': 10,
+        'stddev': 2
+    }])
     assert is_match_up(tulip.bbands.inputs, ('low', 'close', 'open', 'high'))
     assert [f"{PREFIX}_bbands_{f.__name__}_10_2"
             for f in tulip.bbands.features_list] \
@@ -69,10 +124,12 @@ def test_cci(test_dataset):
 
 
 def test_macd(test_dataset):
-    features = tulip.macd.calc_all(
-        test_dataset,
-        DATA_MAPPING,
-        [{'short_period': 3, 'long_period': 6, 'signal_period': 5}])
+    features = tulip.macd.calc_all(test_dataset, DATA_MAPPING,
+                                   [{
+                                       'short_period': 3,
+                                       'long_period': 6,
+                                       'signal_period': 5
+                                   }])
     assert is_match_up(tulip.macd.inputs, ('series', ))
     assert [f"{PREFIX}_macd_{f.__name__}_3_6_5"
             for f in tulip.macd.features_list] \
@@ -87,10 +144,11 @@ def test_obv(test_dataset):
 
 
 def test_psar(test_dataset):
-    features = tulip.psar.calc_all(
-        test_dataset,
-        DATA_MAPPING,
-        [{'acceleration_factor_step': .2, 'acceleration_factor_maximum': 2}])
+    features = tulip.psar.calc_all(test_dataset, DATA_MAPPING,
+                                   [{
+                                       'acceleration_factor_step': .2,
+                                       'acceleration_factor_maximum': 2
+                                   }])
     assert is_match_up(tulip.psar.inputs, ('open', 'high', 'low', 'close'))
     assert [f"{PREFIX}_psar_{f.__name__}_0.2_2"
             for f in tulip.psar.features_list] \
@@ -112,10 +170,12 @@ def test_rsi(test_dataset):
 
 
 def test_stoch(test_dataset):
-    features = tulip.stoch.calc_all(
-        test_dataset,
-        DATA_MAPPING,
-        [{'k_period': 10, 'k_slowing_period': 20, 'd_period': 12}])
+    features = tulip.stoch.calc_all(test_dataset, DATA_MAPPING,
+                                    [{
+                                        'k_period': 10,
+                                        'k_slowing_period': 20,
+                                        'd_period': 12
+                                    }])
     assert is_match_up(tulip.stoch.inputs, ('high', 'low', 'close'))
     assert [f"{PREFIX}_stoch_{f.__name__}_10_20_12"
             for f in tulip.stoch.features_list] \
@@ -123,8 +183,9 @@ def test_stoch(test_dataset):
 
 
 def test_willr(test_dataset):
-    features = tulip.willr.calc_all(
-        test_dataset, DATA_MAPPING, [{'period': 10}])
+    features = tulip.willr.calc_all(test_dataset, DATA_MAPPING, [{
+        'period': 10
+    }])
     assert is_match_up(tulip.willr.inputs, ('high', 'low', 'close'))
     assert [f"{PREFIX}_willr_{f.__name__}_10"
             for f in tulip.willr.features_list] \

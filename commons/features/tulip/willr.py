@@ -2,7 +2,7 @@ from tulipindicators import ti
 import pandas as pd
 import numpy as np
 
-from commons.features.tulip.utils import cache, calc_all_helper
+from commons.features.tulip._utils import cache, calc_all_helper
 from commons.features.utils import get_inputs
 
 
