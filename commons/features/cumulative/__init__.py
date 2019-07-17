@@ -1,1 +1,1 @@
-from commons.features.cumulative import bars
+from commons.features.cumulative import bars # noqa

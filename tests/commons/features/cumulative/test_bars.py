@@ -23,15 +23,14 @@ AGGREGATE = {
 
 
 @pytest.fixture
-def test_dataset():
+def df():
     yield pd.read_hdf(DATASET,
                       key='table')[bars.base.BaseConsolidator.COLUMNS[2:]]
 
 
-def test_f1(test_dataset):
+def test_f1(df):
     period = 5
-    feature_bars = features.cumulative.bars.f1(test_dataset.index.values,
-                                               period)
+    feature_bars = features.cumulative.bars.f1(df.index.values, period)
     feature_index = feature_bars[feature_bars == 1].index.values
     timedeltas = [
         td / np.timedelta64(1, 's') == 5 for td in np.diff(feature_index)
@@ -39,26 +38,76 @@ def test_f1(test_dataset):
     assert all(timedeltas)
 
 
-def test_f2(test_dataset):
+def test_f2(df):
     threshold = 100
-    df = test_dataset
     df['f2'] = features.cumulative.bars.f2(df.ticks_sell + df.ticks_buy,
                                            threshold)
     assert not df[df.f2 != 0].empty
 
     new_df = df.groupby(
         ['f2']).agg(AGGREGATE).loc[:, ['ticks_buy', 'ticks_sell']]  # yapf: disable
-    new_df.ticks = new_df.ticks_sell + new_df.ticks_buy
-    assert new_df[new_df.ticks < threshold].empty
+    assert new_df[new_df.ticks_sell + new_df.ticks_buy < threshold].empty
 
     # Compares with commons.bars
     feature_index = df[df.f2 == 1].index.values
     consolidated_bars = bars.tick.fixed(df, threshold, timestamp_close=True)
-    consolidated_index = consolidated_bars.timestamp_close.values
+    consolidated_timestamp_close = consolidated_bars.timestamp_close.values
     timedeltas = [
         td / np.timedelta64(1, 's') == 1
-        for td in (consolidated_index - feature_index)
+        for td in (consolidated_timestamp_close - feature_index)
     ]
-    # Because timestamp_close == timestamp of row that satisfied condition + 1s
-    # the timedelta always equals one.
+    # The timedelta always equals one, because timestamp_close ==
+    # timestamp of row that satisfied the condition + 1s.
     assert all(timedeltas)
+
+
+def test_f3(df):
+    threshold = 500
+    df['f3'] = features.cumulative.bars.f3(df.volume_sell + df.volume_buy,
+                                           threshold)
+    assert not df[df.f3 != 0].empty
+
+    new_df = df.groupby(
+        ['f3']).agg(AGGREGATE).loc[:, ['volume_buy', 'volume_sell']]  # yapf: disable
+    assert new_df[new_df.volume_sell + new_df.volume_buy < threshold].empty
+
+    # Compares with commons.bars
+    feature_index = df[df.f3 == 1].index.values
+    consolidated_bars = bars.volume.fixed(df,
+                                          threshold,
+                                          by_quote=False,
+                                          timestamp_close=True)
+    consolidated_timestamp_close = consolidated_bars.timestamp_close.values
+    timedeltas = [
+        td / np.timedelta64(1, 's') == 1
+        for td in (consolidated_timestamp_close - feature_index)
+    ]
+    # The timedelta always equals one, because timestamp_close ==
+    # timestamp of row that satisfied the condition + 1s.
+    assert all(timedeltas)
+
+
+# def test_f3(df):
+#     threshold = 10**6
+#     df['f3'] = features.cumulative.bars.f3(df.volume_sell + df.volume_buy,
+#                                            threshold)
+#     assert not df[df.f3 != 0].empty
+
+#     new_df = df.groupby(
+#         ['f3']).agg(AGGREGATE).loc[:, ['volume_buy', 'volume_sell']]  # yapf: disable
+#     assert new_df[new_df.volume_sell + new_df.volume_buy < threshold].empty
+
+#     # Compares with commons.bars
+#     feature_index = df[df.f3 == 1].index.values
+#     consolidated_bars = bars.volume.fixed(df,
+#                                           threshold,
+#                                           by_quote=False,
+#                                           timestamp_close=True)
+#     consolidated_timestamp_close = consolidated_bars.timestamp_close.values
+#     timedeltas = [
+#         td / np.timedelta64(1, 's') == 1
+#         for td in (consolidated_timestamp_close - feature_index)
+#     ]
+#     # The timedelta always equals one, because timestamp_close ==
+#     # timestamp of row that satisfied the condition + 1s.
+#     assert all(timedeltas)
