@@ -54,7 +54,7 @@ def test_f2(df):
     consolidated_timestamp_close = consolidated_bars.timestamp_close.values
     timedeltas = [
         td / np.timedelta64(1, 's') == 1
-        for td in (consolidated_timestamp_close - feature_index)
+        for td in consolidated_timestamp_close - feature_index
     ]
     # The timedelta always equals one, because timestamp_close ==
     # timestamp of row that satisfied the condition + 1s.
@@ -81,7 +81,7 @@ def test_f3(df):
     consolidated_timestamp_close = consolidated_bars.timestamp_close.values
     timedeltas = [
         td / np.timedelta64(1, 's') == 1
-        for td in (consolidated_timestamp_close - feature_index)
+        for td in consolidated_timestamp_close - feature_index
     ]
     # The timedelta always equals one, because timestamp_close ==
     # timestamp of row that satisfied the condition + 1s.
@@ -105,7 +105,28 @@ def test_f4(df):
     consolidated_timestamp_close = consolidated_bars.timestamp_close.values
     timedeltas = [
         td / np.timedelta64(1, 's') == 1
-        for td in (consolidated_timestamp_close - feature_index)
+        for td in consolidated_timestamp_close - feature_index
+    ]
+    # The timedelta always equals one, because timestamp_close ==
+    # timestamp of row that satisfied the condition + 1s.
+    assert all(timedeltas)
+
+
+def test_f5(df):
+    threshold = 0.01
+    df['f5'] = features.cumulative.bars.f5(df.open.values, df.close.values, threshold)
+    assert not df[df.f5 != 0].empty
+
+    new_df = df.groupby(['f5']).agg(AGGREGATE).loc[:, ['close']]
+    assert new_df[abs(new_df.close.pct_change()) < threshold].iloc[:-1].empty
+
+    # Compares with commons.bars
+    feature_index = df[df.f5 == 1].index.values
+    consolidated_bars = bars.range.fixed(df, threshold, timestamp_close=True)
+    consolidated_timestamp_close = consolidated_bars.timestamp_close.values
+    timedeltas = [
+        td / np.timedelta64(1, 's') == 1
+        for td in consolidated_timestamp_close - feature_index
     ]
     # The timedelta always equals one, because timestamp_close ==
     # timestamp of row that satisfied the condition + 1s.
