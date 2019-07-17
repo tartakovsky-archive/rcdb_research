@@ -108,3 +108,26 @@ def f5(open: np.array, close: np.array, pct_threshold: float) -> np.array:
     feature = np.array(bars)
     assert feature.shape == close.shape
     return feature
+
+
+def f6(open: np.array, close: np.array, abs_threshold: float) -> np.array:
+    """Range absolute fixed bars feature.
+
+    :param open: series of bar open
+    :param close: series of bar close
+    :param abs_threshold: absolute threshold
+    :return: binary series where 1 means bar generation event, 0 means bar
+    doesn't exist yet
+    """
+    bars = []
+    get_limits = lambda x: (x + abs_threshold, x - abs_threshold)
+    upper_limit, lower_limit = get_limits(open[0])
+    for value in close:
+        if value > upper_limit or value < lower_limit:
+            bars.append(1)
+            upper_limit, lower_limit = get_limits(value)
+        else:
+            bars.append(0)
+    feature = np.array(bars)
+    assert feature.shape == close.shape
+    return feature
