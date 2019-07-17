@@ -61,23 +61,23 @@ def f3(volume: np.array, threshold: float) -> np.array:
     return feature
 
 
-# def f4(quote_volume: np.array, threshold: float) -> np.array:
-#     """Quote volume fixed bars feature.
+def f4(quote_volume: np.array, quote_threshold: float) -> np.array:
+    """Quote volume fixed bars feature.
 
-#     :param volume: series of bar volume in quote currency
-#     :param threshold: quote volume threshold
-#     :return: binary series where 1 means bar generation event, 0 means bar
-#     doesn't exist yet
-#     """
-#     bars = []
-#     quote_volume_sum = 0
-#     for amount in quote_volume:
-#         quote_volume_sum += amount
-#         if quote_volume_sum >= threshold:
-#             bars.append(1)
-#             quote_volume_sum = 0
-#         else:
-#             bars.append(0)
-#     feature = np.array(bars)
-#     assert feature.shape == quote_volume.shape
-#     return feature
+    :param volume: series of bar volume in quote currency
+    :param quote_threshold: quote volume threshold
+    :return: binary series where 1 means bar generation event, 0 means bar
+    doesn't exist yet
+    """
+    bars = []
+    quote_volume_sum = 0
+    for amount in quote_volume:
+        quote_volume_sum += amount
+        if quote_volume_sum >= quote_threshold:
+            bars.append(1)
+            quote_volume_sum = 0
+        else:
+            bars.append(0)
+    feature = np.array(bars)
+    assert feature.shape == quote_volume.shape
+    return feature

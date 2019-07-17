@@ -69,7 +69,8 @@ def test_f3(df):
 
     new_df = df.groupby(
         ['f3']).agg(AGGREGATE).loc[:, ['volume_buy', 'volume_sell']]  # yapf: disable
-    assert new_df[new_df.volume_sell + new_df.volume_buy < threshold].empty
+    assert new_df[new_df.volume_sell +  # noqa
+                  new_df.volume_buy < threshold].iloc[:-1].empty
 
     # Compares with commons.bars
     feature_index = df[df.f3 == 1].index.values
@@ -87,27 +88,25 @@ def test_f3(df):
     assert all(timedeltas)
 
 
-# def test_f3(df):
-#     threshold = 10**6
-#     df['f3'] = features.cumulative.bars.f3(df.volume_sell + df.volume_buy,
-#                                            threshold)
-#     assert not df[df.f3 != 0].empty
+def test_f4(df):
+    threshold = 10**6
+    df['f4'] = features.cumulative.bars.f4(
+        df.volume_quote_buy + df.volume_quote_sell, threshold)
+    assert not df[df.f4 != 0].empty
 
-#     new_df = df.groupby(
-#         ['f3']).agg(AGGREGATE).loc[:, ['volume_buy', 'volume_sell']]  # yapf: disable
-#     assert new_df[new_df.volume_sell + new_df.volume_buy < threshold].empty
+    new_df = df.groupby(
+        ['f4']).agg(AGGREGATE).loc[:, ['volume_quote_buy', 'volume_quote_sell']]  # yapf: disable
+    assert new_df[new_df.volume_quote_buy +  # noqa
+                  new_df.volume_quote_sell < threshold].iloc[:-1].empty
 
-#     # Compares with commons.bars
-#     feature_index = df[df.f3 == 1].index.values
-#     consolidated_bars = bars.volume.fixed(df,
-#                                           threshold,
-#                                           by_quote=False,
-#                                           timestamp_close=True)
-#     consolidated_timestamp_close = consolidated_bars.timestamp_close.values
-#     timedeltas = [
-#         td / np.timedelta64(1, 's') == 1
-#         for td in (consolidated_timestamp_close - feature_index)
-#     ]
-#     # The timedelta always equals one, because timestamp_close ==
-#     # timestamp of row that satisfied the condition + 1s.
-#     assert all(timedeltas)
+    # Compares with commons.bars
+    feature_index = df[df.f4 == 1].index.values
+    consolidated_bars = bars.volume.fixed(df, threshold, timestamp_close=True)
+    consolidated_timestamp_close = consolidated_bars.timestamp_close.values
+    timedeltas = [
+        td / np.timedelta64(1, 's') == 1
+        for td in (consolidated_timestamp_close - feature_index)
+    ]
+    # The timedelta always equals one, because timestamp_close ==
+    # timestamp of row that satisfied the condition + 1s.
+    assert all(timedeltas)
