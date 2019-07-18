@@ -1,7 +1,6 @@
 from typing import NamedTuple
 
 import numpy as np
-import pandas as pd
 from tulipindicators import ti
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -9,7 +8,7 @@ from commons.features.utils import get_inputs
 
 
 @cache
-def macd(series: pd.Series, short_period: int, long_period: int, signal_period: int) -> NamedTuple:
+def macd(series: np.array, short_period: int, long_period: int, signal_period: int) -> NamedTuple:
     """Calculates Moving Average Convergence/Divergence indicator
 
     :param series: series of real
@@ -24,7 +23,7 @@ def macd(series: pd.Series, short_period: int, long_period: int, signal_period: 
 # Feature functions region:
 
 
-def f1(series: pd.Series, short_period: int, long_period: int, signal_period: int) -> np.array:
+def f1(series: np.array, short_period: int, long_period: int, signal_period: int) -> np.array:
     """Extracts series of MACD indicator values
 
     :param series: series of real
@@ -36,7 +35,7 @@ def f1(series: pd.Series, short_period: int, long_period: int, signal_period: in
     return macd(series, short_period, long_period, signal_period).macd
 
 
-def f2(series: pd.Series, short_period: int, long_period: int, signal_period: int) -> np.array:
+def f2(series: np.array, short_period: int, long_period: int, signal_period: int) -> np.array:
     """Extracts series of Signal EMA by MACD values
 
     :param series: series of real
@@ -48,7 +47,7 @@ def f2(series: pd.Series, short_period: int, long_period: int, signal_period: in
     return macd(series, short_period, long_period, signal_period).macd_signal
 
 
-def f3(series: pd.Series, short_period: int, long_period: int, signal_period: int) -> np.array:
+def f3(series: np.array, short_period: int, long_period: int, signal_period: int) -> np.array:
     """Extracts series of MACD Histogram values
 
     :param series: series of real
@@ -60,7 +59,7 @@ def f3(series: pd.Series, short_period: int, long_period: int, signal_period: in
     return macd(series, short_period, long_period, signal_period).macd_histogram
 
 
-def f4(series: pd.Series, short_period: int, long_period: int, signal_period: int) -> np.array:
+def f4(series: np.array, short_period: int, long_period: int, signal_period: int) -> np.array:
     """Extracts difference between MACD values and Signal EMA by MACD values
 
     :param series: series of real

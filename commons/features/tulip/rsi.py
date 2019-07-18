@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from tulipindicators import ti
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -7,7 +6,7 @@ from commons.features.utils import get_inputs
 
 
 @cache
-def rsi(series: pd.Series, period: int) -> np.array:
+def rsi(series: np.array, period: int) -> np.array:
     """Calculates Relative Strength Index indicator
 
     :param series: series of real
@@ -20,7 +19,7 @@ def rsi(series: pd.Series, period: int) -> np.array:
 # Feature functions region:
 
 
-def f1(series: pd.Series, period: int) -> np.array:
+def f1(series: np.array, period: int) -> np.array:
     """Extracts series of RSI indicator values
 
     :param series: series of real

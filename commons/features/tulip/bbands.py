@@ -1,7 +1,6 @@
 from typing import NamedTuple
 
 import numpy as np
-import pandas as pd
 from tulipindicators import ti
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -9,7 +8,7 @@ from commons.features.utils import get_inputs
 
 
 @cache
-def bbands(close: pd.Series, period: int, stddev: float) -> NamedTuple:
+def bbands(close: np.array, period: int, stddev: float) -> NamedTuple:
     """Calculates Bollinger Bands indicator
 
     :param close: bar close series
@@ -23,7 +22,7 @@ def bbands(close: pd.Series, period: int, stddev: float) -> NamedTuple:
 # Feature functions region:
 
 
-def f1(close: pd.Series, period: int, stddev: float) -> np.array:
+def f1(close: np.array, period: int, stddev: float) -> np.array:
     """Extracts Upper Band value series
 
     :param close: series of bar close
@@ -34,7 +33,7 @@ def f1(close: pd.Series, period: int, stddev: float) -> np.array:
     return bbands(close, period, stddev).bbands_upper
 
 
-def f2(close: pd.Series, period: int, stddev: float) -> np.array:
+def f2(close: np.array, period: int, stddev: float) -> np.array:
     """Extracts Middle Band value series
 
     :param close: series of bar close
@@ -45,7 +44,7 @@ def f2(close: pd.Series, period: int, stddev: float) -> np.array:
     return bbands(close, period, stddev).bbands_middle
 
 
-def f3(close: pd.Series, period: int, stddev: float) -> np.array:
+def f3(close: np.array, period: int, stddev: float) -> np.array:
     """Extracts Lower Band value series
 
     :param close: series of bar close
@@ -56,7 +55,7 @@ def f3(close: pd.Series, period: int, stddev: float) -> np.array:
     return bbands(close, period, stddev).bbands_lower
 
 
-def f4(close: pd.Series, period: int, stddev: float) -> np.array:
+def f4(close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Upper Band and Lower Band
 
     :param close: series of bar close
@@ -68,7 +67,7 @@ def f4(close: pd.Series, period: int, stddev: float) -> np.array:
     return outputs.bbands_upper - outputs.bbands_lower
 
 
-def f5(close: pd.Series, period: int, stddev: float) -> np.array:
+def f5(close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Upper Band and Middle Band
 
     :param close: series of bar close
@@ -80,7 +79,7 @@ def f5(close: pd.Series, period: int, stddev: float) -> np.array:
     return outputs.bbands_upper - outputs.bbands_middle
 
 
-def f6(close: pd.Series, period: int, stddev: float) -> np.array:
+def f6(close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Middle Band and Lower Band
 
     :param close: series of bar close
@@ -92,7 +91,7 @@ def f6(close: pd.Series, period: int, stddev: float) -> np.array:
     return outputs.bbands_middle - outputs.bbands_lower
 
 
-def f7(open: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f7(open: np.array, close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Upper Band values and open prices
 
     :param open: series of bar open
@@ -105,7 +104,7 @@ def f7(open: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Seri
     return outputs.bbands_upper - open
 
 
-def f8(high: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f8(high: np.array, close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Upper Band values and high prices
 
     :param high: series of bar high
@@ -118,7 +117,7 @@ def f8(high: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Seri
     return outputs.bbands_upper - high
 
 
-def f9(low: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f9(low: np.array, close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Upper Band values and high prices
 
     :param low: series of bar low
@@ -131,7 +130,7 @@ def f9(low: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Serie
     return outputs.bbands_upper - low
 
 
-def f10(close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f10(close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Upper Band values and close prices
 
     :param close: series of bar close
@@ -143,7 +142,7 @@ def f10(close: pd.Series, period: int, stddev: float) -> pd.Series:
     return outputs.bbands_upper - close
 
 
-def f11(open: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f11(open: np.array, close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Middle Band values and open prices
 
     :param open: series of bar open
@@ -156,7 +155,7 @@ def f11(open: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Ser
     return outputs.bbands_middle - open
 
 
-def f12(high: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f12(high: np.array, close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Middle Band values and high prices
 
     :param high: series of bar high
@@ -169,7 +168,7 @@ def f12(high: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Ser
     return outputs.bbands_middle - high
 
 
-def f13(low: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f13(low: np.array, close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Middle Band values and low prices
 
     :param low: series of bar low
@@ -182,7 +181,7 @@ def f13(low: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Seri
     return outputs.bbands_middle - low
 
 
-def f14(close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f14(close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Middle Band values and close prices
 
     :param close: series of bar close
@@ -194,7 +193,7 @@ def f14(close: pd.Series, period: int, stddev: float) -> pd.Series:
     return outputs.bbands_middle - close
 
 
-def f15(open: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f15(open: np.array, close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Lower Band values and open prices
 
     :param open: series of bar open
@@ -207,7 +206,7 @@ def f15(open: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Ser
     return outputs.bbands_lower - open
 
 
-def f16(high: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f16(high: np.array, close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Lower Band values and high prices
 
     :param high: series of bar high
@@ -220,7 +219,7 @@ def f16(high: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Ser
     return outputs.bbands_lower - high
 
 
-def f17(low: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f17(low: np.array, close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Lower Band values and low prices
 
     :param low: series of bar low
@@ -233,7 +232,7 @@ def f17(low: pd.Series, close: pd.Series, period: int, stddev: float) -> pd.Seri
     return outputs.bbands_lower - low
 
 
-def f18(close: pd.Series, period: int, stddev: float) -> pd.Series:
+def f18(close: np.array, period: int, stddev: float) -> np.array:
     """Extracts difference between Lower Band values and close prices
 
     :param close: series of bar close

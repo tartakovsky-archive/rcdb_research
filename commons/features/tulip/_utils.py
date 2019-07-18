@@ -47,7 +47,7 @@ def calc_all_helper(features_list, prefix):
             for param_set in param_sets:
                 f_args = inspect.getfullargspec(f).args
                 feature = f(*[
-                    data[data_mapping[name]] if name in
+                    data[data_mapping[name]].values if name in
                     data_mapping else param_set[name] for name in f_args
                 ])
                 postfix = ''.join(

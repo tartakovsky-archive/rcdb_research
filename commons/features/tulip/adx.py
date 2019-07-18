@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from tulipindicators import ti
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -7,7 +6,7 @@ from commons.features.utils import get_inputs
 
 
 @cache
-def adx(high: pd.Series, low: pd.Series, period: int) -> np.array:
+def adx(high: np.array, low: np.array, period: int) -> np.array:
     """Сalculates Average Directional Movement Index indicator
 
     :param high: series of bar high
@@ -21,7 +20,7 @@ def adx(high: pd.Series, low: pd.Series, period: int) -> np.array:
 # Feature functions region:
 
 
-def f1(high: pd.Series, low: pd.Series, period: int) -> np.array:
+def f1(high: np.array, low: np.array, period: int) -> np.array:
     """Extracts series of ADX indicator values
 
     :param high: series of bar high

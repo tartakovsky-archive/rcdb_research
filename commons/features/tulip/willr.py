@@ -1,5 +1,4 @@
 from tulipindicators import ti
-import pandas as pd
 import numpy as np
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -7,7 +6,7 @@ from commons.features.utils import get_inputs
 
 
 @cache
-def willr(high: pd.Series, low: pd.Series, close: pd.Series, period: int) -> np.array:
+def willr(high: np.array, low: np.array, close: np.array, period: int) -> np.array:
     """Сalculates Williams %R indicator
 
     :param high: series of bar high
@@ -22,7 +21,7 @@ def willr(high: pd.Series, low: pd.Series, close: pd.Series, period: int) -> np.
 # Feature functions region:
 
 
-def f1(high: pd.Series, low: pd.Series, close: pd.Series, period: int) -> np.array:
+def f1(high: np.array, low: np.array, close: np.array, period: int) -> np.array:
     """Extracts series of WILLR indicator values
 
     :param high: series of bar high

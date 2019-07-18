@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from tulipindicators import ti
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -7,10 +6,10 @@ from commons.features.utils import get_inputs
 
 
 @cache
-def bop(open: pd.Series,
-        high: pd.Series,
-        low: pd.Series,
-        close: pd.Series) -> np.array:
+def bop(open: np.array,
+        high: np.array,
+        low: np.array,
+        close: np.array) -> np.array:
     """Сalculates Balance Of Power indicator
 
     :param open: series of bar open
@@ -25,10 +24,10 @@ def bop(open: pd.Series,
 # Feature functions region:
 
 
-def f1(open: pd.Series,
-       high: pd.Series,
-       low: pd.Series,
-       close: pd.Series) -> np.array:
+def f1(open: np.array,
+       high: np.array,
+       low: np.array,
+       close: np.array) -> np.array:
     """Extracts series of BOP indicator values
 
     :param open: series of bar open

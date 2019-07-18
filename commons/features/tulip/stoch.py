@@ -1,7 +1,6 @@
 from typing import NamedTuple
 
 import numpy as np
-import pandas as pd
 from tulipindicators import ti
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -9,9 +8,9 @@ from commons.features.utils import get_inputs
 
 
 @cache
-def stoch(high: pd.Series,
-          low: pd.Series,
-          close: pd.Series,
+def stoch(high: np.array,
+          low: np.array,
+          close: np.array,
           k_period: int,
           k_slowing_period: int,
           d_period: int) -> NamedTuple:
@@ -31,9 +30,9 @@ def stoch(high: pd.Series,
 # Feature functions region:
 
 
-def f1(high: pd.Series,
-       low: pd.Series,
-       close: pd.Series,
+def f1(high: np.array,
+       low: np.array,
+       close: np.array,
        k_period: int,
        k_slowing_period: int,
        d_period: int) -> np.array:
@@ -50,9 +49,9 @@ def f1(high: pd.Series,
     return stoch(high, low, close, k_period, k_slowing_period, d_period).stoch_k
 
 
-def f2(high: pd.Series,
-       low: pd.Series,
-       close: pd.Series,
+def f2(high: np.array,
+       low: np.array,
+       close: np.array,
        k_period: int,
        k_slowing_period: int,
        d_period: int) -> np.array:
@@ -69,9 +68,9 @@ def f2(high: pd.Series,
     return stoch(high, low, close, k_period, k_slowing_period, d_period).stoch_d
 
 
-def f3(high: pd.Series,
-       low: pd.Series,
-       close: pd.Series,
+def f3(high: np.array,
+       low: np.array,
+       close: np.array,
        k_period: int,
        k_slowing_period: int,
        d_period: int) -> np.array:

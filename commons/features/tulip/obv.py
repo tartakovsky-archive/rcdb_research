@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from tulipindicators import ti
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -7,7 +6,7 @@ from commons.features.utils import get_inputs
 
 
 @cache
-def obv(series: pd.Series, volume: pd.Series) -> np.array:
+def obv(series: np.array, volume: np.array) -> np.array:
     """Calculates On Balance Volume indicator
 
     :param series: series of real
@@ -20,7 +19,7 @@ def obv(series: pd.Series, volume: pd.Series) -> np.array:
 # Feature functions region:
 
 
-def f1(series: pd.Series, volume: pd.Series) -> np.array:
+def f1(series: np.array, volume: np.array) -> np.array:
     """Extracts series of OBV indicator values
 
     :param series: series of real

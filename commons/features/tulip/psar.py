@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from tulipindicators import ti
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -7,10 +6,10 @@ from commons.features.utils import get_inputs
 
 
 @cache
-def psar(high: pd.Series,
-         low: pd.Series,
+def psar(high: np.array,
+         low: np.array,
          acceleration_factor_step: float,
-         acceleration_factor_maximum: int) -> np.array:
+         acceleration_factor_maximum: float) -> np.array:
     """Calculates Parabolic SAR indicator
 
     :param high: series of bar high
@@ -26,8 +25,8 @@ def psar(high: pd.Series,
 # Feature functions region:
 
 
-def f1(high: pd.Series,
-       low: pd.Series,
+def f1(high: np.array,
+       low: np.array,
        acceleration_factor_step: float,
        acceleration_factor_maximum: int) -> np.array:
     """Extracts series of PSAR indicator values
@@ -42,9 +41,9 @@ def f1(high: pd.Series,
         high, low, acceleration_factor_step, acceleration_factor_maximum)
 
 
-def f2(open: pd.Series,
-       high: pd.Series,
-       low: pd.Series,
+def f2(open: np.array,
+       high: np.array,
+       low: np.array,
        acceleration_factor_step: float,
        acceleration_factor_maximum: int) -> np.array:
     """Extracts difference between PSAR values and open prices
@@ -61,8 +60,8 @@ def f2(open: pd.Series,
     return output - open
 
 
-def f3(high: pd.Series,
-       low: pd.Series,
+def f3(high: np.array,
+       low: np.array,
        acceleration_factor_step: float,
        acceleration_factor_maximum: int) -> np.array:
     """Extracts difference between PSAR values and high prices
@@ -78,8 +77,8 @@ def f3(high: pd.Series,
     return output - high
 
 
-def f4(high: pd.Series,
-       low: pd.Series,
+def f4(high: np.array,
+       low: np.array,
        acceleration_factor_step: float,
        acceleration_factor_maximum: int) -> np.array:
     """Extracts difference between PSAR values and open prices
@@ -95,9 +94,9 @@ def f4(high: pd.Series,
     return output - low
 
 
-def f5(high: pd.Series,
-       low: pd.Series,
-       close: pd.Series,
+def f5(high: np.array,
+       low: np.array,
+       close: np.array,
        acceleration_factor_step: float,
        acceleration_factor_maximum: int) -> np.array:
     """Extracts difference between PSAR values and open prices
