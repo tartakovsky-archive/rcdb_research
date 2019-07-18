@@ -2,23 +2,30 @@ import numpy as np
 import pandas as pd
 
 
-def _pct_change(series: np.array) -> np.array:
-    return np.insert(np.diff(series) / series[1:], 0, .0)
+def f1(close: np.array, threshold: float) -> np.array:
+    """Cusum fixed bars feature.
 
-
-def f1(datetimes: np.array, timeframe: int) -> pd.Series:
-    """Time fixed bars feature.
-
-    :param datetimes: series of datetime
-    :param timeframe: timeframe in sec.
+    :param close: series of bar close
+    :param timeframe: cusum threshold.
     :return: binary series where 1 means bar generation event, 0 means bar
     doesn't exist yet
     """
-    # TODO: Find out could we change source series shape
-    index = pd.date_range(datetimes[0], datetimes[-1], freq='s')
-    feature = pd.Series(np.zeros(index.size), index=index)
-    feature.iloc[timeframe - 1::timeframe] = 1
-    return feature[(feature == 1) | (feature.index.isin(datetimes))]
+    bars = [0]
+    s_pos, s_neg = 0, 0
+    for value in np.diff(np.log(close)):
+        s_pos = max(0.0, s_pos + value)
+        s_neg = min(0.0, s_neg + value)
+        if s_neg < -threshold:
+            s_neg = 0
+            bars.append(1)
+        elif s_pos > threshold:
+            s_pos = 0
+            bars.append(1)
+        else:
+            bars.append(0)
+    feature = np.array(bars)
+    assert feature.shape == close.shape
+    return feature
 
 
 def f2(ticks: np.array, threshold: float) -> np.array:

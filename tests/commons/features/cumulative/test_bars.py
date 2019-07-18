@@ -29,19 +29,27 @@ def df():
 
 
 def test_f1(df):
-    period = 5
-    feature_bars = features.cumulative.bars.f1(df.index.values, period)
-    feature_index = feature_bars[feature_bars == 1].index.values
+    threshold = 0.001
+    df['f1'] = features.cumulative.bars.f1(df.close.values, threshold)
+    assert not df[df['f1'] != 0].empty
+
+    # Compares with commons.bars
+    feature_index = df[df['f1'] == 1].index.values
+    consolidated_bars = bars.cusum.fixed(df, threshold, timestamp_close=True)
+    consolidated_timestamp_close = consolidated_bars.timestamp_close.values
     timedeltas = [
-        td / np.timedelta64(1, 's') == 5 for td in np.diff(feature_index)
+        td / np.timedelta64(1, 's') == 1
+        for td in consolidated_timestamp_close - feature_index
     ]
+    # The timedelta always equals one, because timestamp_close ==
+    # timestamp of row that satisfied the condition + 1s.
     assert all(timedeltas)
 
 
 def test_f2(df):
     threshold = 100
-    df['f2'] = features.cumulative.bars.f2(df.ticks_sell + df.ticks_buy,
-                                           threshold)
+    df['f2'] = features.cumulative.bars.f2(
+        df.ticks_sell.values + df.ticks_buy.values, threshold)
     assert not df[df['f2'] != 0].empty
 
     new_df = df.groupby(
@@ -63,8 +71,8 @@ def test_f2(df):
 
 def test_f3(df):
     threshold = 500
-    df['f3'] = features.cumulative.bars.f3(df.volume_sell + df.volume_buy,
-                                           threshold)
+    df['f3'] = features.cumulative.bars.f3(
+        df.volume_sell.values + df.volume_buy.values, threshold)
     assert not df[df['f3'] != 0].empty
 
     new_df = df.groupby(
@@ -91,7 +99,7 @@ def test_f3(df):
 def test_f4(df):
     threshold = 10**6
     df['f4'] = features.cumulative.bars.f4(
-        df.volume_quote_buy + df.volume_quote_sell, threshold)
+        df.volume_quote_buy.values + df.volume_quote_sell.values, threshold)
     assert not df[df['f4'] != 0].empty
 
     new_df = df.groupby(
