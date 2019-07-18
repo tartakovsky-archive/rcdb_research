@@ -41,76 +41,23 @@ def f1(high: np.array,
         high, low, acceleration_factor_step, acceleration_factor_maximum)
 
 
-def f2(open: np.array,
+def f2(series: np.array,
        high: np.array,
        low: np.array,
        acceleration_factor_step: float,
        acceleration_factor_maximum: int) -> np.array:
-    """Extracts difference between PSAR values and open prices
+    """Extracts difference between PSAR values and series
 
-    :param open: series of bar open
+    :param series: series of real
     :param high: series of bar high
     :param low: series of bar low
     :param acceleration_factor_step: PSAR acceleration factor step
     :param acceleration_factor_maximum: PSAR acceleration factor maximum
-    :return: series difference between PSAR values and open prices
+    :return: series difference between PSAR values and series
     """
     output = psar(
         high, low, acceleration_factor_step, acceleration_factor_maximum)
-    return output - open
-
-
-def f3(high: np.array,
-       low: np.array,
-       acceleration_factor_step: float,
-       acceleration_factor_maximum: int) -> np.array:
-    """Extracts difference between PSAR values and high prices
-
-    :param high: series of bar high
-    :param low: series of bar low
-    :param acceleration_factor_step: PSAR acceleration factor step
-    :param acceleration_factor_maximum: PSAR acceleration factor maximum
-    :return: series difference between PSAR values and high prices
-    """
-    output = psar(
-        high, low, acceleration_factor_step, acceleration_factor_maximum)
-    return output - high
-
-
-def f4(high: np.array,
-       low: np.array,
-       acceleration_factor_step: float,
-       acceleration_factor_maximum: int) -> np.array:
-    """Extracts difference between PSAR values and open prices
-
-    :param high: series of bar high
-    :param low: series of bar low
-    :param acceleration_factor_step: PSAR acceleration factor step
-    :param acceleration_factor_maximum: PSAR acceleration factor maximum
-    :return: series difference between PSAR values and low prices
-    """
-    output = psar(
-        high, low, acceleration_factor_step, acceleration_factor_maximum)
-    return output - low
-
-
-def f5(high: np.array,
-       low: np.array,
-       close: np.array,
-       acceleration_factor_step: float,
-       acceleration_factor_maximum: int) -> np.array:
-    """Extracts difference between PSAR values and open prices
-
-    :param high: series of bar high
-    :param low: series of bar low
-    :param close: series of bar close
-    :param acceleration_factor_step: PSAR acceleration factor step
-    :param acceleration_factor_maximum: PSAR acceleration factor maximum
-    :return: series difference between PSAR values and close prices
-    """
-    output = psar(
-        high, low, acceleration_factor_step, acceleration_factor_maximum)
-    return output - close
+    return output - series
 
 
 # Calc all region:

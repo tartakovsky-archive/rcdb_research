@@ -108,7 +108,7 @@ def test_bbands(test_dataset):
         'period': 10,
         'stddev': 2
     }])
-    assert is_match_up(tulip.bbands.inputs, ('low', 'close', 'open', 'high'))
+    assert is_match_up(tulip.bbands.inputs, ('close', 'series'))
     assert [f"{PREFIX}_bbands_{f.__name__}_10_2"
             for f in tulip.bbands.features_list] \
         in features.columns.values
@@ -154,7 +154,7 @@ def test_psar(test_dataset):
                                        'acceleration_factor_step': .2,
                                        'acceleration_factor_maximum': 2
                                    }])
-    assert is_match_up(tulip.psar.inputs, ('open', 'high', 'low', 'close'))
+    assert is_match_up(tulip.psar.inputs, ('high', 'low', 'series'))
     assert [f"{PREFIX}_psar_{f.__name__}_0.2_2"
             for f in tulip.psar.features_list] \
         in features.columns.values
