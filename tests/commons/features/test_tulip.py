@@ -91,6 +91,11 @@ def test_global_calc_all(test_dataset):
     assert all(n[1] in params_sets_by_indicator.keys() for n in split_names)
 
 
+def test_global_inputs():
+    assert is_match_up(tulip.inputs,
+                       ('series', 'open', 'high', 'low', 'close', 'volume'))
+
+
 def test_adx(test_dataset):
     features = tulip.adx.calc_all(test_dataset, DATA_MAPPING, [{'period': 10}])
     assert is_match_up(tulip.adx.inputs, ('low', 'high'))

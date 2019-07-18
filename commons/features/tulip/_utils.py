@@ -12,6 +12,15 @@ Params = List[Dict]
 namespaces = get_namespaces_around(__file__)
 
 
+def get_sub_inputs():
+    inputs = []
+    for namespace in namespaces:
+        module = importlib.import_module(name=f".{namespace}",
+                                         package='commons.features.tulip')
+        inputs += getattr(module, 'inputs', [])
+    return tuple(set(inputs))
+
+
 def cache(function):
     memo = {}
 
@@ -80,3 +89,6 @@ def calc_all(data: pd.DataFrame,
         df = pd.concat(results, axis='columns')
         df.index = data.index
         return df
+
+
+inputs = get_sub_inputs()
