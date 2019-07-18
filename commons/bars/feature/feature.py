@@ -5,12 +5,14 @@ import uuid
 
 
 def feature(
-        df: pd.DataFrame,
-        column_name: str,
-        aggregate: dict = {"open": 'first', "high": 'max', "low": 'min', "close": 'last', "volume_buy": 'sum',
-                           "volume_quote_sell": 'sum', "volume_quote_buy": 'sum', "ticks_sell": 'sum',
-                           "ticks_buy": 'sum'},
-        aggregate_default='last'
+            df: pd.DataFrame,
+            column_name: str,
+            aggregate: dict = {"open": 'first', "high": 'max', "low": 'min', "close": 'last',
+                               "volume_buy": 'sum', "volume_sell": 'sum', "volume_quote_sell": 'sum',
+                               "volume_quote_buy": 'sum', "ticks_sell": 'sum',
+                               "ticks_buy": 'sum'},
+            aggregate_default='first'
+
         ):
     # save index
     index_tmp_name = str(uuid.uuid4())
