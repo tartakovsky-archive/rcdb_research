@@ -20,7 +20,7 @@ def bbands(close: pd.Series, period: int, stddev: float) -> NamedTuple:
     return ti.bbands(close, period, stddev)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(close: pd.Series, period: int, stddev: float) -> np.array:
@@ -245,7 +245,7 @@ def f18(close: pd.Series, period: int, stddev: float) -> pd.Series:
     return outputs.bbands_lower - close
 
 
-# Calc all region:
+# Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]

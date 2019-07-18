@@ -1,7 +1,8 @@
 import numpy as np
-import pandas as pd
 
-# Fixed region
+from commons.features.utils import get_inputs
+
+# Feature functions fixed bars region
 
 
 def f1(close: np.array, threshold: float) -> np.array:
@@ -145,7 +146,7 @@ def f6(open: np.array, close: np.array, abs_threshold: float) -> np.array:
     return feature
 
 
-# Adaptive region
+# Feature functions adaptive bars region
 
 # def f7(datetimes: np.array, volume_buy: np.array, volume_sell: np.array,
 #        avg_per: int, window: int) -> np.array:
@@ -162,7 +163,7 @@ def f6(open: np.array, close: np.array, abs_threshold: float) -> np.array:
 #     # TODO: Make decision how to realize rolling window by timestamp
 #     pass
 
-# Hybrid region
+# Feature functions hybrid bars region
 
 
 def f8(open: np.array, close: np.array, ticks_buy: np.array,
@@ -228,3 +229,9 @@ def f9(open: np.array, close: np.array, ticks_buy: np.array,
     feature = np.array(bars)
     assert feature.shape == close.shape
     return feature
+
+
+# Helpers region
+
+features_list = [value for key, value in locals().items() if key[1:].isdigit()]
+inputs = get_inputs(features_list)

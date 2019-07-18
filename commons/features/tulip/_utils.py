@@ -33,7 +33,7 @@ def cache(function):
     return wrapper
 
 
-def calc_all_helper(features_list, prefix):
+def calc_all_helper(features_list, prefix, namespace='tulip'):
     def _calc_all(data: pd.DataFrame,
                   data_mapping: Dict,
                   param_sets: Params = None,
@@ -52,7 +52,7 @@ def calc_all_helper(features_list, prefix):
                 ])
                 postfix = ''.join(
                     [f"_{param}" for param in param_set.values()])
-                res[f"tulip_{prefix}_{f.__name__}{postfix}"] = feature
+                res[f"{namespace}_{prefix}_{f.__name__}{postfix}"] = feature
 
         return pd.DataFrame(res, index=data.index) if not inplace else None
 

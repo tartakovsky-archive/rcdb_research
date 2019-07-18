@@ -21,6 +21,14 @@ AGGREGATE = {
     'ticks_sell': 'sum',
     'ticks_buy': 'sum',
 }
+DATA_MAPPING = dict(
+    series='close',
+    open='open',
+    high='high',
+    low='low',
+    close='close',
+    volume='volume',
+)
 
 
 @pytest.fixture
@@ -209,7 +217,7 @@ def test_f8(df):
     assert all(timedeltas)
 
 
-def test_f8(df):
+def test_f9(df):
     abs_threshold = 50
     ticks_threshold = 5000
     df['f9'] = features.cumulative.bars.f9(

@@ -22,7 +22,7 @@ def bop(open: pd.Series,
     return ti.bop(open, high, low, close)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(open: pd.Series,
@@ -40,7 +40,7 @@ def f1(open: pd.Series,
     return bop(open, high, low, close)
 
 
-# Calc all region:
+# Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]
