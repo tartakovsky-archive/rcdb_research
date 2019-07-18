@@ -207,3 +207,40 @@ def test_f8(df):
     # The timedelta always equals one, because timestamp_close ==
     # timestamp of row that satisfied the condition + 1s.
     assert all(timedeltas)
+
+
+def test_f8(df):
+    abs_threshold = 50
+    ticks_threshold = 5000
+    df['f9'] = features.cumulative.bars.f9(
+        df.open.values,
+        df.close.values,
+        df.ticks_buy.values,
+        df.ticks_sell.values,
+        abs_threshold,
+        ticks_threshold,
+    )
+    assert not df[df['f9'] != 0].empty
+
+    df.loc[:, 'bar_no'] = df['f9'].cumsum().shift().fillna(0)
+    agg_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
+    assert agg_df[agg_df.ticks_sell + agg_df.ticks_buy < ticks_threshold].empty
+    assert agg_df[abs(agg_df.close.diff()) < abs_threshold].empty
+
+    # Compares with commons.bars
+    feature_index = df[df['f9'] == 1].index.values
+    consolidated_bars = bars.hybrid.range_fixed_ticks_fixed(
+        df,
+        abs_threshold,
+        ticks_threshold,
+        absolute=True,
+        timestamp_close=True,
+    )
+    consolidated_timestamp_close = consolidated_bars.timestamp_close.values
+    timedeltas = [
+        td / np.timedelta64(1, 's') == 1
+        for td in consolidated_timestamp_close - feature_index
+    ]
+    # The timedelta always equals one, because timestamp_close ==
+    # timestamp of row that satisfied the condition + 1s.
+    assert all(timedeltas)

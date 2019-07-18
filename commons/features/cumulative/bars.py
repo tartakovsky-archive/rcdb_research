@@ -166,7 +166,7 @@ def f6(open: np.array, close: np.array, abs_threshold: float) -> np.array:
 
 
 def f8(open: np.array, close: np.array, ticks_buy: np.array,
-       ticks_sell: np.array, pct_threshold: float,
+       ticks_sell: np.array, range_pct_threshold: float,
        ticks_threshold: int) -> np.array:
     """Range percentage fixed and tick fixed bars bars feature.
 
@@ -174,14 +174,47 @@ def f8(open: np.array, close: np.array, ticks_buy: np.array,
     :param close: series of bar close
     :param ticks_buy: series of ticks buy
     :param ticks_sell: series of ticks sell
-    :param pct_threshold: percentage threshold
+    :param range_pct_threshold: range percentage threshold
     :param ticks_threshold: ticks threshold
     :return: binary series where 1 means bar generation event, 0 means bar
     doesn't exist yet
     """
     bars = []
     ticks_sum = 0
-    get_limits = lambda x: (x * (1 + pct_threshold), x * (1 - pct_threshold))
+    get_limits = lambda x: (x * (1 + range_pct_threshold),
+                            x * (1 - range_pct_threshold))  # yapf: disable
+    upper_limit, lower_limit = get_limits(open[0])
+    for idx in range(len(close)):
+        ticks_sum += ticks_buy[idx] + ticks_sell[idx]
+        if ticks_sum >= ticks_threshold \
+                and (close[idx] > upper_limit or close[idx] < lower_limit):
+            upper_limit, lower_limit = get_limits(close[idx])
+            ticks_sum = 0
+            bars.append(1)
+        else:
+            bars.append(0)
+    feature = np.array(bars)
+    assert feature.shape == close.shape
+    return feature
+
+
+def f9(open: np.array, close: np.array, ticks_buy: np.array,
+       ticks_sell: np.array, range_abs_threshold: float,
+       ticks_threshold: int) -> np.array:
+    """Range percentage fixed and tick fixed bars bars feature.
+
+    :param open: series of bar open
+    :param close: series of bar close
+    :param ticks_buy: series of ticks buy
+    :param ticks_sell: series of ticks sell
+    :param range_abs_threshold: range absolute threshold
+    :param ticks_threshold: ticks threshold
+    :return: binary series where 1 means bar generation event, 0 means bar
+    doesn't exist yet
+    """
+    bars = []
+    ticks_sum = 0
+    get_limits = lambda x: (x + range_abs_threshold, x - range_abs_threshold)
     upper_limit, lower_limit = get_limits(open[0])
     for idx in range(len(close)):
         ticks_sum += ticks_buy[idx] + ticks_sell[idx]
