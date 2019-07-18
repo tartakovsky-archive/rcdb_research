@@ -45,6 +45,7 @@ def f2(ticks: np.array, threshold: float) -> np.array:
             ticks_sum = 0
         else:
             bars.append(0)
+        
     feature = np.array(bars)
     assert feature.shape == ticks.shape
     return feature

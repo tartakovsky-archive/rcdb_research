@@ -15,6 +15,7 @@ AGGREGATE = {
     'low': 'min',
     'close': 'last',
     'volume_buy': 'sum',
+    'volume_sell': 'sum',
     'volume_quote_sell': 'sum',
     'volume_quote_buy': 'sum',
     'ticks_sell': 'sum',
@@ -32,6 +33,14 @@ def test_f1(df):
     threshold = 0.001
     df['f1'] = features.cumulative.bars.f1(df.close.values, threshold)
     assert not df[df['f1'] != 0].empty
+
+    df.loc[:, 'bar_no'] = df['f1'].cumsum().shift().fillna(0)
+    agg_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
+    # agg_df.loc[:, 'log_close_diff'] = np.log(agg_df.close.diff().fillna(0))
+    # agg_df.loc[:, 's_pos'] = agg_df.log_close_diff.apply(lambda x: max(0.0, x))
+    # agg_df.loc[:, 's_neg'] = agg_df.log_close_diff.apply(lambda x: min(0.0, x))
+    # n = agg_df[(agg_df.s_pos < threshold) & (agg_df.s_neg > -threshold)]
+    # assert n.empty
 
     # Compares with commons.bars
     feature_index = df[df['f1'] == 1].index.values
@@ -52,9 +61,9 @@ def test_f2(df):
         df.ticks_sell.values + df.ticks_buy.values, threshold)
     assert not df[df['f2'] != 0].empty
 
-    new_df = df.groupby(
-        ['f2']).agg(AGGREGATE).loc[:, ['ticks_buy', 'ticks_sell']]  # yapf: disable
-    assert new_df[new_df.ticks_sell + new_df.ticks_buy < threshold].empty
+    df.loc[:, 'bar_no'] = df['f2'].cumsum().shift().fillna(0)
+    agg_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
+    assert agg_df[agg_df.ticks_sell + agg_df.ticks_buy < threshold].empty
 
     # Compares with commons.bars
     feature_index = df[df['f2'] == 1].index.values
@@ -75,10 +84,9 @@ def test_f3(df):
         df.volume_sell.values + df.volume_buy.values, threshold)
     assert not df[df['f3'] != 0].empty
 
-    new_df = df.groupby(
-        ['f3']).agg(AGGREGATE).loc[:, ['volume_buy', 'volume_sell']]  # yapf: disable
-    assert new_df[new_df.volume_sell +  # noqa
-                  new_df.volume_buy < threshold].iloc[:-1].empty
+    df.loc[:, 'bar_no'] = df['f3'].cumsum().shift().fillna(0)
+    agg_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
+    assert agg_df[agg_df.volume_sell + agg_df.volume_buy < threshold].empty
 
     # Compares with commons.bars
     feature_index = df[df['f3'] == 1].index.values
@@ -102,10 +110,10 @@ def test_f4(df):
         df.volume_quote_buy.values + df.volume_quote_sell.values, threshold)
     assert not df[df['f4'] != 0].empty
 
-    new_df = df.groupby(
-        ['f4']).agg(AGGREGATE).loc[:, ['volume_quote_buy', 'volume_quote_sell']]  # yapf: disable
-    assert new_df[new_df.volume_quote_buy +  # noqa
-                  new_df.volume_quote_sell < threshold].iloc[:-1].empty
+    df.loc[:, 'bar_no'] = df['f4'].cumsum().shift().fillna(0)
+    agg_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
+    assert agg_df[agg_df.volume_quote_buy +  # noqa
+                  agg_df.volume_quote_sell < threshold].empty
 
     # Compares with commons.bars
     feature_index = df[df['f4'] == 1].index.values
@@ -126,8 +134,9 @@ def test_f5(df):
                                            threshold)
     assert not df[df['f5'] != 0].empty
 
-    new_df = df.groupby(['f5']).agg(AGGREGATE).loc[:, ['close']]
-    assert new_df[abs(new_df.close.pct_change()) < threshold].iloc[:-1].empty
+    df.loc[:, 'bar_no'] = df['f5'].cumsum().shift().fillna(0)
+    new_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
+    assert new_df[abs(new_df.close.pct_change()) < threshold].empty
 
     # Compares with commons.bars
     feature_index = df[df['f5'] == 1].index.values
@@ -148,7 +157,8 @@ def test_f6(df):
                                            threshold)
     assert not df[df['f6'] != 0].empty
 
-    new_df = df.groupby(['f6']).agg(AGGREGATE).loc[:, ['close']]
+    df.loc[:, 'bar_no'] = df['f6'].cumsum().shift().fillna(0)
+    new_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
     assert new_df[abs(new_df.close.diff()) < threshold].iloc[:-1].empty
 
     # Compares with commons.bars
