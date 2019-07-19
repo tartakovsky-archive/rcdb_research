@@ -96,8 +96,8 @@ def calc_all_helper(feature_functions, indicator):
                     *[v for k, v in feature_params.items() if k in func_args],
                 )
                 suffix = ''.join(
-                    [f"_{i}" for i in inputs] +
-                    [f"_{p}" for p in indicator_params.values()] +
+                    [f"_{i}" for i in inputs] +  # noqa
+                    [f"_{p}" for p in indicator_params.values()] +  # noqa
                     [f"_{p}" for p in feature_params.values() if p in func_args]
                 )  # yapf: disable
                 res[f"tulip_{indicator}_{func_name}{suffix}"] = feature
