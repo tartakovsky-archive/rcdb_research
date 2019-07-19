@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+from scipy.ndimage.interpolation import shift
 from tulipindicators import ti
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -7,7 +7,7 @@ from commons.features.utils import get_inputs
 
 
 @cache
-def roc(series: pd.Series, period: int) -> np.array:
+def roc(series: np.array, period: int) -> np.array:
     """Calculates Rate Of Change indicator
 
     :param series: series of real
@@ -20,7 +20,7 @@ def roc(series: pd.Series, period: int) -> np.array:
 # Feature functions region
 
 
-def f1(series: pd.Series, period: int) -> np.array:
+def f1(series: np.array, period: int) -> np.array:
     """Extracts series of ROC indicator values
 
     :param series: series of real
@@ -30,9 +30,21 @@ def f1(series: pd.Series, period: int) -> np.array:
     return roc(series, period)
 
 
+def f2(series: np.array, period: int, n: int = 1) -> np.array:
+    """Extracts series of ROC changes.
+
+    :param series: series of real
+    :param period: ROC period
+    :param n: no for shift
+    :return: series of ROC changes
+    """
+    output = roc(series, period)
+    return output - shift(output, n, cval=np.nan)
+
+
 # Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]
-calc_all = calc_all_helper(features_list, prefix='roc')
+calc_all = calc_all_helper(features_list, indicator='roc')
 inputs = get_inputs(features_list)
