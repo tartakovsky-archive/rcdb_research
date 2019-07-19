@@ -28,7 +28,7 @@ def stoch(high: pd.Series,
     return ti.stoch(high, low, close, k_period, k_slowing_period, d_period)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(high: pd.Series,
@@ -89,7 +89,7 @@ def f3(high: pd.Series,
     return outputs.stoch_k - outputs.stoch_d
 
 
-# Calc all region:
+# Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]

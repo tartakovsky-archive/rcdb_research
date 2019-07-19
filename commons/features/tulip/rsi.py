@@ -17,7 +17,7 @@ def rsi(series: pd.Series, period: int) -> np.array:
     return ti.rsi(series, period)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(series: pd.Series, period: int) -> np.array:
@@ -30,7 +30,7 @@ def f1(series: pd.Series, period: int) -> np.array:
     return rsi(series, period)
 
 
-# Calc all region:
+# Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]

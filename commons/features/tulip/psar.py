@@ -23,7 +23,7 @@ def psar(high: pd.Series,
         high, low, acceleration_factor_step, acceleration_factor_maximum)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(high: pd.Series,
@@ -114,7 +114,7 @@ def f5(high: pd.Series,
     return output - close
 
 
-# Calc all region:
+# Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]

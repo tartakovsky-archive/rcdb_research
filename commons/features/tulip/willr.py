@@ -19,7 +19,7 @@ def willr(high: pd.Series, low: pd.Series, close: pd.Series, period: int) -> np.
     return ti.willr(high, low, close, period)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(high: pd.Series, low: pd.Series, close: pd.Series, period: int) -> np.array:
@@ -34,7 +34,7 @@ def f1(high: pd.Series, low: pd.Series, close: pd.Series, period: int) -> np.arr
     return willr(high, low, close, period)
 
 
-# Calc all region:
+# Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]

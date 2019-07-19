@@ -18,7 +18,7 @@ def adx(high: pd.Series, low: pd.Series, period: int) -> np.array:
     return ti.adx(high, low, period)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(high: pd.Series, low: pd.Series, period: int) -> np.array:
@@ -32,7 +32,7 @@ def f1(high: pd.Series, low: pd.Series, period: int) -> np.array:
     return adx(high, low, period)
 
 
-# Calc all region:
+# Helpers region
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]
 calc_all = calc_all_helper(features_list, prefix='adx')
