@@ -15,6 +15,25 @@ NAMESPACES = get_namespaces_around(__file__)
 Params = List[Dict]
 
 
+def _is_auto_mapping_feature(indicator, func_name):
+    return indicator == 'bbands' and func_name in ['f7', 'f8', 'f9'] \
+        or indicator == 'psar' and func_name in ['f2']
+
+
+def _get_input_sets(indicator, func_name, func_args, data_mapping):
+    input_sets = []
+    if _is_auto_mapping_feature(indicator, func_name):
+        for series in SERIES_MAPPING:
+            input_sets.append([
+                data_mapping[arg] if arg != 'series' else series
+                for arg in func_args if arg in data_mapping
+            ])
+    else:
+        input_sets.append(
+            [data_mapping[arg] for arg in func_args if arg in data_mapping])
+    return input_sets
+
+
 def get_sub_inputs(namespaces):
     inputs = []
     for namespace in namespaces:
@@ -43,25 +62,6 @@ def cache(function):
             return rv
 
     return wrapper
-
-
-def _is_auto_mapping_feature(indicator, func_name):
-    return indicator == 'bbands' and func_name in ['f7', 'f8', 'f9'] \
-        or indicator == 'psar' and func_name in ['f2']
-
-
-def _get_input_sets(indicator, func_name, func_args, data_mapping):
-    input_sets = []
-    if _is_auto_mapping_feature(indicator, func_name):
-        for series in SERIES_MAPPING:
-            input_sets.append([
-                data_mapping[arg] if arg != 'series' else series
-                for arg in func_args if arg in data_mapping
-            ])
-    else:
-        input_sets.append(
-            [data_mapping[arg] for arg in func_args if arg in data_mapping])
-    return input_sets
 
 
 def calc_all_helper(feature_functions, indicator):

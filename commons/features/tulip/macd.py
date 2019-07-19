@@ -17,12 +17,12 @@ def macd(series: np.array, short_period: int, long_period: int,
     :param short_period: short period
     :param long_period: long period
     :param signal_period: signal period
-    :return: BBANDS outputs: bbands_upper, bbands_middle, bbands_lower
+    :return: MACD outputs: macd, macd_signal, macd_histogram
     """
     return ti.macd(series, short_period, long_period, signal_period)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(series: np.array, short_period: int, long_period: int,
@@ -135,7 +135,7 @@ def f7(series: np.array,
     return output - shift(output, n, cval=np.nan)
 
 
-# Calc all region:
+# Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]

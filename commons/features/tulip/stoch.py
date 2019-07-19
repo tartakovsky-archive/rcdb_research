@@ -24,7 +24,7 @@ def stoch(high: np.array, low: np.array, close: np.array, k_period: int,
     return ti.stoch(high, low, close, k_period, k_slowing_period, d_period)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(high: np.array, low: np.array, close: np.array, k_period: int,
@@ -121,7 +121,7 @@ def f5(high: np.array,
     return output - shift(output, n, cval=np.nan)
 
 
-# Calc all region:
+# Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]

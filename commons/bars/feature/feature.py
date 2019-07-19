@@ -5,18 +5,23 @@ import uuid
 
 
 def feature(
-        df: pd.DataFrame,
-        column_name: str,
-        aggregate: dict = {"open": 'first', "high": 'max', "low": 'min', "close": 'last', "volume_buy": 'sum',
-                           "volume_quote_sell": 'sum', "volume_quote_buy": 'sum', "ticks_sell": 'sum',
-                           "ticks_buy": 'sum'},
-        aggregate_default='last'
+            df: pd.DataFrame,
+            column_name: str,
+            aggregate: dict = {"open": 'first', "high": 'max', "low": 'min', "close": 'last',
+                               "volume_buy": 'sum', "volume_sell": 'sum', "volume_quote_sell": 'sum',
+                               "volume_quote_buy": 'sum', "ticks_sell": 'sum',
+                               "ticks_buy": 'sum'},
+            aggregate_default='first'
         ):
+    # prevent bugs with default mutable dict
+    aggregate = aggregate.copy()
+
     # save index
     index_tmp_name = str(uuid.uuid4())
     index_prev_name = df.index.name
+
+    columns = list(df.columns) + [index_tmp_name]
     df[index_tmp_name] = df.index
-    columns = list(df.columns)
 
     # tmp column for aggregation
     agg_id_name = str(uuid.uuid4())

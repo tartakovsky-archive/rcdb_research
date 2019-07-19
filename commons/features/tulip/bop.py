@@ -20,7 +20,7 @@ def bop(open: np.array, high: np.array, low: np.array,
     return ti.bop(open, high, low, close)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(open: np.array, high: np.array, low: np.array,
@@ -54,7 +54,7 @@ def f2(open: np.array,
     return output - shift(output, n, cval=np.nan)
 
 
-# Calc all region:
+# Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]

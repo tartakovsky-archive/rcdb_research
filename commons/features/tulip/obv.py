@@ -17,7 +17,7 @@ def obv(series: np.array, volume: np.array) -> np.array:
     return ti.obv(series, volume)
 
 
-# Feature functions region:
+# Feature functions region
 
 
 def f1(series: np.array, volume: np.array) -> np.array:
@@ -42,7 +42,7 @@ def f2(series: np.array, volume: np.array, n: int = 1) -> np.array:
     return output - shift(output, n, cval=np.nan)
 
 
-# Calc all region:
+# Helpers region
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]
