@@ -1,6 +1,7 @@
 from typing import NamedTuple
 
 import numpy as np
+from scipy.ndimage.interpolation import shift
 from tulipindicators import ti
 
 from commons.features.tulip._utils import cache, calc_all_helper
@@ -9,7 +10,7 @@ from commons.features.utils import get_inputs
 
 @cache
 def bbands(close: np.array, period: int, stddev: float) -> NamedTuple:
-    """Calculates Bollinger Bands indicator
+    """Calculates Bollinger Bands indicator.
 
     :param close: bar close series
     :param period: BBANDS period
@@ -23,7 +24,7 @@ def bbands(close: np.array, period: int, stddev: float) -> NamedTuple:
 
 
 def f1(close: np.array, period: int, stddev: float) -> np.array:
-    """Extracts Upper Band value series
+    """Extracts Upper Band value series.
 
     :param close: series of bar close
     :param period: BBANDS period
@@ -34,7 +35,7 @@ def f1(close: np.array, period: int, stddev: float) -> np.array:
 
 
 def f2(close: np.array, period: int, stddev: float) -> np.array:
-    """Extracts Middle Band value series
+    """Extracts Middle Band value series.
 
     :param close: series of bar close
     :param period: BBANDS period
@@ -45,7 +46,7 @@ def f2(close: np.array, period: int, stddev: float) -> np.array:
 
 
 def f3(close: np.array, period: int, stddev: float) -> np.array:
-    """Extracts Lower Band value series
+    """Extracts Lower Band value series.
 
     :param close: series of bar close
     :param period: BBANDS period
@@ -56,7 +57,7 @@ def f3(close: np.array, period: int, stddev: float) -> np.array:
 
 
 def f4(close: np.array, period: int, stddev: float) -> np.array:
-    """Extracts difference between Upper Band and Lower Band
+    """Extracts difference between Upper Band and Lower Band.
 
     :param close: series of bar close
     :param period: BBANDS period
@@ -68,7 +69,7 @@ def f4(close: np.array, period: int, stddev: float) -> np.array:
 
 
 def f5(close: np.array, period: int, stddev: float) -> np.array:
-    """Extracts difference between Upper Band and Middle Band
+    """Extracts difference between Upper Band and Middle Band.
 
     :param close: series of bar close
     :param period: BBANDS period
@@ -80,7 +81,7 @@ def f5(close: np.array, period: int, stddev: float) -> np.array:
 
 
 def f6(close: np.array, period: int, stddev: float) -> np.array:
-    """Extracts difference between Middle Band and Lower Band
+    """Extracts difference between Middle Band and Lower Band.
 
     :param close: series of bar close
     :param period: BBANDS period
@@ -92,7 +93,7 @@ def f6(close: np.array, period: int, stddev: float) -> np.array:
 
 
 def f7(series: np.array, close: np.array, period: int, stddev: float) -> np.array:
-    """Extracts difference between Upper Band values and series
+    """Extracts difference between Upper Band values and series.
 
     :param series: series of real
     :param close: series of bar close
@@ -105,7 +106,7 @@ def f7(series: np.array, close: np.array, period: int, stddev: float) -> np.arra
 
 
 def f8(series: np.array, close: np.array, period: int, stddev: float) -> np.array:
-    """Extracts difference between Middle Band values and series
+    """Extracts difference between Middle Band values and series.
 
     :param series: series of real
     :param close: series of bar close
@@ -118,7 +119,7 @@ def f8(series: np.array, close: np.array, period: int, stddev: float) -> np.arra
 
 
 def f9(series: np.array, close: np.array, period: int, stddev: float) -> np.array:
-    """Extracts difference between Lower Band values and series
+    """Extracts difference between Lower Band values and series.
 
     :param series: series of real
     :param close: series of bar close
@@ -130,9 +131,48 @@ def f9(series: np.array, close: np.array, period: int, stddev: float) -> np.arra
     return outputs.bbands_lower - series
 
 
+def f10(close: np.array, period: int, stddev: float, n: int = 1) -> np.array:
+    """Extracts series of Upper Band changes.
+
+    :param close: series of bar close
+    :param period: BBANDS period
+    :param stddev: BBANDS stddev
+    :param n: no for shift
+    :return: series of Upper Band changes
+    """
+    output = bbands(close, period, stddev).bbands_upper
+    return output - shift(output, n, cval=np.nan)
+
+
+def f11(close: np.array, period: int, stddev: float, n: int = 1) -> np.array:
+    """Extracts series of Middle Band changes.
+
+    :param close: series of bar close
+    :param period: BBANDS period
+    :param stddev: BBANDS stddev
+    :param n: no for shift
+    :return: series of Middle Band changes
+    """
+    output = bbands(close, period, stddev).bbands_middle
+    return output - shift(output, n, cval=np.nan)
+
+
+def f12(close: np.array, period: int, stddev: float, n: int = 1) -> np.array:
+    """Extracts series of Lower Band changes.
+
+    :param close: series of bar close
+    :param period: BBANDS period
+    :param stddev: BBANDS stddev
+    :param n: no for shift
+    :return: series of Lower Band changes
+    """
+    output = bbands(close, period, stddev).bbands_middle
+    return output - shift(output, n, cval=np.nan)
+
+
 # Calc all region:
 
 
 features_list = [value for key, value in locals().items() if key[1:].isdigit()]
-calc_all = calc_all_helper(features_list, prefix='bbands')
+calc_all = calc_all_helper(features_list, indicator='bbands')
 inputs = get_inputs(features_list)
