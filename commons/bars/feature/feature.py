@@ -12,13 +12,16 @@ def feature(
                                "volume_quote_buy": 'sum', "ticks_sell": 'sum',
                                "ticks_buy": 'sum'},
             aggregate_default='first'
-
         ):
+    # prevent bugs with default mutable dict
+    aggregate = aggregate.copy()
+
     # save index
     index_tmp_name = str(uuid.uuid4())
     index_prev_name = df.index.name
+
+    columns = list(df.columns) + [index_tmp_name]
     df[index_tmp_name] = df.index
-    columns = list(df.columns)
 
     # tmp column for aggregation
     agg_id_name = str(uuid.uuid4())
