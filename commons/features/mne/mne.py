@@ -1,0 +1,666 @@
+import sys
+import inspect
+from typing import List, Dict
+
+import numpy as np
+import pandas as pd
+
+from .utils import rolling_window, mne_doc_helper, feature_filter
+
+from mne_features import bivariate, univariate
+
+PREFIX = "mne"
+
+
+@mne_doc_helper(univariate.compute_mean)
+def f1(series: np.array, window: int) -> np.array:
+    """
+    Mean of the data
+
+    :param np.array series:
+    :param int window:
+    :return:
+    """
+    return univariate.compute_mean(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_variance)
+def f2(series: np.array, window: int) -> np.array:
+    """
+    Variance of the data
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_variance(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_std)
+def f3(series: np.array, window: int) -> np.array:
+    """
+    Standard deviation of the data
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_std(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_ptp_amp)
+def f4(series: np.array, window: int) -> np.array:
+    """
+    Peak-to-peak (PTP) amplitude of the data
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_ptp_amp(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_skewness)
+def f5(series: np.array, window: int) -> np.array:
+    """
+    Skewness of the data
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_skewness(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_kurtosis)
+def f6(series: np.array, window: int) -> np.array:
+    """
+    Kurtosis of the data
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_kurtosis(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_hurst_exp)
+def f7(series: np.array, window: int) -> np.array:
+    """
+    Hurst exponent of the data
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_hurst_exp(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_app_entropy)
+def f8(series: np.array, window: int, emb: int = 2, metric: str = 'chebyshev') -> np.array:
+    """
+    Approximate Entropy
+
+    :param series:
+    :param window:
+    :param emb:
+    :param metric:
+    :return:
+    """
+    return univariate.compute_app_entropy(
+        rolling_window(series, window), emb, metric
+    )
+
+
+@mne_doc_helper(univariate.compute_samp_entropy)
+def f9(series: np.array, window: int, emb: int = 2, metric: str = 'chebyshev') -> np.array:
+    """
+    Sample Entropy
+
+    :param series:
+    :param window:
+    :param emb:
+    :param metric:
+    :return:
+    """
+    return univariate.compute_samp_entropy(
+        rolling_window(series, window), emb, metric
+    )
+
+
+@mne_doc_helper(univariate.compute_decorr_time)
+def f10(series: np.array, window: int, sfreq: float = 256.) -> np.array:
+    """
+    Decorrelation time
+
+    :param series:
+    :param window:
+    :param sfreq:
+    :return:
+    """
+    return univariate.compute_decorr_time(
+        sfreq,
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_pow_freq_bands)
+def f11(series: np.array,
+        window: int,
+        sfreq: float = 256.,
+        freq_bands: np.array = np.array([0.5, 4., 8., 13., 30., 100.]),
+        normalize: bool = True,
+        ratios: str = None,
+        psd_method: str = 'welch',
+        psd_params: dict = None) -> np.array:
+    """
+    Power Spectrum (computed by frequency bands)
+
+    :param series:
+    :param window:
+    :param sfreq:
+    :param freq_bands:
+    :param normalize:
+    :param ratios:
+    :param psd_method:
+    :param psd_params:
+    :return:
+    """
+    data = rolling_window(series, window)
+    res = univariate.compute_pow_freq_bands(
+        sfreq,
+        data,
+        freq_bands=freq_bands,
+        normalize=normalize,
+        ratios=ratios,
+        psd_method=psd_method,
+        psd_params=psd_params
+    )
+    return res
+
+
+@mne_doc_helper(univariate.compute_hjorth_mobility_spect)
+def f12(series: np.array,
+        window: int,
+        sfreq: float = 256.,
+        normalize: bool = False,
+        psd_method: str = 'welch',
+        psd_params: dict = None) -> np.array:
+    """
+    Hjorth mobility
+
+    :param series:
+    :param window:
+    :param sfreq:
+    :param normalize:
+    :param psd_method:
+    :param psd_params:
+    :return:
+    """
+    return univariate.compute_hjorth_mobility_spect(
+        sfreq,
+        rolling_window(series, window),
+        normalize=normalize,
+        psd_method=psd_method,
+        psd_params=psd_params
+    )
+
+
+@mne_doc_helper(univariate.compute_hjorth_complexity_spect)
+def f13(series: np.array,
+        window: int,
+        sfreq: float = 256.) -> np.array:
+    """
+    Hjorth complexity
+
+    :param series:
+    :param window:
+    :param sfreq:
+    :return:
+    """
+    return univariate.compute_hjorth_complexity_spect(
+        sfreq,
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_hjorth_mobility)
+def f14(series: np.array, window: int) -> np.array:
+    """
+    Hjorth mobility
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_hjorth_mobility(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_hjorth_complexity)
+def f15(series: np.array, window: int) -> np.array:
+    """
+    Hjorth complexity
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_hjorth_complexity(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_higuchi_fd)
+def f16(series: np.array, window: int, kmax: int = 10) -> np.array:
+    """
+    Higuchi Fractal Dimension
+
+    :param series:
+    :param window:
+    :param kmax:
+    :return:
+    """
+    return univariate.compute_higuchi_fd(
+        rolling_window(series, window),
+        kmax=kmax
+    )
+
+
+@mne_doc_helper(univariate.compute_katz_fd)
+def f17(series: np.array, window: int) -> np.array:
+    """
+    Katz Fractal Dimension
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_katz_fd(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_zero_crossings)
+def f18(series: np.array, window: int) -> np.array:
+    """
+    Number of zero crossings
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_zero_crossings(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_line_length)
+def f19(series: np.array, window: int) -> np.array:
+    """
+    Line length
+
+    :param series:
+    :param window:
+    :return:
+    """
+    return univariate.compute_line_length(
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_spect_slope)
+def f20(series: np.array,
+        window: int,
+        sfreq: float = 256.,
+        fmin: float = 0.1,
+        fmax: float = 50,
+        with_intercept: bool = True,
+        psd_method: str = 'welch',
+        psd_params: dict = None) -> np.array:
+    """
+    Linear regression of the the log-log frequency-curve
+
+    :param series:
+    :param window:
+    :param sfreq:
+    :param fmin:
+    :param fmax:
+    :param with_intercept:
+    :param psd_method:
+    :param psd_params:
+    :return:
+    """
+    return univariate.compute_spect_slope(
+        sfreq,
+        rolling_window(series, window),
+        fmin=fmin,
+        fmax=fmax,
+        with_intercept=with_intercept,
+        psd_method=psd_method,
+        psd_params=psd_params
+    )
+
+
+@mne_doc_helper(univariate.compute_spect_entropy)
+def f21(series: np.array,
+        window: int,
+        sfreq: float = 256.) -> np.array:
+    """
+    Spectral Entropy
+
+    :param series:
+    :param window:
+    :param sfreq:
+    :return:
+    """
+    return univariate.compute_spect_entropy(
+        sfreq,
+        rolling_window(series, window)
+    )
+
+
+@mne_doc_helper(univariate.compute_svd_entropy)
+def f22(series: np.array,
+        window: int,
+        tau: int = 2,
+        emb: int = 10) -> np.array:
+    """
+    SVD entropy
+
+    :param series:
+    :param window:
+    :param tau:
+    :param emb:
+    :return:
+    """
+    return univariate.compute_svd_entropy(
+        rolling_window(series, window),
+        tau=tau,
+        emb=emb
+    )
+
+
+@mne_doc_helper(univariate.compute_svd_fisher_info)
+def f23(series: np.array,
+        window: int,
+        tau: int = 2,
+        emb: int = 10) -> np.array:
+    """
+    SVD Fisher Information
+
+    :param series:
+    :param window:
+    :param tau:
+    :param emb:
+    :return:
+    """
+    return univariate.compute_svd_fisher_info(
+        rolling_window(series, window),
+        tau=tau,
+        emb=emb
+    )
+
+
+@mne_doc_helper(univariate.compute_energy_freq_bands)
+def f24(series: np.array,
+        window: int,
+        sfreq: float = 256.,
+        freq_bands: np.array = np.array([0.5, 4., 8., 13., 30., 100.]),
+        deriv_filt: bool = True) -> np.array:
+    """
+    Band energy
+
+    :param series:
+    :param window:
+    :param sfreq:
+    :param freq_bands:
+    :param deriv_filt:
+    :return:
+    """
+    return univariate.compute_energy_freq_bands(
+        sfreq,
+        rolling_window(series, window),
+        freq_bands=freq_bands,
+        deriv_filt=deriv_filt
+    )
+
+
+@mne_doc_helper(univariate.compute_spect_edge_freq)
+def f25(series: np.array,
+        window: int,
+        sfreq: float = 256.,
+        ref_freq: float = None,
+        edge: List[float] = None,
+        psd_method: str = 'welch',
+        psd_params: dict = None) -> np.array:
+    """
+    Spectal Edge Frequency
+
+    :param series:
+    :param window:
+    :param sfreq:
+    :param ref_freq:
+    :param edge:
+    :param psd_method:
+    :param psd_params:
+    :return:
+    """
+    return univariate.compute_spect_edge_freq(
+        sfreq,
+        rolling_window(series, window),
+        ref_freq=ref_freq,
+        edge=edge,
+        psd_method=psd_method,
+        psd_params=psd_params
+    )
+
+
+@mne_doc_helper(univariate.compute_wavelet_coef_energy)
+def f26(series: np.array, window: int, wavelet_name: str = 'db4') -> np.array:
+    """
+    Energy of Wavelet decomposition coefficients
+
+    :param series:
+    :param window:
+    :param wavelet_name:
+    :return:
+    """
+    return univariate.compute_wavelet_coef_energy(
+        rolling_window(series, window),
+        wavelet_name=wavelet_name
+    )
+
+
+@mne_doc_helper(univariate.compute_teager_kaiser_energy)
+def f27(series: np.array, window: int, wavelet_name: str = 'db4') -> np.array:
+    """
+    Compute the Teager-Kaiser energy
+
+    :param series:
+    :param window:
+    :param wavelet_name:
+    :return:
+    """
+    return univariate.compute_teager_kaiser_energy(
+        rolling_window(series, window),
+        wavelet_name=wavelet_name
+    )
+
+
+@mne_doc_helper(bivariate.compute_max_cross_corr)
+def f28(series: np.array,
+        window: int,
+        sfreq: float = 256.,
+        include_diag: bool = False) -> np.array:
+    """
+    Maximum linear cross-correlation
+
+    :param series:
+    :param window:
+    :param sfreq:
+    :param include_diag:
+    :return:
+    """
+    return bivariate.compute_max_cross_corr(
+        sfreq,
+        rolling_window(series, window),
+        include_diag=include_diag
+    )
+
+
+@mne_doc_helper(bivariate.compute_phase_lock_val)
+def f29(series: np.array,
+        window: int,
+        include_diag: bool = False) -> np.array:
+    """
+    Phase Locking Value (PLV)
+
+    :param series:
+    :param window:
+    :param include_diag:
+    :return:
+    """
+    return bivariate.compute_phase_lock_val(
+        rolling_window(series, window),
+        include_diag=include_diag
+    )
+
+
+@mne_doc_helper(bivariate.compute_nonlin_interdep)
+def f30(series: np.array,
+        window: int,
+        tau: int = 2,
+        emb: int = 10,
+        nn: int = 5,
+        include_diag: bool = False) -> np.array:
+    """
+    Measure of nonlinear interdependence
+
+    :param series:
+    :param window:
+    :param tau:
+    :param emb:
+    :param nn:
+    :param include_diag:
+    :return:
+    """
+    return bivariate.compute_nonlin_interdep(
+        rolling_window(series, window),
+        tau=tau,
+        emb=emb,
+        nn=nn,
+        include_diag=include_diag
+    )
+
+
+@mne_doc_helper(bivariate.compute_time_corr)
+def f31(series: np.array,
+        window: int,
+        with_eigenvalues: bool = True,
+        include_diag: bool = False) -> np.array:
+    """
+    Correlation Coefficients
+
+    :param series:
+    :param window:
+    :param with_eigenvalues:
+    :param include_diag:
+    :return:
+    """
+    return bivariate.compute_time_corr(
+        rolling_window(series, window),
+        with_eigenvalues=with_eigenvalues,
+        include_diag=include_diag
+    )
+
+
+@mne_doc_helper(bivariate.compute_spect_corr)
+def f32(series: np.array,
+        window: int,
+        sfreq: float = 256.,
+        with_eigenvalues: bool = True,
+        include_diag: bool = False,
+        psd_method: str = 'welch',
+        psd_params: dict = None) -> np.array:
+    """
+    Correlation Coefficients
+
+    :param series:
+    :param window:
+    :param sfreq:
+    :param with_eigenvalues:
+    :param include_diag:
+    :param psd_method:
+    :param psd_params:
+    :return:
+    """
+    return bivariate.compute_spect_corr(
+        sfreq,
+        rolling_window(series, window),
+        with_eigenvalues=with_eigenvalues,
+        include_diag=include_diag,
+        psd_method=psd_method,
+        psd_params=psd_params
+    )
+
+
+FEATURE_FUNCS = dict(inspect.getmembers(sys.modules[__name__], feature_filter))
+
+__all__ = ("FEATURE_FUNCS", "PREFIX", "calc_all", *FEATURE_FUNCS.keys())
+
+
+def calc_all(
+    data: pd.DataFrame,
+    param_set: Dict[str, List[Dict]],
+    window: int,
+    column_names: dict = None
+) -> pd.DataFrame:
+    """
+    Calculate features from mne
+    :param pd.DataFrame data: df with DatetimeIndex, with `column_names.values()` columns
+    :param Dict[str, List[Dict]] param_set: keys - names of feature (f1, f2, etc.),
+        set of parameters for feature calculation, required key "column"
+    :param dict column_names: mapping of required columns
+    :return:
+    """
+    if column_names is None:
+        column_names = dict(zip(data.columns, data.columns))
+
+    vals = {name: data[column_names[orig_name]].values for orig_name, name in column_names.items()}
+
+    df = pd.DataFrame([])
+    for feature, feature_params in param_set.items():
+        for ps in feature_params:
+            column = ps.pop("column", "__all__")
+            inputs_series = vals if column == "__all__" else {column: vals[column]}
+
+            for input_series_name, input_series in inputs_series.items():
+                res = FEATURE_FUNCS[feature](series=input_series, window=window, **ps)
+
+                postfix = "_".join(f"{k}{v}" for k, v in ps.items())
+                col_name = f"{PREFIX}_{feature}_{window}_{input_series_name}{'_'if postfix else ''}{postfix}"
+
+                expected_column_size = len(input_series) - window + 1
+                if len(res) == expected_column_size:
+                    df[col_name] = res
+                else:
+                    cols = len(res) // expected_column_size
+                    for i, res in zip(range(cols), res.reshape(-1, cols).transpose()):
+                        df[f"{col_name}_col_{i}"] = res
+    return df

@@ -1,6 +1,8 @@
 ## Installing
 
-`# pip install -e .` - install requirements  
+`# pip install --extra-index-url $(cat extra-index-url) .` - install requirements from source
+`# pip install --extra-index-url $(cat extra-index-url) -e .[dev]` - install requirements from source for developing
+`# pip install --extra-index-url $(cat extra-index-url) -e <git url>` - install requirements from git
 `# jupyter notebook` - start jupyter  
 
 See examples at `./notebooks/alex_o/`

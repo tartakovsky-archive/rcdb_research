@@ -1,7 +1,8 @@
 from typing import List, Dict
 
 import pandas as pd
-from fastai.tabular.transform import add_datepart
+
+from .utils import add_datepart
 
 PREFIX = "dt_components"
 
