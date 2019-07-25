@@ -7,6 +7,7 @@ from . import utils
 
 PREFIX = "highlow"
 
+
 def calc_all(
     data: pd.DataFrame,
     param_set: List[Dict],
@@ -14,15 +15,15 @@ def calc_all(
 ) -> pd.DataFrame:
     """
     Calculate high/low features
-    :param pd.DataFrame data: df with DatetimeIndex, with `column_names.values()` columns
+    :param pd.DataFrame data: df with `column_names.values()` columns
     :param List[Dict] param_set: set of parameters for feature calculation, required key "period"
     :param dict column_names: mapping of required columns
     :return:
     """
 
-    high = data[column_names["high"]]
-    low = data[column_names["low"]]
-    close = data[column_names["close"]]
+    high = data[column_names["high"]].values
+    low = data[column_names["low"]].values
+    close = data[column_names["close"]].values
 
     df = pd.DataFrame(
         {
@@ -48,106 +49,148 @@ def calc_all(
     return df
 
 
-def f1(high: pd.Series) -> np.array:
+def f1(high: np.array) -> np.array:
     """
     Check if the high is ath
-    :param pd.Series high: series with DatetimeIndex
+    :param np.array high: input series
     :return: array of 0 and 1 for each row
     """
-    return utils.is_extremum(series=high, period="ALL", maximum=True)
+    return utils.is_ath(high)
 
 
-def f2(high: pd.Series, period: str) -> np.array:
+def f2(high: np.array, period: int) -> np.array:
     """
     Check if the high is a highest in period
-    :param pd.Series high: series with DatetimeIndex
-    :param str period: tf in format `<int>(s|m|h|D|W|M|Q|Y)` Example: 35s, 1h, 3D, 15m, etc.
+    :param np.array high: input series
+    :param int period: rolling window size
     :return: array of 0 and 1 for each row
     """
-    return utils.is_extremum(series=high, period=period, maximum=True)
+    return utils.is_extremum_bars_periods(series=high, period=period, maximum=True)
 
 
-def f3(low: pd.Series, period: str) -> np.array:
+def f3(low: np.array, period: int) -> np.array:
     """
     Check if the low is a lowest in period
-    :param pd.Series low: series with DatetimeIndex
-    :param str period: tf in format `<int>(s|m|h|D|W|M|Q|Y)` Example: 35s, 1h, 3D, 15m, etc.
+    :param np.array low: input series
+    :param int period: window size
     :return: array of 0 and 1 for each row
     """
-    return utils.is_extremum(series=low, period=period, maximum=False)
+    return utils.is_extremum_bars_periods(series=low, period=period, maximum=False)
 
 
-def f4(high: pd.Series) -> np.array:
+def f4(high: np.array) -> np.array:
     """
-    Calculate time since ath
-    :param pd.Series high: series with DatetimeIndex
+    Calculate bars since ath
+    :param np.array high: input series
     :return: array of seconds
     """
-    return utils.time_since_extremum(series=high, period="ALL", maximum=True)
+    return utils.bars_since_mark(
+        utils.is_ath(high)
+    )
 
 
-def f5(high: pd.Series, period: str) -> np.array:
+def f5(high: np.array, period: int) -> np.array:
     """
-    Calculate time since highest in period
-    :param pd.Series high: series with DatetimeIndex
-    :param str period: tf in format `<int>(s|m|h|D|W|M|Q|Y)` Example: 35s, 1h, 3D, 15m, etc.
+    Calculate numbers of bars since highest in period
+    :param np.array high: input series
+    :param int period: rolling window size
     :return: array of seconds
     """
-    return utils.time_since_extremum(series=high, period=period, maximum=True)
+    return utils.bars_since_mark(
+        utils.is_extremum_bars_periods(
+            series=high,
+            period=period,
+            maximum=True
+        )
+    )
 
 
-def f6(low: pd.Series, period: str) -> np.array:
+def f6(low: np.array, period: int) -> np.array:
     """
-    Calculate time since lowest in period
-    :param pd.Series low: series with DatetimeIndex
-    :param str period: tf in format `<int>(s|m|h|D|W|M|Q|Y)` Example: 35s, 1h, 3D, 15m, etc.
+    Calculate numbers of bars since lowest in period
+    :param np.array low: input series
+    :param int period: rolling window size
     :return: array of seconds
     """
-    return utils.time_since_extremum(series=low, period=period, maximum=False)
+    return utils.bars_since_mark(
+        utils.is_extremum_bars_periods(
+            series=low,
+            period=period,
+            maximum=False
+        )
+    )
 
 
-def f7(close: pd.Series) -> np.array:
+def f7(close: np.array) -> np.array:
     """
-    Calculate time in drawdown
-    :param pd.Series close: series with DatetimeIndex
+    Calculate numbers of bars in drawdown
+    :param np.array close: input series
     :return: array of seconds
     """
-    return utils.time_in(series=close, drawdown=True)
+    return utils.bars_in_marked(
+        (utils.pct_change(series=close) < 0) * 1
+    )
 
 
-def f8(close: pd.Series):
+def f8(close: np.array) -> np.array:
     """
-    Calculate time in run up
-    :param pd.Series close: series with DatetimeIndex
+    Calculate numbers of bars in run up
+    :param np.array close: input series
     :return: array of seconds
     """
-    return utils.time_in(series=close, drawdown=False)
+    return utils.bars_in_marked(
+        (utils.pct_change(series=close) > 0) * 1
+    )
 
 
-def f9(high: pd.Series) -> np.array:
+def f9(high: np.array) -> np.array:
     """
     Calculate % change since ath
-    :param pd.Series high: series with DatetimeIndex
+    :param np.array high: input series
     :return: array of float
     """
-    return utils.change_since_period(series=high, period="ALL", maximum=True)
+    return utils.change_since_mark(
+        series=high,
+        marked=utils.is_ath(high)
+    )
 
 
-def f10(high: pd.Series, period: str) -> np.array:
+def f10(high: np.array, period: int) -> np.array:
     """
     Calculate % change since highest in period
-    :param pd.Series high: series with DatetimeIndex
-    :param str period: tf in format `<int>(s|m|h|D|W|M|Q|Y)` Example: 35s, 1h, 3D, 15m, etc.
+    :param np.array high: input series
+    :param int period: rolling window size
     :return: array of float
     """
-    return utils.change_since_period(series=high, period=period, maximum=True)
+    return utils.change_since_mark(
+        series=high,
+        marked=utils.is_extremum_bars_periods(
+            series=high,
+            period=period,
+            maximum=True
+        )
+    )
 
 
-def f11(low: pd.Series, period: str) -> np.array:
+def f11(low: np.array, period: int) -> np.array:
     """
     Calculate % change since lowest in period
-    :param pd.Series low: series with DatetimeIndex
-    :param str period: tf in format `<int>(s|m|h|D|W|M|Q|Y)` Example: 35s, 1h, 3D, 15m, etc.
+    :param np.array low: input series
+    :param int period: rolling window size
     :return: array of float
     """
-    return utils.change_since_period(series=low, period=period, maximum=False)
+    return utils.change_since_mark(
+        series=low,
+        marked=utils.is_extremum_bars_periods(
+            series=low,
+            period=period,
+            maximum=False
+        )
+    )
+
+
+__all__ = (
+    "PREFIX",
+    "calc_all",
+    *[key for key in locals().keys() if key[1:].isdigit()]
+)

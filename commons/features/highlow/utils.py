@@ -1,3 +1,6 @@
+from itertools import zip_longest
+
+from tulipindicators import ti
 import numpy as np
 import pandas as pd
 
@@ -140,3 +143,61 @@ def change_since_period(series: pd.Series, period: str, maximum: bool) -> np.arr
         df.loc[start:end, "change_since_extremum"] = (df.loc[start:end].series - extrm_in_period) / extrm_in_period
 
     return df.change_since_extremum.values
+
+
+def is_extremum_bars_periods(series: np.array, period: int, maximum: bool):
+    extremum_func = ti.max if maximum else ti.min
+    return (extremum_func(series, period) == series) * 1
+
+
+def is_ath(series: np.array):
+    return (series == np.max(series)) * 1
+
+
+def bars_since_mark(series: np.array):
+    poses, = np.where(series == 1)
+    if poses.size == 1:
+        if not poses:
+            return np.arange(series.size)
+
+        return np.hstack(
+            (
+                np.zeros(poses[0], dtype=np.int8),
+                np.arange(series.size - poses[0])
+            )
+        )
+
+    res = np.zeros(series.size, dtype=np.int8)
+    poses_end = np.append(poses[1:], res.size)
+
+    sizes = poses_end - poses
+
+    for start, end, size in zip(poses, poses_end, sizes):
+        res[start:end] = np.arange(size)
+    return res
+
+
+def change_since_mark(series: np.array, marked: np.array):
+    poses, = np.where(marked == 1)
+    change = np.zeros(marked.size)
+
+    for start, end in zip_longest(poses, poses[1:], fillvalue=None):
+        change[start:end] = (series[start:end] - series[start]) / series[start]
+
+    return change
+
+
+def pct_change(series: np.array):
+    return np.insert(
+        np.diff(series) / series[1:] * 100,
+        0, 0.0
+    )
+
+
+def bars_in_marked(series: np.array):
+    res = np.zeros(series.size, dtype=np.uint64)
+    res[0] = bool(series[0])
+    for i in range(1, series.size):
+        res[i] = (res[i - 1] + 1 if res[i - 1] else 1) if series[i] else 0
+
+    return res
