@@ -125,5 +125,5 @@ def frft(open: np.array, close: np.array, ticks: np.array,
 
 
 # Helpers region
-features_list = [value for key, value in locals().items() if key[1:].isdigit()]
+features_list = [ft, fv, fr, frft]
 inputs = get_inputs(features_list)

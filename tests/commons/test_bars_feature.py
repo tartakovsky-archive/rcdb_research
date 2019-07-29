@@ -3,7 +3,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from commons.bars.feature import feature
+from commons.bars import feature
 
 ERROR = 1e-9
 DATASET = os.path.abspath(
