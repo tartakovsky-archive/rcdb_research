@@ -37,22 +37,19 @@ def df():
                       key='table')[bars.base.BaseConsolidator.COLUMNS[2:]]
 
 
-def test_f1(df):
-    threshold = 0.001
-    df['f1'] = features.cumulative.bars.f1(df.close.values, threshold)
-    assert not df[df['f1'] != 0].empty
+def test_fr(df):
+    threshold = 0.01
+    df['f5'] = features.cumulative.bars.fr(df.open.values, df.close.values,
+                                           threshold)
+    assert not df[df['f5'] != 0].empty
 
-    # df.loc[:, 'bar_no'] = df['f1'].cumsum().shift().fillna(0)
-    # agg_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
-    # agg_df.loc[:, 'log_close_diff'] = np.log(agg_df.close.diff().fillna(0))
-    # agg_df.loc[:, 's_pos'] = agg_df.log_close_diff.apply(lambda x: max(0.0, x))
-    # agg_df.loc[:, 's_neg'] = agg_df.log_close_diff.apply(lambda x: min(0.0, x))
-    # n = agg_df[(agg_df.s_pos < threshold) & (agg_df.s_neg > -threshold)]
-    # assert n.empty
+    df.loc[:, 'bar_no'] = df['f5'].cumsum().shift().fillna(0)
+    agg_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
+    assert agg_df[abs(agg_df.close.pct_change()) < threshold].empty
 
     # Compares with commons.bars
-    feature_index = df[df['f1'] == 1].index.values
-    consolidated_bars = bars.cusum.fixed(df, threshold, timestamp_close=True)
+    feature_index = df[df['f5'] == 1].index.values
+    consolidated_bars = bars.range.fixed(df, threshold, timestamp_close=True)
     consolidated_timestamp_close = consolidated_bars.timestamp_close.values
     timedeltas = [
         td / np.timedelta64(1, 's') == 1
@@ -63,10 +60,9 @@ def test_f1(df):
     assert all(timedeltas)
 
 
-def test_f2(df):
+def test_ft(df):
     threshold = 100
-    df['f2'] = features.cumulative.bars.f2(df.ticks_buy.values,
-                                           df.ticks_sell.values, threshold)
+    df['f2'] = features.cumulative.bars.ft(df.ticks_buy.values + df.ticks_sell.values, threshold)
     assert not df[df['f2'] != 0].empty
 
     df.loc[:, 'bar_no'] = df['f2'].cumsum().shift().fillna(0)
@@ -86,10 +82,11 @@ def test_f2(df):
     assert all(timedeltas)
 
 
-def test_f3(df):
+def test_fv(df):
     threshold = 500
-    df['f3'] = features.cumulative.bars.f3(
+    df['f3'] = features.cumulative.bars.fv(
         df.volume_sell.values + df.volume_buy.values, threshold)
+
     assert not df[df['f3'] != 0].empty
 
     df.loc[:, 'bar_no'] = df['f3'].cumsum().shift().fillna(0)
@@ -112,89 +109,15 @@ def test_f3(df):
     assert all(timedeltas)
 
 
-def test_f4(df):
-    threshold = 10**6
-    df['f4'] = features.cumulative.bars.f4(
-        df.volume_quote_buy.values + df.volume_quote_sell.values, threshold)
-    assert not df[df['f4'] != 0].empty
-
-    df.loc[:, 'bar_no'] = df['f4'].cumsum().shift().fillna(0)
-    agg_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
-    assert agg_df[agg_df.volume_quote_buy +  # noqa
-                  agg_df.volume_quote_sell < threshold].empty
-
-    # Compares with commons.bars
-    feature_index = df[df['f4'] == 1].index.values
-    consolidated_bars = bars.volume.fixed(df, threshold, timestamp_close=True)
-    consolidated_timestamp_close = consolidated_bars.timestamp_close.values
-    timedeltas = [
-        td / np.timedelta64(1, 's') == 1
-        for td in consolidated_timestamp_close - feature_index
-    ]
-    # The timedelta always equals one, because timestamp_close ==
-    # timestamp of row that satisfied the condition + 1s.
-    assert all(timedeltas)
-
-
-def test_f5(df):
-    threshold = 0.01
-    df['f5'] = features.cumulative.bars.f5(df.open.values, df.close.values,
-                                           threshold)
-    assert not df[df['f5'] != 0].empty
-
-    df.loc[:, 'bar_no'] = df['f5'].cumsum().shift().fillna(0)
-    agg_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
-    assert agg_df[abs(agg_df.close.pct_change()) < threshold].empty
-
-    # Compares with commons.bars
-    feature_index = df[df['f5'] == 1].index.values
-    consolidated_bars = bars.range.fixed(df, threshold, timestamp_close=True)
-    consolidated_timestamp_close = consolidated_bars.timestamp_close.values
-    timedeltas = [
-        td / np.timedelta64(1, 's') == 1
-        for td in consolidated_timestamp_close - feature_index
-    ]
-    # The timedelta always equals one, because timestamp_close ==
-    # timestamp of row that satisfied the condition + 1s.
-    assert all(timedeltas)
-
-
-def test_f6(df):
-    threshold = 100
-    df['f6'] = features.cumulative.bars.f6(df.open.values, df.close.values,
-                                           threshold)
-    assert not df[df['f6'] != 0].empty
-
-    df.loc[:, 'bar_no'] = df['f6'].cumsum().shift().fillna(0)
-    new_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
-    assert new_df[abs(new_df.close.diff()) < threshold].iloc[:-1].empty
-
-    # Compares with commons.bars
-    feature_index = df[df['f6'] == 1].index.values
-    consolidated_bars = bars.range.fixed(df,
-                                         threshold,
-                                         threshold_is_absolute=True,
-                                         timestamp_close=True)
-    consolidated_timestamp_close = consolidated_bars.timestamp_close.values
-    timedeltas = [
-        td / np.timedelta64(1, 's') == 1
-        for td in consolidated_timestamp_close - feature_index
-    ]
-    # The timedelta always equals one, because timestamp_close ==
-    # timestamp of row that satisfied the condition + 1s.
-    assert all(timedeltas)
-
-
-def test_f8(df):
+def test_frft(df):
     pct_threshold = 0.01
     ticks_threshold = 5000
-    df['f8'] = features.cumulative.bars.f8(
+    df['f8'] = features.cumulative.bars.frft(
         df.open.values,
         df.close.values,
-        df.ticks_buy.values,
-        df.ticks_sell.values,
+        df.ticks_buy.values + df.ticks_sell.values,
         pct_threshold,
-        ticks_threshold,
+        ticks_threshold
     )
     assert not df[df['f8'] != 0].empty
 
@@ -207,43 +130,6 @@ def test_f8(df):
     feature_index = df[df['f8'] == 1].index.values
     consolidated_bars = bars.hybrid.range_fixed_ticks_fixed(
         df, pct_threshold, ticks_threshold, timestamp_close=True)
-    consolidated_timestamp_close = consolidated_bars.timestamp_close.values
-    timedeltas = [
-        td / np.timedelta64(1, 's') == 1
-        for td in consolidated_timestamp_close - feature_index
-    ]
-    # The timedelta always equals one, because timestamp_close ==
-    # timestamp of row that satisfied the condition + 1s.
-    assert all(timedeltas)
-
-
-def test_f9(df):
-    abs_threshold = 50
-    ticks_threshold = 5000
-    df['f9'] = features.cumulative.bars.f9(
-        df.open.values,
-        df.close.values,
-        df.ticks_buy.values,
-        df.ticks_sell.values,
-        abs_threshold,
-        ticks_threshold,
-    )
-    assert not df[df['f9'] != 0].empty
-
-    df.loc[:, 'bar_no'] = df['f9'].cumsum().shift().fillna(0)
-    agg_df = df.groupby(['bar_no']).agg(AGGREGATE).iloc[:-1]
-    assert agg_df[agg_df.ticks_sell + agg_df.ticks_buy < ticks_threshold].empty
-    assert agg_df[abs(agg_df.close.diff()) < abs_threshold].empty
-
-    # Compares with commons.bars
-    feature_index = df[df['f9'] == 1].index.values
-    consolidated_bars = bars.hybrid.range_fixed_ticks_fixed(
-        df,
-        abs_threshold,
-        ticks_threshold,
-        absolute=True,
-        timestamp_close=True,
-    )
     consolidated_timestamp_close = consolidated_bars.timestamp_close.values
     timedeltas = [
         td / np.timedelta64(1, 's') == 1
