@@ -109,8 +109,6 @@ def adaptive_threshold(series: np.array, avg_per: int, window: int) -> np.array:
     series_threshold = rollin_average(series, window, avg_per)
     bars = []
     agg_sum = 0
-    print(series.shape, series_threshold.shape)
-
     for [v_series, v_threshold] in np.column_stack([series, series_threshold]):
         if np.isnan(v_threshold):
             bars.append(v_threshold)
@@ -124,7 +122,6 @@ def adaptive_threshold(series: np.array, avg_per: int, window: int) -> np.array:
             bars.append(0)
 
     feature = np.array([bars[0]] + bars[:-1])
-    print(feature.shape, series.shape)
     assert feature.shape == series.shape
     return feature
 
