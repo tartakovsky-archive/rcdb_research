@@ -10,7 +10,7 @@ from . import utils
 PREFIX = "dt_holidays"
 
 
-def calc_all(data: pd.DataFrame, param_sets: List[Dict], column_names=None) -> pd.DataFrame:
+def calc_all(data: pd.DatetimeIndex, param_sets: List[Dict], column_names=None) -> pd.DataFrame:
     """
     Calculate all holidays features.
     See supported countries at holidays.utils.supported_countries()
@@ -20,9 +20,15 @@ def calc_all(data: pd.DataFrame, param_sets: List[Dict], column_names=None) -> p
     :param column_names: unused template parameter
     :return: df with features
     """
-    df = data.copy()
+    if type(data) != pd.DatetimeIndex:
+        raise ValueError("calc_all `data` arg expected to be `pd.DateTimeIndex`")
 
-    timestamps = data.index.to_pydatetime()
+    ts_col = "ts"
+    df = pd.DataFrame(dict(data=data.values))
+    df[ts_col] = df['data']
+    df.set_index('data', inplace=True)
+
+    timestamps = data.to_pydatetime()
 
     supported_countries = utils.supported_countries()
     for ps in param_sets:

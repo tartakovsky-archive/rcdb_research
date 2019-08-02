@@ -1,7 +1,7 @@
 from importlib import resources
 
 import pytest
-
+import pandas as pd
 from commons.utils import get_df_from_hdf_bytes
 from commons.features.datetime import components, holidays, markets
 
@@ -10,7 +10,7 @@ from commons.features.datetime import components, holidays, markets
 def data():
     with resources.open_binary("tests.datasets", "bitfinex__BTC_USD.hdf") as f:
         df = get_df_from_hdf_bytes(f.read())
-    return df[[]]
+    return df.index
 
 
 @pytest.mark.parametrize(
@@ -23,6 +23,21 @@ def data():
 )
 def test_calc_all(calc_all, params_set, data):
     assert len(data) == len(calc_all(data, params_set))
+
+
+@pytest.mark.parametrize(
+    "calc_all, params_set",
+    [
+        (components.calc_all, None),
+        (holidays.calc_all, [{"country_name": "US"}, {"country_name": "GB"}]),
+        (markets.calc_all, [{"market": "NYSE"}])
+    ]
+)
+def test_calc_all(calc_all, params_set, data):
+    wrong_data = pd.DataFrame(dict(d=data))
+
+    with pytest.raises(ValueError):
+        calc_all(wrong_data, params_set)
 
 
 @pytest.mark.parametrize(
