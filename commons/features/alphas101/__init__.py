@@ -1,1 +1,1 @@
-from .alphas import get_all, Alphas  # noqa
+from .alphas import *  # noqa

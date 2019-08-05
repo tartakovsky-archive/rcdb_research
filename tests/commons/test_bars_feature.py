@@ -25,14 +25,19 @@ def test_dataset():
 
 
 class TestSmaCrossConsolidate:
-    def calc_sma_cross(self, df, fast, slow):
+    @staticmethod
+    def calc_sma_cross(df, fast, slow):
         sma_fast = df.close.rolling(fast).sum() / fast
         sma_slow = df.close.rolling(slow).sum() / slow
         df['sma_cross'] = np.where(sma_fast > sma_slow, 1, -1)
+        print(df['sma_cross'])
+        df['sma_cross'] = np.where(df['sma_cross'] != df['sma_cross'].shift(1), 1, 0)
+        print(df['sma_cross'])
 
     def test_all_groups_is_consolidated(self, test_dataset):
         df = test_dataset
         self.calc_sma_cross(df, 10, 20)
+        cross_count = df['sma_cross'].sum()
         consolidated = feature(test_dataset, column_name="sma_cross")
         assert not consolidated.empty
-        assert not (consolidated.sma_cross == consolidated.sma_cross.shift(1)).any()
+        assert consolidated.shape[0] == cross_count

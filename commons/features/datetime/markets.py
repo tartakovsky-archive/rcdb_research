@@ -9,7 +9,7 @@ from . import utils
 PREFIX = "dt_markets"
 
 
-def calc_all(data: pd.DataFrame, param_sets: List[Dict] = None, column_names=None):
+def calc_all(data: pd.DatetimeIndex, param_sets: List[Dict] = None, column_names=None):
     """
     Calculate features based on the markets open/close time
 
@@ -25,8 +25,15 @@ def calc_all(data: pd.DataFrame, param_sets: List[Dict] = None, column_names=Non
     :param column_names: unused template parameter
     :return: dataframe with calculated features
     """
-    timestamp = data.index.to_pydatetime()
-    df = data.copy()
+    if type(data) != pd.DatetimeIndex:
+        raise ValueError("calc_all `data` arg expected to be `pd.DateTimeIndex`")
+
+    ts_col = "ts"
+    df = pd.DataFrame(dict(data=data.values))
+    df[ts_col] = df['data']
+    df.set_index('data', inplace=True)
+
+    timestamp = data.to_pydatetime()
 
     markets = {
         'NYSE', 'LSE', 'CME', 'ICE',

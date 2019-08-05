@@ -7,7 +7,7 @@ from .utils import add_datepart
 PREFIX = "dt_components"
 
 
-def calc_all(data: pd.DataFrame, param_sets: List[Dict] = None, column_names=None) -> pd.DataFrame:
+def calc_all(data: pd.DatetimeIndex, param_sets: List[Dict] = None, column_names=None) -> pd.DataFrame:
     """
     Extract datetime components features from datetime by fastai module
     Features:
@@ -20,9 +20,13 @@ def calc_all(data: pd.DataFrame, param_sets: List[Dict] = None, column_names=Non
     :param column_names: unused template parameter
     :return: df with features
     """
+    if type(data) != pd.DatetimeIndex:
+        raise ValueError("calc_all `data` arg expected to be `pd.DateTimeIndex`")
+
     ts_col = "ts"
-    df = data.copy()
-    df[ts_col] = df.index
+    df = pd.DataFrame(dict(data=data.values))
+    df[ts_col] = df['data']
+    df.set_index('data', inplace=True)
 
     add_datepart(df, ts_col, drop=False, time=True)
 
@@ -35,4 +39,5 @@ def calc_all(data: pd.DataFrame, param_sets: List[Dict] = None, column_names=Non
 
     df = df.drop(ts_col, axis=1)
     df.columns = [f"{PREFIX}_{cname}" for cname in df.columns]
+
     return df

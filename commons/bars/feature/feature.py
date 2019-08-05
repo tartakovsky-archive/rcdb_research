@@ -1,6 +1,6 @@
 import pandas as pd
+import numpy as np
 import uuid
-
 
 def feature(
             df: pd.DataFrame,
@@ -11,6 +11,8 @@ def feature(
                                "ticks_buy": 'sum'},
             aggregate_default='first'
         ):
+    # drop_first_bar = np.isnan(df[column_name].values[0])
+
     # prevent bugs with default mutable dict
     aggregate = aggregate.copy()
 
@@ -23,12 +25,21 @@ def feature(
 
     # tmp column for aggregation
     agg_id_name = str(uuid.uuid4())
-    df[agg_id_name] = (df[column_name] != df[column_name].shift(1)).cumsum()
+    df[agg_id_name] = df[column_name].cumsum() # np.where(df[column_name] != df[column_name].shift(1), 1, 0).cumsum()
+    tmp = df[agg_id_name].values
+    tmp[0] = tmp[1]
+    df[agg_id_name] = tmp
 
     # apply default aggregation
+    cols_exists = []
     for col in df.columns:
+        cols_exists.append(col)
         if col not in aggregate:
             aggregate[col] = aggregate_default
+
+    for col in list(aggregate.keys()):
+        if col not in cols_exists:
+            del aggregate[col]
 
     # aggregate
     df_new = df.groupby([agg_id_name]).agg(aggregate)[columns]
@@ -37,5 +48,8 @@ def feature(
     # return original index
     df_new = df_new.set_index(index_tmp_name)
     df_new.index.rename(index_prev_name, inplace=True)
+
+    # if drop_first_bar:
+    #     df_new = df_new[1:]
 
     return df_new
