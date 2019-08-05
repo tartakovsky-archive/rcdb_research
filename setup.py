@@ -1,6 +1,6 @@
 import os
 import pip
-from setuptools import setup
+from setuptools import setup, find_packages
 from pip._internal.req import parse_requirements
 from pip._internal.download import PipSession
 
@@ -40,7 +40,7 @@ print(f"Installing {numpy}")
 install(numpy)
 setup(
     name='commons',
-    packages=['commons'],
+    packages=find_packages(include=["commons*"]),
     install_requires=INSTALL_REQUIREMENTS,
     extras_require={
         "dev": DEV_REQUIREMENTS
