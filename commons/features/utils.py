@@ -30,3 +30,15 @@ def get_namespaces_around(file):
         if os.path.isfile(os.path.join(path, file)) and file[0] != '_'
     ]
     return namespaces
+
+
+def feature_filter(o):
+    try:
+        if inspect.isfunction(o) and o.__name__[0] == "f":
+            int(o.__name__[1:])
+            return True
+
+    except ValueError:
+        pass
+
+    return False
