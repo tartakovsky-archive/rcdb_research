@@ -35,20 +35,23 @@ def get_namespaces_around(file):
     return namespaces
 
 
-ROLLING_WINDOW_CACHE = {}
-
-
-def rolling_window(a: np.array, window: int) -> np.ndarray:
-    cache_key = f"{hash(a.tostring())}_{window}"
-    if cache_key in ROLLING_WINDOW_CACHE:
-        return ROLLING_WINDOW_CACHE[cache_key]
-
+def _rolling_window(a: np.array, window: int):
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
-    res = np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
-    ROLLING_WINDOW_CACHE[cache_key] = res
 
+def rolling_window(a: np.array, window: int, cache: dict = None) -> np.ndarray:
+    if cache is None:
+        return _rolling_window(a, window)
+
+    cache_key = f"{hash(a.tostring())}_{window}"
+    if cache_key in cache:
+        return cache[cache_key]
+
+    res = _rolling_window(a, window)
+
+    cache[cache_key] = res
     return res
 
 
