@@ -64,6 +64,7 @@ def petrosian_fd(series: np.array, window: int) -> np.array:
         window=window,
     )
 
+
 __all__ = ("FEATURE_FUNCS", "PREFIX", "calc_all", *FEATURE_FUNCS.keys())
 
 calc_all = generate_calc_all(PREFIX, FEATURE_FUNCS)

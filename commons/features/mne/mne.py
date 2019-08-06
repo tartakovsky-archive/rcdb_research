@@ -264,36 +264,6 @@ def f15(series: np.array, window: int) -> np.array:
     )
 
 
-@mne_doc_helper(univariate.compute_higuchi_fd)
-def f16(series: np.array, window: int, kmax: int = 10) -> np.array:
-    """
-    Higuchi Fractal Dimension
-
-    :param series:
-    :param window:
-    :param kmax:
-    :return:
-    """
-    return univariate.compute_higuchi_fd(
-        rolling_window(series, window),
-        kmax=kmax
-    )
-
-
-@mne_doc_helper(univariate.compute_katz_fd)
-def f17(series: np.array, window: int) -> np.array:
-    """
-    Katz Fractal Dimension
-
-    :param series:
-    :param window:
-    :return:
-    """
-    return univariate.compute_katz_fd(
-        rolling_window(series, window)
-    )
-
-
 @mne_doc_helper(univariate.compute_zero_crossings)
 def f18(series: np.array, window: int) -> np.array:
     """
