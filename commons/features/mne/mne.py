@@ -108,38 +108,6 @@ def f7(series: np.array, window: int) -> np.array:
     )
 
 
-@mne_doc_helper(univariate.compute_app_entropy)
-def f8(series: np.array, window: int, emb: int = 2, metric: str = 'chebyshev') -> np.array:
-    """
-    Approximate Entropy
-
-    :param series:
-    :param window:
-    :param emb:
-    :param metric:
-    :return:
-    """
-    return univariate.compute_app_entropy(
-        rolling_window(series, window), emb, metric
-    )
-
-
-@mne_doc_helper(univariate.compute_samp_entropy)
-def f9(series: np.array, window: int, emb: int = 2, metric: str = 'chebyshev') -> np.array:
-    """
-    Sample Entropy
-
-    :param series:
-    :param window:
-    :param emb:
-    :param metric:
-    :return:
-    """
-    return univariate.compute_samp_entropy(
-        rolling_window(series, window), emb, metric
-    )
-
-
 @mne_doc_helper(univariate.compute_decorr_time)
 def f10(series: np.array, window: int, sfreq: float = 256.) -> np.array:
     """
@@ -370,27 +338,6 @@ def f21(series: np.array,
     return univariate.compute_spect_entropy(
         sfreq,
         rolling_window(series, window)
-    )
-
-
-@mne_doc_helper(univariate.compute_svd_entropy)
-def f22(series: np.array,
-        window: int,
-        tau: int = 2,
-        emb: int = 10) -> np.array:
-    """
-    SVD entropy
-
-    :param series:
-    :param window:
-    :param tau:
-    :param emb:
-    :return:
-    """
-    return univariate.compute_svd_entropy(
-        rolling_window(series, window),
-        tau=tau,
-        emb=emb
     )
 
 

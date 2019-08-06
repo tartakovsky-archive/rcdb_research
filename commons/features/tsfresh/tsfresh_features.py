@@ -94,27 +94,6 @@ def f4(series: np.array, window: int, chunk_len: int, attr: str, f_agg: str) -> 
     )
 
 
-def f5(series: np.array, window: int, m: int, r: float) -> np.array:
-    """
-    Implements a vectorized Approximate entropy algorithm.
-
-    https://en.wikipedia.org/wiki/Approximate_entropy
-    For short time-series this method is highly dependent on the parameters, but should be stable for N > 2000, see:
-
-    Yentes et al. (2012) - The Appropriate Use of Approximate Entropy and Sample Entropy with Short Data Sets
-    Other shortcomings and alternatives discussed in:
-
-    Richman & Moorman (2000) - Physiological time-series analysis using approximate entropy and sample entropy
-
-    :param series: input data
-    :param window: rolling window size
-    :param m: Length of compared run of data
-    :param r: Filtering level, must be positive
-    :return:
-    """
-    return apply_to_window(fc.approximate_entropy, series, window, m=m, r=r)
-
-
 def f6(series: np.array, window: int, coeff: float, k: int) -> np.array:
     """
     This feature calculator fits the unconditional maximum likelihoodof an autoregressive
@@ -168,22 +147,6 @@ def f8(series: np.array, window: int, lag: int) -> np.array:
         series=series,
         window=window,
         lag=lag
-    )
-
-
-def f9(series: np.array, window: int, max_bins: int) -> np.array:
-    """
-    First bins the values of x into max_bins equidistant bins in each window
-    :param series: input data
-    :param window: rolling window size
-    :param max_bins: the maximal number of bins
-    :return:
-    """
-    return apply_to_window(
-        func=fc.binned_entropy,
-        series=series,
-        window=window,
-        max_bins=max_bins
     )
 
 
@@ -896,25 +859,6 @@ def f51(series: np.array, window: int) -> np.array:
     """
     return apply_to_window(
         func=fc.ratio_value_number_to_time_series_length,
-        series=series,
-        window=window,
-    )
-
-
-def f52(series: np.array, window: int) -> np.array:
-    """
-    Calculate and return sample entropy of each window series.
-
-    References
-
-    [1] http://en.wikipedia.org/wiki/Sample_Entropy
-    [2] https://www.ncbi.nlm.nih.gov/pubmed/10843903?dopt=Abstract
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.sample_entropy,
         series=series,
         window=window,
     )
