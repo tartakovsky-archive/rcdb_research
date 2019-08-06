@@ -1,21 +1,12 @@
 import numpy as np
 
 from . import utils
-from ..utils import generate_calc_all
+from ..utils import generate_calc_all, apply_to_window, feature_registrator_factory
 
 PREFIX = "fracdim"
-
 FEATURE_FUNCS = {}
 
-
-def register_feature(features_dict):
-    def inner(func):
-        features_dict[func.__name__] = func
-        return func
-    return inner
-
-
-register_feature_fracdim = lambda func: register_feature(FEATURE_FUNCS)(func)
+register_feature_fracdim = feature_registrator_factory(FEATURE_FUNCS)
 
 
 @register_feature_fracdim
@@ -27,7 +18,7 @@ def higuchi_fd(series: np.array, window: int, kmax: int = 10) -> np.array:
     :param kmax: (optional, default: 10) Maximum delay/offset (in number of samples)
     :return:
     """
-    return utils.apply_to_window(
+    return apply_to_window(
         func=utils.higuchi_fd,
         series=series,
         window=window,
@@ -43,7 +34,7 @@ def katz_fd(series: np.array, window: int) -> np.array:
     :param window: rolling window size
     :return:
     """
-    return utils.apply_to_window(
+    return apply_to_window(
         func=utils.katz_fd,
         series=series,
         window=window,
@@ -58,7 +49,7 @@ def petrosian_fd(series: np.array, window: int) -> np.array:
     :param window: rolling window size
     :return:
     """
-    return utils.apply_to_window(
+    return apply_to_window(
         func=utils.petrosian_fd,
         series=series,
         window=window,

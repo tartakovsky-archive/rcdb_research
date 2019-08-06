@@ -5,12 +5,6 @@ from numba import jit
 from sklearn.neighbors import KDTree
 from scipy.signal import periodogram, welch
 
-from ..utils import rolling_window
-
-
-def apply_to_window(series: np.array, window: int, func, *args, **kwargs) -> np.array:
-    return np.array([func(x, *args, **kwargs) for x in rolling_window(series, window)])
-
 
 def _embed(x, order=3, delay=1):
     """Time-delay embedding.

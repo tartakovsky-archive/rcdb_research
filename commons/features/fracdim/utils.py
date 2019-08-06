@@ -3,12 +3,6 @@ from math import log, floor
 import numpy as np
 from numba import jit
 
-from ..utils import rolling_window
-
-
-def apply_to_window(series: np.array, window: int, func, *args, **kwargs) -> np.array:
-    return np.array([func(x, *args, **kwargs) for x in rolling_window(series, window)])
-
 
 @jit('UniTuple(float64, 2)(float64[:], float64[:])', nopython=True)
 def _linear_regression(x, y):

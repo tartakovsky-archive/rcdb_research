@@ -2,21 +2,12 @@ import numpy as np
 from scipy import stats as st
 from scipy import ndimage
 
-from ..utils import rolling_window, generate_calc_all
+from ..utils import rolling_window, feature_registrator_factory, generate_calc_all
 
 PREFIX = "stats"
-
 FEATURE_FUNCS = {}
 
-
-def register_feature(features_dict):
-    def inner(func):
-        features_dict[func.__name__] = func
-        return func
-    return inner
-
-
-register_feature_stats = lambda func: register_feature(FEATURE_FUNCS)(func)
+register_feature_stats = feature_registrator_factory(FEATURE_FUNCS)
 
 
 @register_feature_stats

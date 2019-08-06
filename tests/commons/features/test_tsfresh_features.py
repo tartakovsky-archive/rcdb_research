@@ -12,67 +12,42 @@ TEST_LIST = [
 ]
 MULTIPLE_COLUMN_DF = pd.DataFrame({"val1": TEST_LIST, "val2": TEST_LIST})
 PARAMS_SET = {
-    "f1": [{}],
-    "f2": [{"column": "val2"}],
-    "f3": [dict(column="val1", maxlag=3, f_agg="mean")],
-    "f4": [dict(column="val1", chunk_len=3, attr="rvalue", f_agg="mean")],
-    "f6": [dict(column="val1", coeff=0.5, k=2)],
-    "f7": [dict(column="val1", attr="teststate")],
-    "f8": [dict(column="val1", lag=3)],
-    "f10": [dict(column="val1", lag=3)],
-    "f11": [dict(column="val1", ql=.05, qh=.2, isabs=True, f_agg="mean")],
-    "f12": [dict(column="val1", normalize=True)],
-    "f13": [dict(column="val1", )],
-    "f14": [dict(column="val1", )],
-    "f15": [dict(column="val1", num_segments=2, segment_focus=1)],
-    "f16": [dict(column="val1", )],
-    "f17": [dict(column="val1", )],
-    "f18": [dict(column="val1", )],
-    "f19": [dict(column="val1", )],
-    "f20": [dict(column="val1", coeff=0, attr="abs")],
-    "f21": [dict(column="val1", )],
-    "f22": [dict(column="val1", )],
-    # "f23": [dict(column="val1", m=2, r=.7, coeff=1)],
-    "f24": [dict(column="val1", )],
-    "f25": [dict(column="val1", )],
-    "f26": [dict(column="val1", )],
-    "f27": [dict(column="val1", q=.3)],
-    "f28": [dict(column="val1", )],
-    "f29": [dict(column="val1", r=.25)],
-    "f30": [dict(column="val1", )],
-    "f31": [dict(column="val1", )],
-    "f32": [dict(column="val1", attr="pvalue")],
-    "f33": [dict(column="val1", )],
-    "f34": [dict(column="val1", )],
-    # "f35": [dict(column="val1", m=2, r=0.5)],
-    "f36": [dict(column="val1", )],
-    "f37": [dict(column="val1", )],
-    "f38": [dict(column="val1", )],
-    "f39": [dict(column="val1", )],
-    "f40": [dict(column="val1", )],
-    "f41": [dict(column="val1", )],
-    "f42": [dict(column="val1", )],
-    "f43": [dict(column="val1", m=.1)],
-    "f44": [dict(column="val1", n=3)],
-    "f45": [dict(column="val1", lag=3)],
-    "f46": [dict(column="val1", )],
-    "f47": [dict(column="val1", )],
-    "f48": [dict(column="val1", q=.5)],
-    "f49": [dict(column="val1", min=0.1, max=1.)],
-    "f50": [dict(column="val1", r=1.5)],
-    "f51": [dict(column="val1", )],
-    "f53": [dict(column="val1", )],
-    "f54": [dict(column="val1", coeff=2)],
-    "f55": [dict(column="val1", )],
-    "f56": [dict(column="val1", )],
-    "f57": [dict(column="val1", )],
-    "f58": [dict(column="val1", )],
-    "f59": [dict(column="val1", )],
-    "f60": [dict(column="val1", r=.5)],
-    "f61": [dict(column="val1", lag=3)],
-    "f62": [dict(column="val1", value=1.9)],
-    "f63": [dict(column="val1", )],
-    "f64": [dict(column="val1", )],
+    "abs_energy": [{}],
+    "abs_sum_of_changes": [{"column": "val2"}],
+    "agg_linear_trend": [dict(column="val1", chunk_len=3, attr="rvalue", f_agg="mean")],
+    "ar_coefs": [dict(column="val1", coeff=0.5, k=2)],
+    "adf": [dict(column="val1", attr="teststate")],
+    "autocorr": [dict(column="val1", lag=3)],
+    "c3": [dict(column="val1", lag=3)],
+    "change_quantiles": [dict(column="val1", ql=.05, qh=.2, isabs=True, f_agg="mean")],
+    "cid_ce": [dict(column="val1", normalize=True)],
+    "count_above_mean": [dict(column="val1", )],
+    "count_below_mean": [dict(column="val1", )],
+    "energy_ratio_by_chunks": [dict(column="val1", num_segments=2, segment_focus=1)],
+    "fft_agg_centroid": [dict(column="val1", )],
+    "fft_agg_variance": [dict(column="val1", )],
+    "fft_agg_skew": [dict(column="val1", )],
+    "fft_agg_kurtosis": [dict(column="val1", )],
+    "fft_coefficient": [dict(column="val1", coeff=0, attr="abs")],
+    "index_mass_quantile": [dict(column="val1", q=.3)],
+    "large_standard_deviation": [dict(column="val1", r=.25)],
+    "linear_trend": [dict(column="val1", attr="pvalue")],
+    "longest_strike_above_mean": [dict(column="val1", )],
+    "longest_strike_below_mean": [dict(column="val1", )],
+    "mean_second_derivative_central": [dict(column="val1", )],
+    "number_cwt_peaks": [dict(column="val1", n=3)],
+    "partial_autocorrelation": [dict(column="val1", lag=3)],
+    "pct_reoccuring_uniq": [dict(column="val1", )],
+    "pct_reoccuring_all": [dict(column="val1", )],
+    "ratio_beyond_r_sigma": [dict(column="val1", r=1.5)],
+    "uniq_to_all_ratio": [dict(column="val1", )],
+    "spkt_welch_density": [dict(column="val1", coeff=2)],
+    "sum_of_reoccuring_datapoints": [dict(column="val1", )],
+    "sum_of_reoccuring_values": [dict(column="val1", )],
+    "sum_values": [dict(column="val1", )],
+    "symmetry_looking": [dict(column="val1", r=.5)],
+    "time_reversal_asymmetry_statistic": [dict(column="val1", lag=3)],
+    "var_lt_stdev": [dict(column="val1", )],
 }
 
 
@@ -83,23 +58,23 @@ def test_calc_all():
 
 def test_calc_all_column_param():
     ps = {
-        "f1": [{"column": "val2"}],
+        "abs_energy": [{"column": "val2"}],
     }
     res = calc_all(MULTIPLE_COLUMN_DF, ps, 3)
-    assert {f"{PREFIX}_f1_3_val2"} == set(res.columns)
+    assert {f"{PREFIX}_abs_energy_3_val2"} == set(res.columns)
 
 
 @pytest.mark.parametrize(
     "ps",
     [
-        {"f1": [{"column": "val2"}, {"column": "val1"}]},
-        {"f1": [{"column": "__all__"}]},
-        {"f1": [{}]},
+        {"abs_energy": [{"column": "val2"}, {"column": "val1"}]},
+        {"abs_energy": [{"column": "__all__"}]},
+        {"abs_energy": [{}]},
     ]
 )
 def test_calc_all_column_param__all__(ps):
     res = calc_all(MULTIPLE_COLUMN_DF, ps, 3)
-    assert {f"{PREFIX}_f1_3_val1", f"{PREFIX}_f1_3_val2"} == set(res.columns)
+    assert {f"{PREFIX}_abs_energy_3_val1", f"{PREFIX}_abs_energy_3_val2"} == set(res.columns)
 
 
 @pytest.mark.parametrize(

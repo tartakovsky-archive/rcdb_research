@@ -1,12 +1,13 @@
-from typing import Union
-
 import numpy as np
 from tsfresh.feature_extraction import feature_calculators as fc
 
-from ..utils import rolling_window, get_feature_funcs, generate_calc_all
+from ..utils import rolling_window, generate_calc_all, feature_registrator_factory
 
 
 PREFIX = "tsfresh"
+FEATURE_FUNCS = {}
+
+register_feature_tsfresh = feature_registrator_factory(FEATURE_FUNCS)
 
 
 def apply_to_window(func, series, window, to_np=True, *args, **kwargs):
@@ -27,7 +28,8 @@ def apply_parametric_to_window(func, series, window, *args, **kwargs):
     return np.array([x[0][1] for x in res])
 
 
-def f1(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def abs_energy(series: np.array, window: int) -> np.array:
     """
     Returns the absolute energy of the time series which is the sum over the squared values
     :param series: input data
@@ -37,7 +39,8 @@ def f1(series: np.array, window: int) -> np.array:
     return apply_to_window(fc.abs_energy, series, window)
 
 
-def f2(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def abs_sum_of_changes(series: np.array, window: int) -> np.array:
     """
     Returns the sum over the absolute value of consecutive changes in each window of series
     :param series: input data
@@ -47,24 +50,8 @@ def f2(series: np.array, window: int) -> np.array:
     return apply_to_window(fc.absolute_sum_of_changes, series, window)
 
 
-def f3(series: np.array, window: int, maxlag: int, f_agg: str) -> np.array:
-    """
-    Calculates the value of an aggregation function (one of "mean", "var", "std", "median")
-    :param series: input data
-    :param window: rolling window size
-    :param maxlag: is an int and the maximal number of lags to consider
-    :param f_agg: agg function
-    :return:
-    """
-    return apply_parametric_to_window(
-        func=fc.agg_autocorrelation,
-        series=series,
-        window=window,
-        maxlag=maxlag, f_agg=f_agg
-    )
-
-
-def f4(series: np.array, window: int, chunk_len: int, attr: str, f_agg: str) -> np.array:
+@register_feature_tsfresh
+def agg_linear_trend(series: np.array, window: int, chunk_len: int, attr: str, f_agg: str) -> np.array:
     """
     Calculates a linear least-squares regression for values of the time series that
     were aggregated over chunks versus the sequence from 0 up to the number of chunks
@@ -94,7 +81,8 @@ def f4(series: np.array, window: int, chunk_len: int, attr: str, f_agg: str) -> 
     )
 
 
-def f6(series: np.array, window: int, coeff: float, k: int) -> np.array:
+@register_feature_tsfresh
+def ar_coefs(series: np.array, window: int, coeff: float, k: int) -> np.array:
     """
     This feature calculator fits the unconditional maximum likelihoodof an autoregressive
     AR(k) process. The k parameter is the maximum lag of the process
@@ -114,7 +102,8 @@ def f6(series: np.array, window: int, coeff: float, k: int) -> np.array:
     )
 
 
-def f7(series: np.array, window: int, attr: str) -> np.array:
+@register_feature_tsfresh
+def adf(series: np.array, window: int, attr: str) -> np.array:
     """
     The Augmented Dickey-Fuller test is a hypothesis test which checks whether a unit
     root is present in a time series sample. This feature calculator returns the value
@@ -133,7 +122,8 @@ def f7(series: np.array, window: int, attr: str) -> np.array:
     )
 
 
-def f8(series: np.array, window: int, lag: int) -> np.array:
+@register_feature_tsfresh
+def autocorr(series: np.array, window: int, lag: int) -> np.array:
     """
     Calculates the autocorrelation of the specified lag
 
@@ -150,7 +140,8 @@ def f8(series: np.array, window: int, lag: int) -> np.array:
     )
 
 
-def f10(series: np.array, window: int, lag: int) -> np.array:
+@register_feature_tsfresh
+def c3(series: np.array, window: int, lag: int) -> np.array:
     """
     c3
     :param series: input data
@@ -166,7 +157,8 @@ def f10(series: np.array, window: int, lag: int) -> np.array:
     )
 
 
-def f11(series: np.array, window: int, ql: float, qh: float, isabs: bool, f_agg: str) -> np.array:
+@register_feature_tsfresh
+def change_quantiles(series: np.array, window: int, ql: float, qh: float, isabs: bool, f_agg: str) -> np.array:
     """
     First fixes a corridor given by the quantiles ql and qh of the distribution of x. Then calculates the average,
     absolute value of consecutive changes of the series x inside this corridor.
@@ -193,7 +185,8 @@ def f11(series: np.array, window: int, ql: float, qh: float, isabs: bool, f_agg:
     )
 
 
-def f12(series: np.array, window: int, normalize: bool) -> np.array:
+@register_feature_tsfresh
+def cid_ce(series: np.array, window: int, normalize: bool) -> np.array:
     """
     This function calculator is an estimate for a time series complexity [1]
     (A more complex time series has more peaks, valleys etc.).
@@ -214,7 +207,8 @@ def f12(series: np.array, window: int, normalize: bool) -> np.array:
     )
 
 
-def f13(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def count_above_mean(series: np.array, window: int) -> np.array:
     """
     Returns the number of values in x that are higher than the mean of window
     :param series: input data
@@ -228,7 +222,8 @@ def f13(series: np.array, window: int) -> np.array:
     )
 
 
-def f14(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def count_below_mean(series: np.array, window: int) -> np.array:
     """
     Returns the number of values in x that are lower than the mean of window
     :param series: input data
@@ -242,7 +237,8 @@ def f14(series: np.array, window: int) -> np.array:
     )
 
 
-def f15(series: np.array, window: int, num_segments: int, segment_focus: int) -> np.array:
+@register_feature_tsfresh
+def energy_ratio_by_chunks(series: np.array, window: int, num_segments: int, segment_focus: int) -> np.array:
     """
     Calculates the sum of squares of chunk i out of N chunks expressed as a ratio with the
     sum of squares over the whole series.
@@ -270,7 +266,8 @@ def f15(series: np.array, window: int, num_segments: int, segment_focus: int) ->
     )
 
 
-def f16(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def fft_agg_centroid(series: np.array, window: int) -> np.array:
     """
     Returns the spectral centroid (mean) of the absolute fourier transform spectrum.
     :param series: input data
@@ -285,7 +282,8 @@ def f16(series: np.array, window: int) -> np.array:
     )
 
 
-def f17(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def fft_agg_variance(series: np.array, window: int) -> np.array:
     """
     Returns the spectral variance of the absolute fourier transform spectrum.
     :param series: input data
@@ -300,7 +298,8 @@ def f17(series: np.array, window: int) -> np.array:
     )
 
 
-def f18(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def fft_agg_skew(series: np.array, window: int) -> np.array:
     """
     Returns the spectral skew of the absolute fourier transform spectrum.
     :param series: input data
@@ -315,7 +314,8 @@ def f18(series: np.array, window: int) -> np.array:
     )
 
 
-def f19(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def fft_agg_kurtosis(series: np.array, window: int) -> np.array:
     """
     Returns the spectral kurtosis of the absolute fourier transform spectrum.
     :param series: input data
@@ -330,7 +330,8 @@ def f19(series: np.array, window: int) -> np.array:
     )
 
 
-def f20(series: np.array, window: int, coeff: int, attr: str) -> np.array:
+@register_feature_tsfresh
+def fft_coefficient(series: np.array, window: int, coeff: int, attr: str) -> np.array:
     """
     Calculates the fourier coefficients of the one-dimensional discrete
     Fourier Transform for real input by fast fourier transformation algorithm.
@@ -354,108 +355,8 @@ def f20(series: np.array, window: int, coeff: int, attr: str) -> np.array:
     )
 
 
-def f21(series: np.array, window: int) -> np.array:
-    """
-    Returns the first location of the maximum value of x.
-    The position is calculated relatively to the length of x.
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.first_location_of_maximum,
-        series=series,
-        window=window,
-    )
-
-
-def f22(series: np.array, window: int) -> np.array:
-    """
-    Returns the first location of the minimum value of x.
-    The position is calculated relatively to the length of x.
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.first_location_of_minimum,
-        series=series,
-        window=window,
-    )
-
-
-# Todo: raised TypeError: len() of unsized object
-# def f23(series: np.array, window: int, m: int, r: float, coeff: int) -> np.array:
-#     """
-#     Coefficients of polynomial h(x), which has been fitted
-#     to the deterministic dynamics of Langevin model as described by [1].
-#
-#     For short time-series this method is highly dependent on the parameters.
-#
-#     References
-#
-#     [1] Friedrich et al. (2000): Physics Letters A 271, p. 217-222
-#     Extracting model equations from experimental data
-#
-#     :param series: input data
-#     :param window: rolling window size
-#     :param m: the order of polynom to fit for estimating fixed points of dynamics
-#     :param r: the number of quantils to use for averaging
-#     :param coeff: a positive integer corresponding to the returned coefficient
-#     :return:
-#     """
-#     return apply_parametric_to_window(
-#         func=fc.friedrich_coefficients,
-#         series=series,
-#         window=window,
-#         coeff=coeff,
-#         m=m, r=r
-#     )
-
-
-def f24(series: np.array, window: int) -> np.array:
-    """
-    Checks if any value in window occurs more than once
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.has_duplicate,
-        series=series,
-        window=window,
-    )
-
-
-def f25(series: np.array, window: int) -> np.array:
-    """
-    Checks if the maximum value in window occurs more than once
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.has_duplicate_max,
-        series=series,
-        window=window,
-    )
-
-
-def f26(series: np.array, window: int) -> np.array:
-    """
-    Checks if the minimum value in window occurs more than once
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.has_duplicate_max,
-        series=series,
-        window=window,
-    )
-
-
-def f27(series: np.array, window: int, q: float) -> np.array:
+@register_feature_tsfresh
+def index_mass_quantile(series: np.array, window: int, q: float) -> np.array:
     """
     Those apply features calculate the relative index i where q%
     of the mass of the time series x lie left of i. For example
@@ -474,22 +375,8 @@ def f27(series: np.array, window: int, q: float) -> np.array:
     )
 
 
-def f28(series: np.array, window: int) -> np.array:
-    """
-    Returns the kurtosis for each window
-    (calculated with the adjusted Fisher-Pearson standardized moment coefficient G2).
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.kurtosis,
-        series=series,
-        window=window,
-    )
-
-
-def f29(series: np.array, window: int, r: float) -> np.array:
+@register_feature_tsfresh
+def large_standard_deviation(series: np.array, window: int, r: float) -> np.array:
     """
     Variable denoting if the standard dev of x is higher than
     ‘r’ times the range = difference between max and min of x
@@ -506,35 +393,8 @@ def f29(series: np.array, window: int, r: float) -> np.array:
     ) * 1
 
 
-def f30(series: np.array, window: int) -> np.array:
-    """
-    Returns the relative last location of the maximum value of window
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.last_location_of_maximum,
-        series=series,
-        window=window,
-    )
-
-
-def f31(series: np.array, window: int) -> np.array:
-    """
-    Returns the relative last location of the minimum value of window
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.last_location_of_minimum,
-        series=series,
-        window=window,
-    )
-
-
-def f32(series: np.array, window: int, attr: str) -> np.array:
+@register_feature_tsfresh
+def linear_trend(series: np.array, window: int, attr: str) -> np.array:
     """
     Calculate a linear least-squares regression for the values of
     the window versus the sequence from 0 to length of the window minus one.
@@ -556,7 +416,8 @@ def f32(series: np.array, window: int, attr: str) -> np.array:
     )
 
 
-def f33(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def longest_strike_above_mean(series: np.array, window: int) -> np.array:
     """
     Returns the length of the longest consecutive subsequence
     in x that is bigger than the mean of each window series
@@ -571,7 +432,8 @@ def f33(series: np.array, window: int) -> np.array:
     )
 
 
-def f34(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def longest_strike_below_mean(series: np.array, window: int) -> np.array:
     """
     Returns the length of the longest consecutive subsequence
     in x that is smaller than the mean of each window series
@@ -585,84 +447,9 @@ def f34(series: np.array, window: int) -> np.array:
         window=window,
     )
 
-# Todo: raised TypeError: len() of unsized object
-# def f35(series: np.array, window: int, m: int, r: int) -> np.array:
-#     """
-#     Largest fixed point of dynamics :math:argmax_x {h(x)=0}` estimated from polynomial h(x),
-#     which has been fitted to the deterministic dynamics of Langevin model
-#     :param series: input data
-#     :param window: rolling window size
-#     :param m: order of polynom to fit for estimating fixed points of dynamics
-#     :param r: number of quantils to use for averaging
-#     :return:
-#     """
-#     return apply_to_window(
-#         func=fc.max_langevin_fixed_point,
-#         series=series,
-#         window=window,
-#         m=m, r=r
-#     )
 
-
-def f36(series: np.array, window: int) -> np.array:
-    """
-    Calculates the highest value of each window time series.
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.maximum,
-        series=series,
-        window=window,
-    )
-
-
-def f37(series: np.array, window: int) -> np.array:
-    """
-    Calculates the mean value of each window time series.
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.mean,
-        series=series,
-        window=window,
-    )
-
-
-def f38(series: np.array, window: int) -> np.array:
-    """
-    Returns the mean over the absolute differences
-    between subsequent time series values of each window time series
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.mean_abs_change,
-        series=series,
-        window=window,
-    )
-
-
-def f39(series: np.array, window: int) -> np.array:
-    """
-    Returns the mean over the differences
-    between subsequent time series values of each window time series
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.mean_change,
-        series=series,
-        window=window,
-    )
-
-
-def f40(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def mean_second_derivative_central(series: np.array, window: int) -> np.array:
     """
     Returns the mean value of a central approximation of the second derivative
     :param series: input data
@@ -676,51 +463,8 @@ def f40(series: np.array, window: int) -> np.array:
     )
 
 
-def f41(series: np.array, window: int) -> np.array:
-    """
-    Returns the median of each window series
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.median,
-        series=series,
-        window=window,
-    )
-
-
-def f42(series: np.array, window: int) -> np.array:
-    """
-    Calculates the lowest value of each window series
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.median,
-        series=series,
-        window=window,
-    )
-
-
-def f43(series: np.array, window: int, m: float) -> np.array:
-    """
-    Calculates the number of crossings of each window series on m
-    :param series: input data
-    :param window: rolling window size
-    :param m: the threshold for the crossing
-    :return:
-    """
-    return apply_to_window(
-        func=fc.number_crossing_m,
-        series=series,
-        window=window,
-        m=m
-    )
-
-
-def f44(series: np.array, window: int, n: int) -> np.array:
+@register_feature_tsfresh
+def number_cwt_peaks(series: np.array, window: int, n: int) -> np.array:
     """
     This feature calculator searches for different peaks in x.
     To do so, window series is smoothed by a ricker wavelet and for widths
@@ -741,7 +485,8 @@ def f44(series: np.array, window: int, n: int) -> np.array:
     )
 
 
-def f45(series: np.array, window: int, lag: int) -> np.array:
+@register_feature_tsfresh
+def partial_autocorrelation(series: np.array, window: int, lag: int) -> np.array:
     """
     Calculates the value of the partial autocorrelation function at the given lag.
     The lag k partial autocorrelation of a time series
@@ -763,7 +508,8 @@ def f45(series: np.array, window: int, lag: int) -> np.array:
     )
 
 
-def f46(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def pct_reoccuring_uniq(series: np.array, window: int) -> np.array:
     """
     Returns the percentage of unique values, that are present in the window time series more than once.
         len(different values occurring more than once) / len(different values)
@@ -781,7 +527,8 @@ def f46(series: np.array, window: int) -> np.array:
     )
 
 
-def f47(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def pct_reoccuring_all(series: np.array, window: int) -> np.array:
     """
     Returns the ratio of unique values, that are present in the window time series more than once.
         # of data points occurring more than once / # of all data points
@@ -799,41 +546,8 @@ def f47(series: np.array, window: int) -> np.array:
     )
 
 
-def f48(series: np.array, window: int, q: float) -> np.array:
-    """
-    Calculates the q quantile of each window series.
-    This is the value of x greater than q% of the ordered values from window series.
-    :param series: input data
-    :param window: rolling window size
-    :param q: the quantile to calculate
-    :return:
-    """
-    return apply_to_window(
-        func=fc.quantile,
-        series=series,
-        window=window,
-        q=q
-    )
-
-
-def f49(series: np.array, window: int, min: Union[int, float], max: Union[int, float]) -> np.array:
-    """
-    Count observed values within the interval [min, max).
-    :param series: input data
-    :param window: rolling window size
-    :param min: the inclusive lower bound of the range
-    :param max: the exclusive upper bound of the range
-    :return:
-    """
-    return apply_to_window(
-        func=fc.range_count,
-        series=series,
-        window=window,
-        min=min, max=max
-    )
-
-
-def f50(series: np.array, window: int, r: float) -> np.array:
+@register_feature_tsfresh
+def ratio_beyond_r_sigma(series: np.array, window: int, r: float) -> np.array:
     """
     Ratio of values that are more than r*std(x) (so r sigma) away from the mean of each window series.
     :param series: input data
@@ -849,7 +563,8 @@ def f50(series: np.array, window: int, r: float) -> np.array:
     )
 
 
-def f51(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def uniq_to_all_ratio(series: np.array, window: int) -> np.array:
     """
     Returns a factor which is 1 if all values in the time series occur only once,
     and below one if this is not the case. In principle, it just returns
@@ -864,22 +579,8 @@ def f51(series: np.array, window: int) -> np.array:
     )
 
 
-def f53(series: np.array, window: int) -> np.array:
-    """
-    Returns the sample skewness of each window series
-    (calculated with the adjusted Fisher-Pearson standardized moment coefficient G1).
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.skewness,
-        series=series,
-        window=window,
-    )
-
-
-def f54(series: np.array, window: int, coeff: int) -> np.array:
+@register_feature_tsfresh
+def spkt_welch_density(series: np.array, window: int, coeff: int) -> np.array:
     """
     This feature calculator estimates the cross power spectral density of each window series at different frequencies.
     To do so, the time series is first shifted from the time domain to the frequency domain.
@@ -898,21 +599,8 @@ def f54(series: np.array, window: int, coeff: int) -> np.array:
     )
 
 
-def f55(series: np.array, window: int) -> np.array:
-    """
-    Returns the standard deviation of each window series
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.standard_deviation,
-        series=series,
-        window=window,
-    )
-
-
-def f56(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def sum_of_reoccuring_datapoints(series: np.array, window: int) -> np.array:
     """
     Returns the sum of all data points, that are present in the time series more than once.
     :param series: input data
@@ -926,21 +614,8 @@ def f56(series: np.array, window: int) -> np.array:
     )
 
 
-def f57(series: np.array, window: int) -> np.array:
-    """
-    Returns the sum of all values, that are present in the time series more than once.
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.sum_of_reoccurring_data_points,
-        series=series,
-        window=window,
-    )
-
-
-def f58(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def sum_of_reoccuring_values(series: np.array, window: int) -> np.array:
     """
     Returns the sum of all values, that are present in the time series more than once.
     :param series: input data
@@ -954,7 +629,8 @@ def f58(series: np.array, window: int) -> np.array:
     )
 
 
-def f59(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def sum_values(series: np.array, window: int) -> np.array:
     """
     Calculates the sum over the time series values
     :param series: input data
@@ -968,7 +644,8 @@ def f59(series: np.array, window: int) -> np.array:
     )
 
 
-def f60(series: np.array, window: int, r: float) -> np.array:
+@register_feature_tsfresh
+def symmetry_looking(series: np.array, window: int, r: float) -> np.array:
     """
     Variable denoting if the distribution of x looks symmetric
     :param series: input data
@@ -984,7 +661,8 @@ def f60(series: np.array, window: int, r: float) -> np.array:
     ) * 1
 
 
-def f61(series: np.array, window: int, lag: int) -> np.array:
+@register_feature_tsfresh
+def time_reversal_asymmetry_statistic(series: np.array, window: int, lag: int) -> np.array:
     """
     Times reversal asymmetry statistic
     :param series: input data
@@ -1000,37 +678,8 @@ def f61(series: np.array, window: int, lag: int) -> np.array:
     )
 
 
-def f62(series: np.array, window: int, value: Union[int, float]) -> np.array:
-    """
-    Count occurrences of value in each window series
-    :param series: input data
-    :param window: rolling window size
-    :param value: the value to be counted
-    :return:
-    """
-    return apply_to_window(
-        func=fc.value_count,
-        series=series,
-        window=window,
-        value=value
-    )
-
-
-def f63(series: np.array, window: int) -> np.array:
-    """
-    Returns the variance of each window series
-    :param series: input data
-    :param window: rolling window size
-    :return:
-    """
-    return apply_to_window(
-        func=fc.variance,
-        series=series,
-        window=window,
-    )
-
-
-def f64(series: np.array, window: int) -> np.array:
+@register_feature_tsfresh
+def var_lt_stdev(series: np.array, window: int) -> np.array:
     """
     Boolean (0 or 1) variable denoting if the variance of each window series
     is greater than its standard deviation.
@@ -1045,8 +694,6 @@ def f64(series: np.array, window: int) -> np.array:
         window=window,
     )
 
-
-FEATURE_FUNCS = get_feature_funcs(__name__)
 
 __all__ = ("FEATURE_FUNCS", "PREFIX", "calc_all", *FEATURE_FUNCS.keys())
 
