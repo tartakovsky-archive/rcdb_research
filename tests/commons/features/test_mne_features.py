@@ -62,7 +62,7 @@ def test_calc_all_column_param__all__(ps):
 @pytest.mark.parametrize(
     "ps",
     [
-        {"f8": [{"emb": 3}, {"emb": 4}]},
+        {"f10": [{"sfreq": 270.}, {"sfreq": 170.}]},
         {"f10": [{"sfreq": 270.}]},
     ]
 )
