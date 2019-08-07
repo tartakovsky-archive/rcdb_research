@@ -1,7 +1,7 @@
 import os
 import sys
 import inspect
-from typing import Dict, List
+from typing import Dict, List, Callable
 
 import numpy as np
 import pandas as pd
@@ -114,3 +114,19 @@ def generate_calc_all(prefix: str, feature_funcs: dict):
         return df
 
     return calc_all
+
+
+def apply_to_window(series: np.array, window: int, func: Callable, *args, **kwargs) -> np.array:
+    return np.array([func(x, *args, **kwargs) for x in rolling_window(series, window)])
+
+
+def feature_registrator_factory(features_dict):
+
+    def register_feature(features_dict):
+        def inner(func):
+            features_dict[func.__name__] = func
+            return func
+
+        return inner
+
+    return register_feature(features_dict)

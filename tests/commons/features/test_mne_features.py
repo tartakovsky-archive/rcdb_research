@@ -17,7 +17,7 @@ SINGLE_COLUMN_DF = pd.DataFrame(TEST_LIST * 20, columns=["val"])
     [
         (
             pd.DataFrame(TEST_LIST, columns=["val"]),
-            dict(f30=[dict(column="val")]),
+            dict(nonlin_interdep=[dict(column="val")]),
             18,
             None
         ),
@@ -28,10 +28,10 @@ SINGLE_COLUMN_DF = pd.DataFrame(TEST_LIST * 20, columns=["val"])
                 350,
                 dict(val="val")
             )
-            for feature in FEATURE_FUNCS if feature != "f30"
+            for feature in FEATURE_FUNCS if feature != "nonlin_interdep"
         ]
     ],
-    ids=["f30"] + [feature for feature in FEATURE_FUNCS if feature != "f30"]
+    ids=["nonlin_interdep"] + [feature for feature in FEATURE_FUNCS if feature != "nonlin_interdep"]
 )
 def test_calc_all(data, param_set, window, column_names):
     res = calc_all(data, param_set, window, column_names)
@@ -40,30 +40,30 @@ def test_calc_all(data, param_set, window, column_names):
 
 def test_calc_all_column_param():
     ps = {
-        "f1": [{"column": "val2"}]
+        "ptp_amp": [{"column": "val2"}]
     }
     res = calc_all(MULTIPLE_COLUMN_DF, ps, 3)
-    assert {f"{PREFIX}_f1_3_val2"} == set(res.columns)
+    assert {f"{PREFIX}_ptp_amp_3_val2"} == set(res.columns)
 
 
 @pytest.mark.parametrize(
     "ps",
     [
-        {"f1": [{"column": "val2"}, {"column": "val1"}]},
-        {"f1": [{"column": "__all__"}]},
-        {"f1": [{}]},
+        {"ptp_amp": [{"column": "val2"}, {"column": "val1"}]},
+        {"ptp_amp": [{"column": "__all__"}]},
+        {"ptp_amp": [{}]},
     ]
 )
 def test_calc_all_column_param__all__(ps):
     res = calc_all(MULTIPLE_COLUMN_DF, ps, 3)
-    assert {f"{PREFIX}_f1_3_val1", f"{PREFIX}_f1_3_val2"} == set(res.columns)
+    assert {f"{PREFIX}_ptp_amp_3_val1", f"{PREFIX}_ptp_amp_3_val2"} == set(res.columns)
 
 
 @pytest.mark.parametrize(
     "ps",
     [
-        {"f8": [{"emb": 3}, {"emb": 4}]},
-        {"f10": [{"sfreq": 270.}]},
+        {"decorr_time": [{"sfreq": 270.}, {"sfreq": 170.}]},
+        {"decorr_time": [{"sfreq": 270.}]},
     ]
 )
 def test_calc_all_custom_feature_params(ps):
