@@ -129,4 +129,4 @@ def feature_registrator_factory(features_dict):
 
         return inner
 
-    return lambda func: register_feature(features_dict)(func)
+    return register_feature(features_dict)
