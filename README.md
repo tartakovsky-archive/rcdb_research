@@ -1,4 +1,5 @@
 ## Installing
+First install [ta-lib`s dependencies](http://mrjbq7.github.io/ta-lib/install.html)  
 
 `# pip install --extra-index-url $(cat extra-index-url) .` - install requirements from source  
 `# pip install --extra-index-url $(cat extra-index-url) -e .[dev]` - install requirements from source for developing  
