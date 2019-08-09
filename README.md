@@ -1,9 +1,19 @@
-## Installing
+# research-notebooks
 
-`# pip install --extra-index-url $(cat extra-index-url) .` - install requirements from source  
-`# pip install --extra-index-url $(cat extra-index-url) -e .[dev]` - install requirements from source for developing  
-`# pip install --extra-index-url $(cat extra-index-url) -e <git url>` - install requirements from git  
-`# jupyter notebook` - start jupyter  
+## Installation/upgrade from inside of Jupyter
+
+Run the following in the terminal, you'll be prompted for github credentials:
+
+```bash
+$ pip install -U git+https://github.com/tartakovsky-archive/research-notebooks
+```
+
+## Installation for development
+
+`$ pip install --extra-index-url $(cat extra-index-url) .` - install requirements from source  
+`$ pip install --extra-index-url $(cat extra-index-url) -e '.[dev]'` - install requirements from source for development  
+`$ pip install --extra-index-url $(cat extra-index-url) -e <git url>` - install requirements from git  
+`$ jupyter notebook` - start jupyter  
 
 See examples at `./notebooks/alex_o/`
 
