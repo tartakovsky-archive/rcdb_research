@@ -5,14 +5,18 @@ import numpy as np
 from ..features.utils import rolling_window
 
 
-def _cond_after_n_bars(series: np.array, n: int, condition_func: Callable = lambda current, after_n_bars: True) -> np.array:
+def _cond_after_n_bars(
+    series: np.array,
+    n: int,
+    condition_func: Callable = lambda current, after_n_bars: True
+) -> np.array:
     r = np.delete(rolling_window(series, n + 2), [j for j in range(1, n + 1)], axis=1).transpose()
     return np.hstack(
-            (
-                condition_func(r[0], r[1]) * 1,
-                [np.nan for _ in range(n + 1)]
-            )
+        (
+            condition_func(r[0], r[1]) * 1,
+            [np.nan for _ in range(n + 1)]
         )
+    )
 
 
 def label_direction(series: np.array) -> np.array:
