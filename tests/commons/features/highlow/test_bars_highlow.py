@@ -35,7 +35,7 @@ def test_calc_all(params_set, data):
     test_cols = {
         f"{highlow.PREFIX}_f1", f"{highlow.PREFIX}_f4",
         f"{highlow.PREFIX}_f7", f"{highlow.PREFIX}_f8", f"{highlow.PREFIX}_f9",
-        *[f"{highlow.PREFIX}_f{f}{p['period']}" for f in [2, 3, 5, 6, 10, 11] for p in params_set]
+        *[f"{highlow.PREFIX}_f{f}_{p['period']}" for f in [2, 3, 5, 6, 10, 11] for p in params_set]
     }
     assert set(res.columns) == test_cols
 

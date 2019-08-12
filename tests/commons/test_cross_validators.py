@@ -1,4 +1,6 @@
 import pytest
+import numpy as np
+
 from commons.cross_validators import WalkForwardCV
 
 
@@ -9,7 +11,8 @@ def walk_forward_cv():
         test_size=0.3
     )
 
-def test_init_WalkForwardCV(walk_forward_cv):
+
+def test_walkforward_init(walk_forward_cv):
     assert walk_forward_cv.n_splits is not None
     assert walk_forward_cv.test_size is not None
     assert walk_forward_cv.gap_size is not None
@@ -25,8 +28,8 @@ def test_init_WalkForwardCV(walk_forward_cv):
         (1, 1),
     ]
 )
-def test_init_WalkForwardCV_wrong_sizes(test_size, gap_size):
-    with pytest.raises(AssertionError):
+def test_walkforward_init_wrong_sizes(test_size, gap_size):
+    with pytest.raises(ValueError):
         WalkForwardCV(
             10,
             test_size=test_size,
@@ -34,7 +37,7 @@ def test_init_WalkForwardCV_wrong_sizes(test_size, gap_size):
         )
 
 
-def test_WalkForwardCV_get_n_split(walk_forward_cv):
+def test_walkforward_get_n_split(walk_forward_cv):
     assert walk_forward_cv.n_splits == walk_forward_cv.get_n_splits()
 
 
@@ -42,7 +45,8 @@ def test_WalkForwardCV_get_n_split(walk_forward_cv):
     "expanding",
     [True, False]
 )
-def test_WalkForwardCV_split_expanding(expanding, n_splits=10, test_X=range(100)):
+def test_walkforward_split_expanding(
+        expanding, n_splits=10, test_X=range(100)):
     cv = WalkForwardCV(
         n_splits=n_splits,
         test_size=0.3,
@@ -58,3 +62,16 @@ def test_WalkForwardCV_split_expanding(expanding, n_splits=10, test_X=range(100)
     else:
         assert splits[0][0][0] == 0
         assert all(split[0][0] != 0 for split in splits[1:])
+
+
+def test_walkforward_split_not_enough_data(walk_forward_cv):
+    with pytest.raises(ValueError):
+        list(walk_forward_cv.split([]))
+
+
+def test_walkforward_split_to_many_splits():
+    with pytest.raises(ValueError):
+        cv = WalkForwardCV(20, gap_size=0.3, test_size=0.5)
+        list(
+            cv.split(np.arange(25))
+        )

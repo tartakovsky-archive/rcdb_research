@@ -39,12 +39,12 @@ def calc_all(
     for ps in param_set:
         period = ps["period"]
 
-        df[f"{PREFIX}_f2{period}"] = f2(high, period)
-        df[f"{PREFIX}_f3{period}"] = f3(low, period)
-        df[f"{PREFIX}_f5{period}"] = f5(high, period)
-        df[f"{PREFIX}_f6{period}"] = f6(low, period)
-        df[f"{PREFIX}_f10{period}"] = f10(high, period)
-        df[f"{PREFIX}_f11{period}"] = f11(low, period)
+        df[f"{PREFIX}_f2_{period}"] = f2(high, period)
+        df[f"{PREFIX}_f3_{period}"] = f3(low, period)
+        df[f"{PREFIX}_f5_{period}"] = f5(high, period)
+        df[f"{PREFIX}_f6_{period}"] = f6(low, period)
+        df[f"{PREFIX}_f10_{period}"] = f10(high, period)
+        df[f"{PREFIX}_f11_{period}"] = f11(low, period)
 
     return df
 
