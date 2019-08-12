@@ -10,21 +10,19 @@ TEST_N = 2
 
 
 @pytest.mark.parametrize(
-    "func, test_not_nan_part",
+    "func, test_res",
     [
-        (higher_after_n_bars, [1, 0, 0, 0, 1]),
-        (lower_after_n_bars, [0, 0, 1, 1, 0]),
-        (n_consecutive_up, [1, 1, 0, 0, 0, 1]),
-        (n_consecutive_down, [0, 0, 0, 1, 0, 0]),
+        (higher_after_n_bars, [1, 1, 0, 0, 1, 1, np.nan, np.nan]),
+        (lower_after_n_bars, [0, 0, 1, 1, 0, 0, np.nan, np.nan]),
+        (n_consecutive_up, [1, 1, 0, 0, 0, 1, np.nan, np.nan]),
+        (n_consecutive_down, [0, 0, 0, 1, 0, 0, np.nan, np.nan]),
     ]
 )
-def test_labeling(func, test_not_nan_part):
+def test_labeling(func, test_res):
     r = func(TEST_SERIES, TEST_N)
-
-    nan_part_size = r.size - len(test_not_nan_part)
-    assert np.isnan(r[-nan_part_size:]).all()
+    assert np.isnan(r[-TEST_N:]).all()
 
     assert np.array_equal(
-        r[:-nan_part_size],
-        test_not_nan_part
+        r[:-TEST_N],
+        test_res[:-TEST_N]
     )

@@ -10,11 +10,11 @@ def _cond_after_n_bars(
     n: int,
     condition_func: Callable = lambda current, after_n_bars: True
 ) -> np.array:
-    r = np.delete(rolling_window(series, n + 2), [j for j in range(1, n + 1)], axis=1).transpose()
+    r = np.delete(rolling_window(series, n + 1), [j for j in range(1, n)], axis=1).transpose()
     return np.hstack(
         (
             condition_func(r[0], r[1]) * 1,
-            [np.nan for _ in range(n + 1)]
+            [np.nan for _ in range(n)]
         )
     )
 
