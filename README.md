@@ -1,5 +1,8 @@
 # research-notebooks
 
+## Dependencies
+First install [ta-lib`s dependencies](http://mrjbq7.github.io/ta-lib/install.html)  
+
 ## Installation/upgrade from inside of Jupyter
 
 Run the following in the terminal, you'll be prompted for github credentials:
