@@ -1,16 +1,11 @@
-from importlib import resources
-
 import pytest
 import pandas as pd
-from commons.utils import get_df_from_hdf_bytes
 from commons.features.datetime import components, holidays, markets
 
 
 @pytest.fixture(scope="module")
-def data():
-    with resources.open_binary("tests.datasets", "bitfinex__BTC_USD.hdf") as f:
-        df = get_df_from_hdf_bytes(f.read())
-    return df.index
+def data(ohlcv_df):
+    return ohlcv_df.index
 
 
 @pytest.mark.parametrize(
