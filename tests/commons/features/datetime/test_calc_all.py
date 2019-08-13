@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-from commons.utils import get_df_from_hdf_bytes
 from commons.features.datetime import components, holidays, markets, calc_all
 
 
