@@ -1,9 +1,6 @@
-from importlib import resources
-
 import pytest
 import numpy as np
 
-from commons.utils import get_df_from_hdf_bytes
 from commons.features import highlow
 
 
@@ -12,10 +9,8 @@ TEST_PERIOD = 3
 
 
 @pytest.fixture(scope="module")
-def data():
-    with resources.open_binary("tests.datasets", "bitfinex__BTC_USD.hdf") as f:
-        df = get_df_from_hdf_bytes(f.read())
-    return df[["high", "low", "close"]][:len(df) // 2]
+def data(ohlcv_df):
+    return ohlcv_df[["high", "low", "close"]][:len(ohlcv_df) // 2]
 
 
 @pytest.fixture(
