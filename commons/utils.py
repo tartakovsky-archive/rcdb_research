@@ -169,7 +169,7 @@ def fn_call_wrapper(fn, kwargs, transforms):
     return TransformDelayed(fn(**kwargs), transforms).eval()
 
 
-def calc_all_config(data: pd.DataFrame, config: Dict, n_jobs=1, dask_cluster=None, verbose=False) -> pd.DataFrame:
+def calc_all_config(data: pd.DataFrame, config: Dict, n_jobs=1, dask=False, verbose=False) -> pd.DataFrame:
     """
     Example usage:
 
@@ -206,12 +206,9 @@ def calc_all_config(data: pd.DataFrame, config: Dict, n_jobs=1, dask_cluster=Non
                    1 = don't use paralell code, -1 == CPU count
     :return:
     """
-    joblib_client = "loky"
 
-    client = None
-    if dask_cluster:
-        from dask.distributed import Client
-        client = Client(dask_cluster)
+    joblib_client = "loky"
+    if dask:
         joblib_client = "dask"
 
     with joblib.parallel_backend(joblib_client, n_jobs=n_jobs):
