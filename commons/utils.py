@@ -1,12 +1,20 @@
+import subprocess
+import os
+import re
 import pandas as pd
+import numpy as np
+
+from typing import List, Dict, Callable
+from joblib import Parallel, delayed
+from sklearn.model_selection import ParameterGrid
 
 
 def store_df_to_hdf_bytes(df: pd.DataFrame, key: str = "table") -> bytes:
     with pd.HDFStore(
-        "hdfs.tmp",
-        mode="w",
-        driver_core_backing_store=0,
-        driver="H5FD_CORE"
+            "hdfs.tmp",
+            mode="w",
+            driver_core_backing_store=0,
+            driver="H5FD_CORE"
     ) as out:
         out[key] = df
         return out._handle.get_file_image()
@@ -14,10 +22,368 @@ def store_df_to_hdf_bytes(df: pd.DataFrame, key: str = "table") -> bytes:
 
 def get_df_from_hdf_bytes(hdf_bytes: bytes, key: str = "table") -> pd.DataFrame:
     with pd.HDFStore(
-        "hdfs.tmp",
-        mode="r",
-        driver_core_backing_store=0,
-        driver_core_image=hdf_bytes,
-        driver="H5FD_CORE",
+            "hdfs.tmp",
+            mode="r",
+            driver_core_backing_store=0,
+            driver_core_image=hdf_bytes,
+            driver="H5FD_CORE",
     ) as storage:
         return storage[key]
+
+
+def available_cpu_count():
+    """ Number of available virtual or physical CPUs on this system, i.e.
+    user/real as output by time(1) when called with an optimally scaling
+    userspace-only program"""
+
+    # cpuset
+    # cpuset may restrict the number of *available* processors
+    try:
+        m = re.search(r'(?m)^Cpus_allowed:\s*(.*)$',
+                      open('/proc/self/status').read())
+        if m:
+            res = bin(int(m.group(1).replace(',', ''), 16)).count('1')
+            if res > 0:
+                return res
+    except IOError:
+        pass
+
+    # Python 2.6+
+    try:
+        import multiprocessing
+        return multiprocessing.cpu_count()
+    except (ImportError, NotImplementedError):
+        pass
+
+    # https://github.com/giampaolo/psutil
+    try:
+        import psutil
+        return psutil.cpu_count()  # psutil.NUM_CPUS on old versions
+    except (ImportError, AttributeError):
+        pass
+
+    # POSIX
+    try:
+        res = int(os.sysconf('SC_NPROCESSORS_ONLN'))
+
+        if res > 0:
+            return res
+    except (AttributeError, ValueError):
+        pass
+
+    # Windows
+    try:
+        res = int(os.environ['NUMBER_OF_PROCESSORS'])
+
+        if res > 0:
+            return res
+    except (KeyError, ValueError):
+        pass
+
+    # jython
+    try:
+        from java.lang import Runtime
+        runtime = Runtime.getRuntime()
+        res = runtime.availableProcessors()
+        if res > 0:
+            return res
+    except ImportError:
+        pass
+
+    # BSD
+    try:
+        sysctl = subprocess.Popen(['sysctl', '-n', 'hw.ncpu'],
+                                  stdout=subprocess.PIPE)
+        scStdout = sysctl.communicate()[0]
+        res = int(scStdout)
+
+        if res > 0:
+            return res
+    except (OSError, ValueError):
+        pass
+
+    # Linux
+    try:
+        res = open('/proc/cpuinfo').read().count('processor\t:')
+
+        if res > 0:
+            return res
+    except IOError:
+        pass
+
+    # Solaris
+    try:
+        pseudoDevices = os.listdir('/devices/pseudo/')
+        res = 0
+        for pseudo_device in pseudoDevices:
+            if re.match(r'^cpuid@[0-9]+$', pseudo_device):
+                res += 1
+
+        if res > 0:
+            return res
+    except OSError:
+        pass
+
+    # Other UNIXes (heuristic)
+    try:
+        try:
+            dmesg = open('/var/run/dmesg.boot').read()
+        except IOError:
+            dmesgProcess = subprocess.Popen(['dmesg'], stdout=subprocess.PIPE)
+            dmesg = dmesgProcess.communicate()[0]
+
+        res = 0
+        while '\ncpu' + str(res) + ':' in dmesg:
+            res += 1
+
+        if res > 0:
+            return res
+    except OSError:
+        pass
+
+    raise Exception('Can not determine number of CPUs on this system')
+
+
+def calc_all_parallel(func_calls_tasks, n_jobs=-1):
+    """
+    Helper to merge and process all feature calculation across multiple modules in one processes pull
+    :param func_calls_tasks: dict(prefix1=function_calls_list1, prefix2=function_calls_list2, ...)
+    :param n_jobs: process count to spawn, -1 - use all CPUs, 1 - no parallel computing code is used at all
+    :return:
+    """
+
+    if n_jobs == -1:
+        try:
+            # Try to determine CPU count and set jobs equal to CPUs (optimal case)
+            n_jobs = available_cpu_count()
+        except Exception:
+            pass
+
+    prefix_list = []
+    func_calls_list = []
+    for k, v in func_calls_tasks.items():
+        prefix_list += [k] * len(v)
+        func_calls_list += v
+
+    result = Parallel(n_jobs=n_jobs, prefer="threads")(delayed(func)(*args) for [func, args] in func_calls_list)
+
+    result_dict = dict()
+    for i in range(0, len(result)):
+        fn_name = func_calls_list[i][0].__name__
+        fn_args = func_calls_list[i][1]
+        args_to_str = ""
+
+        if fn_args:
+            params = [f"{v}" for v in fn_args if type(v) in [float, int, str]]
+            if params:
+                args_to_str = "__" + "__".join(params)
+
+        result_name = f"{fn_name}{args_to_str}"
+        result_name = f"{prefix_list[i]}__{result_name}"
+
+        result_dict[result_name] = result[i]
+
+    return pd.DataFrame(result_dict)
+
+
+def symlog2_(x):
+    C = 0  # parameter
+    return np.sign(x)*(np.log2(1+abs(x)/(10**C)))
+
+
+def custom_transform(data, p1: int, p2: str):
+    return data
+
+
+class TransformObj:
+    def __init__(self, transform_name: str, fn: Callable, **kwargs):
+        self.transform_name = transform_name
+        self.__fn = fn
+
+        if not kwargs:
+            kwargs = {}
+        self.kwargs = kwargs
+
+    def apply(self, data):
+        return self.__fn(data, **self.kwargs)
+
+    def get_name(self):
+        return f"{self.transform_name}{kwargs_to_str(self.kwargs)}"
+
+
+class Transforms:
+    @staticmethod
+    def symlog():
+        return TransformObj("symlog", symlog2_)
+
+    @staticmethod
+    def custom_transform(p1: int, p2: str):
+        return TransformObj("custom_transform", custom_transform, p1=p1, p2=p2)
+
+
+class Col:
+    def __init__(self, name):
+        self.name = name
+        self.transforms = []
+
+    def t(self, transforms: List[TransformObj]):
+        self.transforms += transforms
+        return self
+
+    def get_value(self, data):
+        d = None
+        if self.name == "index":
+            if isinstance(data.index, pd.DatetimeIndex):
+                d = data.index.to_pydatetime()
+        else:
+            d = data[self.name].values
+
+        return TransformDelayed(d, self.transforms, self.name)
+
+
+class TransformDelayed:
+    def __init__(self, data, transforms=[], data_name=""):
+        self.data = data
+        self.data_name = data_name
+        self.transforms = transforms
+
+    def eval(self):
+        v = self.data
+        for tr in self.transforms:
+            v = tr.apply(v)
+        return v
+
+    def get_name(self):
+        res = [self.data_name]
+        for tr in self.transforms:
+            res.append(tr.get_name())
+
+        return ".".join(res)
+
+
+def kwargs_to_str(kwargs, brackets=True):
+    if kwargs:
+        params = [f"{k}={v}" for k, v in kwargs.items() if type(v) not in [np.ndarray, list]]
+        if params:
+            res = "%s" % ", ".join(params)
+            return res if not brackets else f"({res})"
+
+    return "()"
+
+
+def fn_call_wrapper(fn, kwargs, transforms):
+    for k, v in kwargs.items():
+        if type(v) == TransformDelayed:
+            kwargs[k] = v.eval()
+
+    return TransformDelayed(fn(**kwargs), transforms).eval()
+
+
+def calc_all_config(data: pd.DataFrame, config: Dict, n_jobs=1) -> pd.DataFrame:
+    """
+    Example usage:
+
+    ```
+    config = dict(
+        # prefix aka namespace
+        prefix_1=[
+            # config for single feature function grid
+            dict(
+                # feature function callable
+                fn=features.datetime.holidays.f1,
+                # parameter grid
+                pg=km(country_name=['US', 'RU']),
+                # data mapping
+                dm=km(timestamps=[
+                    # can ge referenced by name, "index" is reserved name to refer pandas `data.index`
+                    "index",
+                    # km.col - helper to wrap column name with "pre" transforms
+                    # t.symlog, t.custom_transform, etc - wrapper to highlight available transformations
+                    km.col("index").t([t.custom_transform(1, "OK")]),
+                    # km.col("close").t([t.symlog()])
+                ]),
+                # post transforms
+                tr=[t.symlog()]
+            )
+        ]
+    )
+    df1 = calc_all_config(df, config=config) # n_jobs==1 by default // single thread
+    ```
+
+    :param data: pandas DataFrame
+    :param config:
+    :param n_jobs: joblib n_jobs parameter parallel process count,
+                   1 = don't use paralell code, -1 == CPU count
+    :return:
+    """
+
+    fn_parallel_list = []
+    for prefix, fn_settings_list in config.items():
+        for fn_settings in fn_settings_list:
+            fn = fn_settings['fn']
+            pg = fn_settings['pg']
+            dm = fn_settings['dm']
+            transforms_post = fn_settings['tr']
+
+            kwargs_list = list(ParameterGrid({**pg, **dm}))
+            for kwargs in kwargs_list:
+                kwargs_dump = dict(
+                    inputs=dict(),
+                    params=dict()
+                )
+                for kw_name in list(kwargs.keys()):
+                    if kw_name in pg:
+                        kwargs_dump['params'][kw_name] = kwargs[kw_name]
+                    if kw_name in dm:
+                        if type(kwargs[kw_name]) == str:
+                            # automatic "col_name" -> km.col("col_name")
+                            kwargs[kw_name] = km.col(kwargs[kw_name])
+
+                        kwargs[kw_name] = kwargs[kw_name].get_value(data)
+                        kwargs_dump['inputs'][kw_name] = kwargs[kw_name].get_name()
+
+                fn_parallel_list.append([fn, kwargs, transforms_post, dict(prefix=prefix, kwargs=kwargs_dump)])
+
+    results = Parallel(
+        n_jobs=n_jobs,
+        # prefer="threads" # usually it's a bad idea, but may be useful for future
+    )(
+        delayed(fn_call_wrapper)(func, kwargs, transforms) for [func, kwargs, transforms, _] in fn_parallel_list
+    )
+
+    result_dict = dict()
+    i = 0
+    for [fn, _, transforms_post, dump] in fn_parallel_list:
+        prefix = dump['prefix']
+        kwargs_dump = dump['kwargs']
+        transforms_post_str = ".".join([t.get_name() for t in transforms_post])
+
+        fn_name = fn.__name__
+        kwargs_str = [kwargs_to_str(kwargs_dump['inputs'], brackets=False)]
+        if kwargs_dump['params']:
+            kwargs_str.append(kwargs_to_str(kwargs_dump['params'], brackets=False))
+
+        kwargs_str = ", ".join(kwargs_str)
+        result_name = f"{prefix}.{fn_name}({kwargs_str})"
+        if transforms_post_str:
+            result_name += f".{transforms_post_str}"
+
+        # TODO: @multiple_outputs_task if results[i] is not 1D np.array we can split it to
+        #       multiple outputs with `_{i}` postfix
+
+        result_dict[result_name] = results[i]
+        i += 1
+
+    return pd.DataFrame(result_dict)
+
+
+class KeyMap:
+    col = Col
+
+    @staticmethod
+    def __call__(**kwargs):
+        return kwargs
+
+
+km = KeyMap()
+t = Transforms

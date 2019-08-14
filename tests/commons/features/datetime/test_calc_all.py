@@ -5,7 +5,7 @@ from commons.features.datetime import components, holidays, markets, calc_all
 
 DT_CALC_ALL_PARAMS_SETS = {
     holidays.PREFIX: [{"country_name": "US"}],
-    markets.PREFIX: [{"market": "NYSE"}]
+    markets.PREFIX: [{"market_name": "NYSE"}]
 }
 
 
@@ -19,13 +19,13 @@ def data(ohlcv_df):
     [
         (components.calc_all, None),
         (holidays.calc_all, [{"country_name": "US"}, {"country_name": "GB"}]),
-        (markets.calc_all, [{"market": "NYSE"}]),
+        (markets.calc_all, [{"market_name": "NYSE"}]),
         (calc_all, DT_CALC_ALL_PARAMS_SETS)
     ],
     ids=["calc_all_components", "calc_all_holidays", "calc_all_markets", "calc_all_dt"]
 )
 def test_calc_all(calc_all, params_set, data):
-    assert len(data) == len(calc_all(data, params_set))
+    assert data.shape[0] == calc_all(data, params_set).shape[0]
 
     with pytest.raises(ValueError):
         wrong_data = pd.DataFrame(dict(d=data))
@@ -47,7 +47,7 @@ def test_holiday_calc_all_params_validation(wrong_country_name, data):
 )
 def test_markets_calc_all_params_validation(wrong_market_name, data):
     with pytest.raises(ValueError):
-        markets.calc_all(data, [{"market": wrong_market_name}])
+        markets.calc_all(data, [{"market_name": wrong_market_name}])
 
 
 def test_imports(data):

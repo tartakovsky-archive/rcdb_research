@@ -6,11 +6,28 @@ import pandas as pd
 import numpy as np
 
 from . import utils
+from commons.utils import calc_all_parallel
 
 PREFIX = "dt_holidays"
 
 
-def calc_all(data: pd.DatetimeIndex, param_sets: List[Dict], column_names=None) -> pd.DataFrame:
+def calc_all(data: pd.DatetimeIndex, param_sets: List[Dict], column_names=None, n_jobs=-1) -> pd.DataFrame:
+    """
+    Calculate all holidays features.
+    See supported countries at holidays.utils.supported_countries()
+
+    :param pd.DataFrame data: df with DateTimeIndex. No required columns
+    :param List[Dict] param_sets: list of dict with country name. Example [{"country_name": "US"}, ...]
+    :param column_names: unused template parameter
+    :return: df with features
+    """
+    return calc_all_parallel(
+        dict(datetime_holidays=calc_all_generator(data, param_sets, column_names)),
+        n_jobs=n_jobs
+    )
+
+
+def calc_all_generator(data: pd.DatetimeIndex, param_sets: List[Dict], column_names=None) -> pd.DataFrame:
     """
     Calculate all holidays features.
     See supported countries at holidays.utils.supported_countries()
@@ -36,17 +53,22 @@ def calc_all(data: pd.DatetimeIndex, param_sets: List[Dict], column_names=None) 
         if name not in supported_countries:
             raise ValueError(f"Unsupported country {name}. Choose from supported: {supported_countries}")
 
+    calc_calls = [
+        [f6, [timestamps]]
+    ]
+
     for ps in param_sets:
         country_name = ps["country_name"]
 
-        df[f"{PREFIX}_f1{country_name}"] = f1(timestamps, country_name)
-        df[f"{PREFIX}_f2{country_name}"] = f2(timestamps, country_name)
-        df[f"{PREFIX}_f3{country_name}"] = f3(timestamps, country_name)
-        df[f"{PREFIX}_f4{country_name}"] = f4(timestamps, country_name)
-        df[f"{PREFIX}_f5{country_name}"] = f5(timestamps, country_name)
+        calc_calls += [
+            [f1, [timestamps, country_name]],
+            [f2, [timestamps, country_name]],
+            [f3, [timestamps, country_name]],
+            [f4, [timestamps, country_name]],
+            [f5, [timestamps, country_name]]
+        ]
 
-    df[f"{PREFIX}_f6"] = f6(timestamps)
-    return df
+    return calc_calls
 
 
 def f1(timestamps: np.array, country_name: str) -> np.array:
@@ -78,6 +100,7 @@ def f3(timestamps: np.array, country_name: str) -> np.array:
     :param str country_name: name of the country for get instance of workalendar calendar
     :return: array with seconds for each timestamp
     """
+
     def prepare_timedelta_to_seconds(td):
         seconds = td.total_seconds()
         if seconds < 0:
