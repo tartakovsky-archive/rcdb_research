@@ -1,14 +1,23 @@
 # research-notebooks
 
 ## Dependencies
-First install [ta-lib`s dependencies](http://mrjbq7.github.io/ta-lib/install.html)  
+First install [ta-lib`s dependencies](http://mrjbq7.github.io/ta-lib/install.html):
+```bash
+$ chomd +x install_talib.sh
+$ sudo ./install_talib.sh
+```  
+
+Install numpy:
+```bash
+$ pip install numpy==1.16.4
+```  
 
 ## Installation/upgrade from inside of Jupyter
 
 Run the following in the terminal, you'll be prompted for github credentials:
 
 ```bash
-$ pip install -U git+https://github.com/tartakovsky-archive/research-notebooks
+$ pip install -U --user --extra-index-url $(cat extra-index-url) git+https://github.com/tartakovsky-archive/research-notebooks
 ```
 
 ## Installation for development
