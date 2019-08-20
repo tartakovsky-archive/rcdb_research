@@ -32,11 +32,13 @@ def sample_entropy(series: np.array, window: int) -> np.array:
     :param window: rolling window size
     :return:
     """
-    return apply_to_window(
+    res = apply_to_window(
         func=utils.sample_entropy,
         series=series,
         window=window
     )
+    res[np.isnan(res)] = 0
+    return res
 
 
 @register_feature_entropy
@@ -48,12 +50,14 @@ def spectral_entropy(series: np.array, window: int, sf: float) -> np.array:
     :param sf:
     :return:
     """
-    return apply_to_window(
+    res = apply_to_window(
         func=utils.spectral_entropy,
         series=series,
         window=window,
         sf=sf
     )
+    res[np.isnan(res)] = 0
+    return res
 
 
 @register_feature_entropy
@@ -64,11 +68,13 @@ def svd_entropy(series: np.array, window: int) -> np.array:
     :param window: rolling window size
     :return:
     """
-    return apply_to_window(
+    res = apply_to_window(
         func=utils.svd_entropy,
         series=series,
         window=window
     )
+    res[np.isnan(res)] = 0
+    return res
 
 
 @register_feature_entropy
