@@ -35,7 +35,7 @@ SINGLE_COLUMN_DF = pd.DataFrame(TEST_LIST * 20, columns=["val"])
 )
 def test_calc_all(data, param_set, window, column_names):
     res = calc_all(data, param_set, window, column_names)
-    assert len(res) == len(data) - window + 1
+    assert len(res) == len(data)
 
 
 def test_calc_all_column_param():

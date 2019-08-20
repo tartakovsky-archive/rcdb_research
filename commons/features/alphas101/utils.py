@@ -1,10 +1,12 @@
-from typing import Any, List, Callable, Union
+from typing import Any, Callable, Union
 
 import numpy as np
 import pandas as pd
 
 from tulipindicators import ti
 from scipy.stats import rankdata
+
+from ..utils import rolling_window
 
 
 def nan_to_value(ar: np.array, value: Any = 0) -> np.array:
@@ -24,12 +26,6 @@ def prepand_nans(arr: np.array, size: int) -> np.array:
             arr
         )
     )
-
-
-def rolling_window(a: np.array, window: int) -> List[np.array]:
-    shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
-    strides = a.strides + (a.strides[-1],)
-    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 
 def rolling_window_apply(a: np.array, window: int, func: Callable) -> np.array:
@@ -53,23 +49,15 @@ def stddev(series: np.array, period: int = 10) -> np.array:
     return pd.Series(series).rolling(period).std().values
 
 
-def correlation(x: np.array, y: np.array, period: int = 10, nans: bool = False) -> np.array:
+def correlation(x: np.array, y: np.array, period: int = 10) -> np.array:
     """
     Wrapper function to estimate rolling correlations.
     :param x: corr param.
     :param y: corr param
     :param period: the rolling window period.
-    :param nans: use version for inputs with NaN
     :return: a pandas DataFrame with the time-series min over
     the past 'window' days.
     """
-    if not nans:
-        rolling_idxs = rolling_window(np.arange(len(x)), period)
-        return prepand_nans(
-            [np.min(np.corrcoef(x[idxs], y[idxs])) for idxs in rolling_idxs],
-            period - 1
-        )
-
     return pd.Series(x).rolling(period).corr(pd.Series(y)).values
 
 
@@ -83,11 +71,6 @@ def covariance(x: np.array, y: np.array, period: int = 10) -> np.array:
     'window' days.
     """
     return pd.Series(x).rolling(period).cov(pd.Series(y)).values
-    # rolling_idxs = rolling_window(np.arange(len(x)), period)
-    # return prepand_nans(
-    #     [np.min(np.cov(x[idxs], y[idxs])) for idxs in rolling_idxs],
-    #     period - 1
-    # )
 
 
 def rolling_rank(na: np.array) -> Union[float, int]:
@@ -117,12 +100,7 @@ def rolling_prod(na: np.array) -> np.array:
 
 
 def product(series: np.array, period: int = 10) -> np.array:
-    return np.hstack(
-        (
-            np.array([np.nan for _ in range(period - 1)]),
-            rolling_window_apply(series, period, rolling_prod)
-        )
-    )
+    return rolling_window_apply(series, period, rolling_prod)
 
 
 def ts_min(series: np.array, period: int = 10) -> np.array:
@@ -156,26 +134,11 @@ def scale(series: np.array, k: int = 1) -> np.array:
     return series * k / np.sum(np.abs(np.nan_to_num(series)))
 
 
-def ts_argmax(series: np.array, period: int = 10, nans: bool = False) -> np.array:
-    if not nans:
-        return np.hstack(
-            (
-                np.array([np.nan for _ in range(period - 1)]),
-                np.argmax(rolling_window(series, period), axis=1)
-                # rolling_window_apply(series, period, np.argmax)
-            )
-        )
+def ts_argmax(series: np.array, period: int = 10) -> np.array:
     return pd.Series(series).rolling(period).apply(np.argmax, raw=True).values
 
 
-def ts_argmin(series: np.array, period: int = 10, nans: bool = False) -> np.array:
-    if not nans:
-        return np.hstack(
-            (
-                np.array([np.nan for _ in range(period - 1)]),
-                rolling_window_apply(series, period, np.argmin)
-            )
-        )
+def ts_argmin(series: np.array, period: int = 10) -> np.array:
     return pd.Series(series).rolling(period).apply(np.argmin, raw=True).values
 
 

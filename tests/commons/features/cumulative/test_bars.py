@@ -2,7 +2,8 @@ import os
 import pytest
 import pandas as pd
 import numpy as np
-from commons import bars, features
+from commons.features import cumulative
+from commons import bars
 
 ERROR = 1e-9
 DATASET = os.path.abspath(
@@ -43,7 +44,7 @@ def open_close_diff(open, close):
 
 def test_fr(df):
     threshold = 0.01
-    df['f'] = features.cumulative.bars.price_pct_threshold(df.open.values, df.close.values, threshold)
+    df['f'] = cumulative.bars.price_pct_threshold(df.open.values, df.close.values, threshold)
 
     # we need at least two unique elements
     assert np.unique(df['f'].values).size > 1
@@ -62,8 +63,7 @@ def test_fr(df):
 def test_fr_asymmetric(df):
     threshold_up = 0.02
     threshold_down = 0.01
-    df['f'] = features.cumulative.bars.price_pct_threshold(df.open.values, df.close.values,
-                                                           threshold_up, threshold_down)
+    df['f'] = cumulative.bars.price_pct_threshold(df.open.values, df.close.values, threshold_up, threshold_down)
 
     # we need at least two unique elements
     assert np.unique(df['f'].values).size > 1
@@ -91,7 +91,7 @@ def test_adaptive(df):
     # vals = df.volume.values # (df.volume_quote_buy + df.volume_quote_sell).values
     vals = (df.volume_quote_buy + df.volume_quote_sell).values
 
-    df['f'] = features.cumulative.bars.adaptive_threshold(vals, avg_per, window)
+    df['f'] = cumulative.bars.adaptive_threshold(vals, avg_per, window)
 
     # we need at least two unique elements
     assert np.unique(df['f'].values).size > 1
@@ -110,7 +110,7 @@ def test_adaptive(df):
 
 def test_ft(df):
     threshold = 500
-    df['f'] = features.cumulative.bars.fixed_threshold(df.ticks_buy.values + df.ticks_sell.values, threshold)
+    df['f'] = cumulative.bars.fixed_threshold(df.ticks_buy.values + df.ticks_sell.values, threshold)
     assert np.unique(df['f'].values).size > 1
 
     agg_df = bars.feature(df, 'f')
@@ -130,8 +130,7 @@ def test_ft(df):
 def test_fv(df):
     threshold = 500000
 
-    df['f'] = features.cumulative.bars.fixed_threshold(df.volume_quote_sell.values + df.volume_quote_buy.values,
-                                                       threshold)
+    df['f'] = cumulative.bars.fixed_threshold(df.volume_quote_sell.values + df.volume_quote_buy.values, threshold)
     assert np.unique(df['f'].values).size > 1
 
     agg_df = bars.feature(df, 'f')
@@ -157,7 +156,7 @@ def test_frft(df):
     pct_threshold = 0.01
     ticks_threshold = 1000
 
-    df['f'] = features.cumulative.bars.price_pct__series_fixed(
+    df['f'] = cumulative.bars.price_pct__series_fixed(
         df.open.values,
         df.close.values,
         pct_threshold,

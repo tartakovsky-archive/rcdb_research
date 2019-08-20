@@ -1,4 +1,4 @@
-import subprocess
+# import subprocess
 import os
 import pandas as pd
 import numpy as np
@@ -337,7 +337,7 @@ def calc_all_config(data: pd.DataFrame, config: Dict, n_jobs=1,
                     df_data = data
 
                 results = parallel(
-                    joblib.delayed(fn_call_wrapper)(df_data, data_file_path, func, kwargs, transforms) for [func, kwargs, transforms, _] in
+                    joblib.delayed(fn_call_wrapper)(df_data, data_file_path, func, kwargs, transforms) for [func, kwargs, transforms, _] in  # noqa
                     fn_parallel_list
                 )
 

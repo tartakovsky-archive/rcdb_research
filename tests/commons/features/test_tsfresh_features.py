@@ -53,7 +53,7 @@ PARAMS_SET = {
 
 def test_calc_all():
     res = calc_all(MULTIPLE_COLUMN_DF, PARAMS_SET, WINDOW)
-    assert len(res) == len(MULTIPLE_COLUMN_DF) - WINDOW + 1
+    assert len(res) == len(MULTIPLE_COLUMN_DF)
 
 
 def test_calc_all_column_param():
@@ -87,4 +87,4 @@ def test_calc_all_column_param__all__(ps):
 )
 def test_features(feature_key, feature_params):
     res = FEATURE_FUNCS[feature_key](MULTIPLE_COLUMN_DF.val1.values, WINDOW, **feature_params)
-    assert len(res) == len(MULTIPLE_COLUMN_DF) - WINDOW + 1
+    assert len(res) == len(MULTIPLE_COLUMN_DF)

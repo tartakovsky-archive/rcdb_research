@@ -230,14 +230,20 @@ def spect_slope(
     :param psd_params:
     :return:
     """
-    return univariate.compute_spect_slope(
+    res = univariate.compute_spect_slope(
         sfreq,
-        rolling_window(series, window),
+        rolling_window(series, window)[window - 1:],
         fmin=fmin,
         fmax=fmax,
         with_intercept=with_intercept,
         psd_method=psd_method,
         psd_params=psd_params
+    )
+    return np.hstack(
+        (
+            [np.nan for _ in range(window - 1)],
+            res
+        )
     )
 
 
@@ -257,10 +263,16 @@ def svd_fisher_info(
     :param emb:
     :return:
     """
-    return univariate.compute_svd_fisher_info(
-        rolling_window(series, window),
+    res = univariate.compute_svd_fisher_info(
+        rolling_window(series, window)[window - 1:],
         tau=tau,
         emb=emb
+    )
+    return np.hstack(
+        (
+            [np.nan for _ in range(window - 1)],
+            res
+        )
     )
 
 
@@ -356,7 +368,7 @@ def teager_kaiser_energy(series: np.array, window: int, wavelet_name: str = 'db4
     )
 
 
-@register_feature_mne
+# @register_feature_mne
 @mne_doc_helper(bivariate.compute_max_cross_corr)
 def max_cross_corr(
         series: np.array,
@@ -393,10 +405,15 @@ def phase_lock_val(
     :param include_diag:
     :return:
     """
-    return bivariate.compute_phase_lock_val(
-        rolling_window(series, window),
+    res = bivariate.compute_phase_lock_val(
+        rolling_window(series, window)[window - 1:],
         include_diag=include_diag
     )
+    cols = res.reshape(-1, res.size // (series.size - window + 1)).transpose()
+    res = np.empty((len(cols), series.size)) * np.nan
+    for i in range(len(cols)):
+        res[i, window - 1:] = cols[i]
+    return res
 
 
 @register_feature_mne
@@ -419,12 +436,18 @@ def nonlin_interdep(
     :param include_diag:
     :return:
     """
-    return bivariate.compute_nonlin_interdep(
-        rolling_window(series, window),
+    res = bivariate.compute_nonlin_interdep(
+        rolling_window(series, window)[window - 1:],
         tau=tau,
         emb=emb,
         nn=nn,
         include_diag=include_diag
+    )
+    return np.hstack(
+        (
+            [np.nan for _ in range(window - 1)],
+            res
+        )
     )
 
 
@@ -444,11 +467,12 @@ def time_corr(
     :param include_diag:
     :return:
     """
-    return bivariate.compute_time_corr(
-        rolling_window(series, window),
+    res = bivariate.compute_time_corr(
+        rolling_window(series, window)[window - 1:],
         with_eigenvalues=with_eigenvalues,
         include_diag=include_diag
     )
+    return np.hstack(([np.nan for _ in range(window - 1)], res))
 
 
 @register_feature_mne
@@ -473,14 +497,15 @@ def spect_corr(
     :param psd_params:
     :return:
     """
-    return bivariate.compute_spect_corr(
+    res = bivariate.compute_spect_corr(
         sfreq,
-        rolling_window(series, window),
+        rolling_window(series, window)[window - 1:],
         with_eigenvalues=with_eigenvalues,
         include_diag=include_diag,
         psd_method=psd_method,
         psd_params=psd_params
     )
+    return np.hstack(([np.nan for _ in range(window - 1)], res))
 
 
 __all__ = ("FEATURE_FUNCS", "PREFIX", "calc_all", *FEATURE_FUNCS.keys())

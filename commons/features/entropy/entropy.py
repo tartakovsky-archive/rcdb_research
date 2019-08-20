@@ -2,7 +2,7 @@ import numpy as np
 from tsfresh.feature_extraction.feature_calculators import binned_entropy as tsf_binned_entropy
 
 from . import utils
-from ..utils import generate_calc_all, feature_registrator_factory, apply_to_window
+from ..utils import generate_calc_all, feature_registrator_factory, apply_to_window, rolling_window
 
 PREFIX = "entropy"
 FEATURE_FUNCS = {}
@@ -18,11 +18,10 @@ def app_entropy(series: np.array, window: int) -> np.array:
     :param window: rolling window size
     :return:
     """
-    return apply_to_window(
-        func=utils.app_entropy,
-        series=series,
-        window=window
-    )
+    return np.hstack((
+        [np.nan for _ in range(window - 1)],
+        [utils.app_entropy(s) for s in rolling_window(series, window)[window - 1:]]
+    ))
 
 
 @register_feature_entropy
@@ -96,12 +95,10 @@ def binned_entropy(series: np.array, window: int, max_bins: int) -> np.array:
     :param max_bins: the maximal number of bins
     :return:
     """
-    return apply_to_window(
-        func=tsf_binned_entropy,
-        series=series,
-        window=window,
-        max_bins=max_bins
-    )
+    return np.hstack((
+        [np.nan for _ in range(window - 1)],
+        [tsf_binned_entropy(s, max_bins=max_bins) for s in rolling_window(series, window)[window - 1:]]
+    ))
 
 
 __all__ = ("calc_all", "PREFIX", "FEATURE_FUNCS", *FEATURE_FUNCS.keys())

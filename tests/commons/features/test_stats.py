@@ -18,7 +18,7 @@ PARAMS_SET = {k: [{}] for k in FEATURE_FUNCS}
 
 def test_calc_all():
     res = calc_all(MULTIPLE_COLUMN_DF, PARAMS_SET, WINDOW)
-    assert len(res) == len(MULTIPLE_COLUMN_DF) - WINDOW + 1
+    assert len(res) == len(MULTIPLE_COLUMN_DF)
     assert {f"{PREFIX}_{f}_{WINDOW}_{c}" for f in FEATURE_FUNCS for c in MULTIPLE_COLUMN_DF.columns} == set(res.columns)
 
 
@@ -28,5 +28,5 @@ def test_calc_all():
     ids=[*FEATURE_FUNCS.keys()]
 )
 def test_features(feature):
-    expected_size = len(MULTIPLE_COLUMN_DF) - WINDOW + 1
+    expected_size = len(MULTIPLE_COLUMN_DF)
     assert feature(MULTIPLE_COLUMN_DF.val1.values, WINDOW).size == expected_size

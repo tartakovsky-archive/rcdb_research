@@ -20,7 +20,7 @@ PARAMS_SET["spectral_entropy"][0]["sf"] = .5
 
 def test_calc_all():
     res = calc_all(MULTIPLE_COLUMN_DF, PARAMS_SET, WINDOW)
-    assert len(res) == len(MULTIPLE_COLUMN_DF) - WINDOW + 1
+    assert len(res) == len(MULTIPLE_COLUMN_DF)
 
     cnames = {
         f"{PREFIX}_{f}_{WINDOW}_{c}{'_' if p else ''}{'_'.join(f'{k}{v}' for k, v in p.items())}"
@@ -38,5 +38,4 @@ def test_calc_all():
     ids=[*FEATURE_FUNCS.keys()]
 )
 def test_features(feature, params):
-    expected_size = len(MULTIPLE_COLUMN_DF) - WINDOW + 1
-    assert feature(MULTIPLE_COLUMN_DF.val1.values, WINDOW, **params).size == expected_size
+    assert feature(MULTIPLE_COLUMN_DF.val1.values, WINDOW, **params).size == len(MULTIPLE_COLUMN_DF)

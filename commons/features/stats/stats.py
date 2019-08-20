@@ -29,7 +29,12 @@ def hmean(series: np.array, window: int) -> np.array:
     :param window: rolling window size
     :return:
     """
-    return st.hmean(rolling_window(series, window), axis=1)
+    return np.hstack(
+        (
+            [np.nan for _ in range(window - 1)],
+            st.hmean(rolling_window(series, window)[window - 1:], axis=1)
+        )
+    )
 
 
 @register_feature_stats

@@ -10,7 +10,7 @@ def _cond_after_n_bars(
     n: int,
     condition_func: Callable = lambda current, after_n_bars: True
 ) -> np.array:
-    r = np.delete(rolling_window(series, n + 1), [j for j in range(1, n)], axis=1).transpose()
+    r = np.delete(rolling_window(series, n + 1)[n:], [j for j in range(1, n)], axis=1).transpose()
     return np.hstack(
         (
             condition_func(r[0], r[1]) * 1,
@@ -35,7 +35,7 @@ def _n_consecutive(series: np.array, n: int, arr_operator: Callable) -> np.array
     arr = np.zeros(series.size)
     arr[arr_operator(label_direction(series))] = 1
 
-    n_after = np.delete(rolling_window(arr, n + 1), 0, axis=1)
+    n_after = np.delete(rolling_window(arr, n + 1)[n:], 0, axis=1)
 
     return np.hstack(
         (

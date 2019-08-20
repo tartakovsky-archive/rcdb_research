@@ -10,22 +10,36 @@ FEATURE_FUNCS = {}
 register_feature_tsfresh = feature_registrator_factory(FEATURE_FUNCS)
 
 
-def apply_to_window(func, series, window, to_np=True, *args, **kwargs):
-    arr = [func(x, *args, **kwargs) for x in rolling_window(series, window)]
+def apply_to_window(func, series, window, to_np=True, no_nans=False, *args, **kwargs):
+    rw = rolling_window(series, window)
+    if no_nans:
+        rw = rw[window - 1:]
+
+    arr = [func(x, *args, **kwargs) for x in rw]
     return np.array(arr) if to_np else arr
 
 
-def apply_parametric_to_window(func, series, window, *args, **kwargs):
+def apply_parametric_to_window(func, series, window, no_nans=False, *args, **kwargs):
     res = apply_to_window(
         func=func,
         series=series,
         window=window,
         to_np=False,
+        no_nans=no_nans,
         param=[{**kwargs}]
     )
     if isinstance(res[-1], zip):
         res = [list(x) for x in res]
-    return np.array([x[0][1] for x in res])
+
+    res = np.array([x[0][1] for x in res])
+    if no_nans:
+        res = np.hstack(
+            (
+                [np.nan for _ in range(window - 1)],
+                res
+            )
+        )
+    return res
 
 
 @register_feature_tsfresh
@@ -98,6 +112,7 @@ def ar_coefs(series: np.array, window: int, coeff: float, k: int) -> np.array:
         func=fc.ar_coefficient,
         series=series,
         window=window,
+        no_nans=True,
         coeff=coeff, k=k
     )
 

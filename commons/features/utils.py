@@ -8,6 +8,7 @@ import pandas as pd
 
 import time
 
+
 def get_inputs(features_list, exclude=[]):
     inputs = set()
     for f in features_list:
@@ -37,9 +38,13 @@ def get_namespaces_around(file):
 
 
 def _rolling_window(a: np.array, window: int):
+    res = np.empty((a.size, window))
+    res.fill(None)
+
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
-    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+    res[window - 1:] = np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+    return res
 
 
 def rolling_window(a: np.array, window: int, cache: dict = None) -> np.ndarray:
@@ -71,11 +76,13 @@ def feature_filter(o):
 def get_feature_funcs(module_name):
     return dict(inspect.getmembers(sys.modules[module_name], feature_filter))
 
+
 def measure_elapsed(f, *args, **kwargs):
     start = time.time()
     res = f(*args, **kwargs)
     end = time.time()
     return res, end - start
+
 
 def generate_calc_all(prefix: str, feature_funcs: dict):
     def calc_all(
@@ -99,7 +106,7 @@ def generate_calc_all(prefix: str, feature_funcs: dict):
 
         vals = {name: data[column_names[orig_name]].values for orig_name, name in column_names.items()}
 
-        df = pd.DataFrame([])
+        df = pd.DataFrame(index=data.index)
         measurements = {}
         for feature, feature_params in param_set.items():
             for ps in feature_params:
@@ -112,14 +119,13 @@ def generate_calc_all(prefix: str, feature_funcs: dict):
                     postfix = "_".join(f"{k}{v}" for k, v in ps.items())
                     col_name = f"{prefix}_{feature}_{window}_{input_series_name}{'_' if postfix else ''}{postfix}"
 
-                    expected_column_size = len(input_series) - window + 1
-                    if len(res) == expected_column_size:
+                    expected_column_size = len(input_series)
+                    if len(res) == expected_column_size and len(res.shape) == 1:
                         df[col_name] = res
                         measurements[col_name] = elapsed
                     else:
-                        cols = len(res) // expected_column_size
-                        for i, res in zip(range(cols), res.reshape(-1, cols).transpose()):
-                            df[f"{col_name}_col_{i}"] = res
+                        for i in range(len(res)):
+                            df[f"{col_name}_col_{i}"] = res[i]
                             measurements[f"{col_name}_col_{i}"] = elapsed
         if not benchmark:
             return df

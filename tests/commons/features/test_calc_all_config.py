@@ -14,6 +14,7 @@ def data():
     return df[["high", "low", "close"]]
 
 
+@pytest.mark.skip
 class TestSettings:
     def test_parallel(self, data):
         print("-")

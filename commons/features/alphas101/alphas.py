@@ -793,12 +793,12 @@ def f45(close: np.array, volume: np.array) -> np.array:
     # (-1 * ((rank((sum(delay(close, 5), 20) / 20)) *
     # correlation(close, volume, 2)) *rank(correlation(sum(close, 5),
     # sum(close, 20), 2))))
-    corr_res = correlation(close, volume, 2, True)
+    corr_res = correlation(close, volume, 2)
     nan_to_value(corr_res, 0)
     return -1 * (rank(sma(delay(close, 5), 20)) * corr_res *
                  rank(correlation(ts_sum(close, 5),
                                   ts_sum(close, 20),
-                                  2, nans=True)))
+                                  2)))
 
 
 def f46(close: np.array) -> np.array:
@@ -953,7 +953,7 @@ def f55(high: np.array, low: np.array, close: np.array, volume: np.array) -> np.
     # - ts_min(low,12)))), rank(volume), 6))
     divisor = ts_max(high, 12) - ts_min(low, 12)
     inner = (close - ts_min(low, 12)) / divisor
-    res = correlation(rank(inner), rank(volume), 6, nans=True)
+    res = correlation(rank(inner), rank(volume), 6)
     nan_to_value(res, 0)
     return -1 * res
 
@@ -1480,8 +1480,8 @@ def f96(close: np.array, volume: np.array, vwap: np.array) -> np.array:
     p1 = ts_rank(decay_linear(
         correlation(rank(vwap), rank(volume), 4), 4), 8)
     p2 = ts_rank(decay_linear(
-        ts_argmax(correlation(ts_rank(close, 7), ts_rank(adv60, 4), 4, True),
-                  13, True), 14), 13)
+        ts_argmax(correlation(ts_rank(close, 7), ts_rank(adv60, 4), 4),
+                  13), 14), 13)
 
     alpha = nans_array(p1.size)
 
@@ -1513,7 +1513,7 @@ def f98(open: np.array, volume: np.array, vwap: np.array) -> np.array:
             7
         )) - rank(decay_linear(ts_rank(ts_argmin(
             correlation(rank(open), rank(adv15), 21),
-            9, nans=True), 7), 8)))
+            9), 7), 8)))
 
 
 def f99(high: np.array, low: np.array, volume: np.array) -> np.array:
