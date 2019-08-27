@@ -11,8 +11,6 @@ dask==2.2.0
 
 jupyter
 cufflinks
-workalendar
-pandas_market_calendars
 
 
 tulipindicators
