@@ -6,8 +6,8 @@ from workalendar.registry import registry
 
 from commons.features.datetime import holidays
 
-
 COUNTRY_NAME = "US"
+
 
 @pytest.fixture(scope="module")
 def calendar():

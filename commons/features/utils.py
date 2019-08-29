@@ -1,12 +1,13 @@
 import os
 import sys
+import time
 import inspect
-from typing import Dict, List, Callable
 
 import numpy as np
 import pandas as pd
 
-import time
+from typing import Dict, List, Callable
+
 
 
 def get_inputs(features_list, exclude=[]):

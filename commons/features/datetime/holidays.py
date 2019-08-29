@@ -1,74 +1,10 @@
-from datetime import timedelta, datetime
-from typing import List, Dict
-
 import pytz
-import pandas as pd
 import numpy as np
 
 from . import utils
-from commons.utils import calc_all_parallel
+from datetime import timedelta, datetime
 
 PREFIX = "dt_holidays"
-
-
-def calc_all(data: pd.DatetimeIndex, param_sets: List[Dict], column_names=None, n_jobs=-1) -> pd.DataFrame:
-    """
-    Calculate all holidays features.
-    See supported countries at holidays.utils.supported_countries()
-
-    :param pd.DataFrame data: df with DateTimeIndex. No required columns
-    :param List[Dict] param_sets: list of dict with country name. Example [{"country_name": "US"}, ...]
-    :param column_names: unused template parameter
-    :return: df with features
-    """
-    return calc_all_parallel(
-        dict(datetime_holidays=calc_all_generator(data, param_sets, column_names)),
-        n_jobs=n_jobs
-    )
-
-
-def calc_all_generator(data: pd.DatetimeIndex, param_sets: List[Dict], column_names=None) -> pd.DataFrame:
-    """
-    Calculate all holidays features.
-    See supported countries at holidays.utils.supported_countries()
-
-    :param pd.DataFrame data: df with DateTimeIndex. No required columns
-    :param List[Dict] param_sets: list of dict with country name. Example [{"country_name": "US"}, ...]
-    :param column_names: unused template parameter
-    :return: df with features
-    """
-    if type(data) != pd.DatetimeIndex:
-        raise ValueError("calc_all `data` arg expected to be `pd.DateTimeIndex`")
-
-    ts_col = "ts"
-    df = pd.DataFrame(dict(data=data.values))
-    df[ts_col] = df['data']
-    df.set_index('data', inplace=True)
-
-    timestamps = data.to_pydatetime()
-
-    supported_countries = utils.supported_countries()
-    for ps in param_sets:
-        name = ps["country_name"]
-        if name not in supported_countries:
-            raise ValueError(f"Unsupported country {name}. Choose from supported: {supported_countries}")
-
-    calc_calls = [
-        [f6, [timestamps]]
-    ]
-
-    for ps in param_sets:
-        country_name = ps["country_name"]
-
-        calc_calls += [
-            [f1, [timestamps, country_name]],
-            [f2, [timestamps, country_name]],
-            [f3, [timestamps, country_name]],
-            [f4, [timestamps, country_name]],
-            [f5, [timestamps, country_name]]
-        ]
-
-    return calc_calls
 
 
 def f1(timestamps: np.array, country_name: str) -> np.array:

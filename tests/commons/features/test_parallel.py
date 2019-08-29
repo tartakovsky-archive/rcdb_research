@@ -13,6 +13,7 @@ def data():
     return df[["high", "low", "close"]]
 
 
+@pytest.mark.skip
 class TestParallelCalcAll:
     def test_parallel(self, data):
         start = time.time()

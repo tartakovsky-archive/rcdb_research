@@ -1,90 +1,10 @@
-from datetime import timedelta
-from typing import List, Dict
-
-import pandas as pd
 import numpy as np
 
 from . import utils
-from commons.utils import calc_all_parallel
+from datetime import timedelta
+
 
 PREFIX = "dt_markets"
-
-
-def calc_all(data: pd.DatetimeIndex, param_sets: List[Dict] = None, column_names=None, n_jobs=-1):
-    """
-    Calculate features based on the markets open/close time
-
-    Supported markets:
-        [
-            'NYSE', 'LSE', 'CME', 'ICE',
-            'CFE', 'BMF', 'TSX', 'EUREX',
-            'JPX', 'SIX', 'OSE', 'SSE', 'HKEX'
-        ]
-
-    :param data: df with DatetimeIndex. No required columns
-    :param List[Dict] param_sets: list of dict with market name. Example [{"market": "NYSE"}, ...]
-    :param column_names: unused template parameter
-    :return: dataframe with calculated features
-    """
-    return calc_all_parallel(
-        dict(datetime_market=calc_all_generator(data, param_sets, column_names)),
-        n_jobs=n_jobs
-    )
-
-
-def calc_all_generator(data: pd.DatetimeIndex, param_sets: List[Dict] = None, column_names=None):
-    """
-    Calculate features based on the markets open/close time
-
-    Supported markets:
-        [
-            'NYSE', 'LSE', 'CME', 'ICE',
-            'CFE', 'BMF', 'TSX', 'EUREX',
-            'JPX', 'SIX', 'OSE', 'SSE', 'HKEX'
-        ]
-
-    :param data: df with DatetimeIndex. No required columns
-    :param List[Dict] param_sets: list of dict with market name. Example [{"market": "NYSE"}, ...]
-    :param column_names: unused template parameter
-    :return: dataframe with calculated features
-    """
-    if type(data) != pd.DatetimeIndex:
-        raise ValueError("calc_all `data` arg expected to be `pd.DateTimeIndex`")
-
-    ts_col = "ts"
-    df = pd.DataFrame(dict(data=data.values))
-    df[ts_col] = df['data']
-    df.set_index('data', inplace=True)
-
-    timestamps = data.to_pydatetime()
-
-    markets = {
-        'NYSE', 'LSE', 'CME', 'ICE',
-        'CFE', 'BMF', 'TSX', 'EUREX',
-        'JPX', 'SIX', 'OSE', 'SSE', 'HKEX'
-    }
-
-    print(param_sets)
-
-    for ps in param_sets:
-        market_name = ps["market_name"]
-        if market_name not in markets:
-            raise ValueError(f"Unsupported market {market_name}. Choose from supported: {markets}")
-
-    calc_calls = []
-
-    for ps in param_sets:
-        market_name = ps["market_name"]
-
-        calc_calls += [
-            [f1, [timestamps, market_name]],
-            [f2, [timestamps, market_name]],
-            [f3, [timestamps, market_name]],
-            [f4, [timestamps, market_name]],
-            [f5, [timestamps, market_name]]
-        ]
-
-    return calc_calls
 
 
 def f1(timestamps: np.array, market_name: str) -> np.array:
