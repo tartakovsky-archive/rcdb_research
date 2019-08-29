@@ -27,11 +27,8 @@ def calc_all(
 
     df = pd.DataFrame(
         {
-            f"{PREFIX}_f1": f1(high),
-            f"{PREFIX}_f4": f4(high),
-            f"{PREFIX}_f7": f7(close),
-            f"{PREFIX}_f8": f8(close),
-            f"{PREFIX}_f9": f9(high),
+            f"{PREFIX}_bars_in_drawdown": bars_in_drawdown(close),
+            f"{PREFIX}_bars_in_runup": bars_in_runup(close),
         },
         index=data.index
     )
@@ -39,26 +36,17 @@ def calc_all(
     for ps in param_set:
         period = ps["period"]
 
-        df[f"{PREFIX}_f2_{period}"] = f2(high, period)
-        df[f"{PREFIX}_f3_{period}"] = f3(low, period)
-        df[f"{PREFIX}_f5_{period}"] = f5(high, period)
-        df[f"{PREFIX}_f6_{period}"] = f6(low, period)
-        df[f"{PREFIX}_f10_{period}"] = f10(high, period)
-        df[f"{PREFIX}_f11_{period}"] = f11(low, period)
+        df[f"{PREFIX}_is_local_high_{period}"] = is_local_high(high, period)
+        df[f"{PREFIX}_is_local_low_{period}"] = is_local_low(low, period)
+        df[f"{PREFIX}_bars_since_local_high_{period}"] = bars_since_local_high(high, period)
+        df[f"{PREFIX}_bars_since_local_low_{period}"] = bars_since_local_low(low, period)
+        df[f"{PREFIX}_change_since_local_high_{period}"] = change_since_local_high(high, period)
+        df[f"{PREFIX}_change_since_local_low_{period}"] = change_since_local_low(low, period)
 
     return df
 
 
-def f1(high: np.array) -> np.array:
-    """
-    Check if the high is ath
-    :param np.array high: input series
-    :return: array of 0 and 1 for each row
-    """
-    return utils.is_ath(high)
-
-
-def f2(high: np.array, period: int) -> np.array:
+def is_local_high(high: np.array, period: int) -> np.array:
     """
     Check if the high is a highest in period
     :param np.array high: input series
@@ -68,7 +56,7 @@ def f2(high: np.array, period: int) -> np.array:
     return utils.is_extremum_bars_periods(series=high, period=period, maximum=True)
 
 
-def f3(low: np.array, period: int) -> np.array:
+def is_local_low(low: np.array, period: int) -> np.array:
     """
     Check if the low is a lowest in period
     :param np.array low: input series
@@ -78,18 +66,7 @@ def f3(low: np.array, period: int) -> np.array:
     return utils.is_extremum_bars_periods(series=low, period=period, maximum=False)
 
 
-def f4(high: np.array) -> np.array:
-    """
-    Calculate bars since ath
-    :param np.array high: input series
-    :return: array of seconds
-    """
-    return utils.bars_since_mark(
-        utils.is_ath(high)
-    )
-
-
-def f5(high: np.array, period: int) -> np.array:
+def bars_since_local_high(high: np.array, period: int) -> np.array:
     """
     Calculate numbers of bars since highest in period
     :param np.array high: input series
@@ -105,7 +82,7 @@ def f5(high: np.array, period: int) -> np.array:
     )
 
 
-def f6(low: np.array, period: int) -> np.array:
+def bars_since_local_low(low: np.array, period: int) -> np.array:
     """
     Calculate numbers of bars since lowest in period
     :param np.array low: input series
@@ -121,7 +98,7 @@ def f6(low: np.array, period: int) -> np.array:
     )
 
 
-def f7(close: np.array) -> np.array:
+def bars_in_drawdown(close: np.array) -> np.array:
     """
     Calculate numbers of bars in drawdown
     :param np.array close: input series
@@ -132,7 +109,7 @@ def f7(close: np.array) -> np.array:
     )
 
 
-def f8(close: np.array) -> np.array:
+def bars_in_runup(close: np.array) -> np.array:
     """
     Calculate numbers of bars in run up
     :param np.array close: input series
@@ -143,19 +120,7 @@ def f8(close: np.array) -> np.array:
     )
 
 
-def f9(high: np.array) -> np.array:
-    """
-    Calculate % change since ath
-    :param np.array high: input series
-    :return: array of float
-    """
-    return utils.change_since_mark(
-        series=high,
-        marked=utils.is_ath(high)
-    )
-
-
-def f10(high: np.array, period: int) -> np.array:
+def change_since_local_high(high: np.array, period: int) -> np.array:
     """
     Calculate % change since highest in period
     :param np.array high: input series
@@ -172,7 +137,7 @@ def f10(high: np.array, period: int) -> np.array:
     )
 
 
-def f11(low: np.array, period: int) -> np.array:
+def change_since_local_low(low: np.array, period: int) -> np.array:
     """
     Calculate % change since lowest in period
     :param np.array low: input series
@@ -187,10 +152,3 @@ def f11(low: np.array, period: int) -> np.array:
             maximum=False
         )
     )
-
-
-__all__ = (
-    "PREFIX",
-    "calc_all",
-    *[key for key in locals().keys() if key[1:].isdigit()]
-)
