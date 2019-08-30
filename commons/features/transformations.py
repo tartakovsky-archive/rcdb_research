@@ -105,6 +105,40 @@ class Transforms:
         return TransformObj("clip", crop_perc=5)
 
 
+class TransformsMixin:
+    def none(cls):
+        cls.t([Transforms.none()])
+        return cls
+
+    def symlog(self):
+        self.t([Transforms.symlog()])
+        return self
+
+    def symroot2(self):
+        self.t([TransformObj("power", p=Fraction(1/2))])
+        return self
+
+    def symroot3(self):
+        self.t([TransformObj("power", p=Fraction(1/3))])
+        return self
+
+    def sympower2(self):
+        self.t([TransformObj("power", p=2)])
+        return self
+
+    def sympower3(self):
+        self.t([TransformObj("power", p=3)])
+        return self
+
+    def symlog_symlog(self):
+        self.t([TransformObj("symlog_symlog")])
+        return self
+
+    def clip(self):
+        self.t([TransformObj("clip", crop_perc=5)])
+        return self
+
+
 class TransformDelayed:
     def __init__(self, data, transforms=tuple(), data_name=""):
         self.data = data

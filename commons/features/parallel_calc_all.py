@@ -12,10 +12,10 @@ import subprocess
 from typing import List, Dict, Callable
 from sklearn.model_selection import ParameterGrid
 from commons.utils import np_to_file, np_from_file, kwargs_to_str, json_from_file, json_to_folder, chunks, FnSerializer
-from commons.features.transformations import TransformObj, Transforms, TransformDelayed
+from commons.features.transformations import TransformObj, Transforms, TransformsMixin, TransformDelayed
 
 
-class Column:
+class Column(TransformsMixin):
     def __init__(self, name, transforms=None):
         self.name = name
         self.transforms = transforms
@@ -35,8 +35,6 @@ class Column:
 
         return self.value_delayed
 
-    # def get_name(self):
-    #     return self.get_value().get_name()
 
     def get_name(self):
         res = [self.name]
