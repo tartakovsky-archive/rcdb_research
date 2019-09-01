@@ -10,11 +10,10 @@ joblib==0.13.2
 dask==2.2.0
 flock==0.1
 
+jupyter
+cufflinks
 jupyter==1.0.0
 cufflinks==0.15
-workalendar==5.2.3
-pandas_market_calendars
-
 
 tulipindicators
 python-mne_features @ git+https://github.com/mne-tools/mne-features.git@629dad6345a61769c97a526c3878bd81c4d50ab6#egg=python-mne_features
