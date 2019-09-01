@@ -10,8 +10,6 @@ joblib==0.13.2
 dask==2.2.0
 flock==0.1
 
-jupyter
-cufflinks
 jupyter==1.0.0
 cufflinks==0.15
 
