@@ -11,7 +11,7 @@ dask==2.2.0
 flock==0.1
 
 jupyter==1.0.0
-cufflinks==0.15
+cufflinks==0.16
 
 tulipindicators
 python-mne_features @ git+https://github.com/mne-tools/mne-features.git@629dad6345a61769c97a526c3878bd81c4d50ab6#egg=python-mne_features
