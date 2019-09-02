@@ -2,12 +2,14 @@ import os
 import sys
 import json
 import uuid
+import copy
 import flock
 import base64
 import joblib
 import pandas as pd
 import numpy as np
 import subprocess
+
 
 from typing import List, Dict, Callable
 from sklearn.model_selection import ParameterGrid
@@ -35,7 +37,6 @@ class Column(TransformsMixin):
 
         return self.value_delayed
 
-
     def get_name(self):
         res = [self.name]
         for tr in self.transforms:
@@ -48,10 +49,16 @@ class Column(TransformsMixin):
 
     def to_dict(self):
         return dict(
-            type='Col',
+            type='Column',
             name=self.name,
             transforms=[t.to_dict() for t in self.transforms]
         )
+
+    def __repr__(self):
+        return self.get_name()
+
+    def __str__(self):
+        return self.get_name()
 
     @classmethod
     def from_dict(cls, d):
@@ -68,6 +75,7 @@ class KeyMap:
 
 km = KeyMap()
 t = Transforms
+col = Column
 
 
 class NpDataFrame:
@@ -105,11 +113,12 @@ class NpDataFrame:
 
 class FnTask:
     name_to_class_dict = {
-        "Col": Column,
+        "Column": Column,
         "TransformObj": TransformObj
     }
 
     def __init__(self, task_meta: Dict):
+        self.task_meta = copy.deepcopy(task_meta)
         self.fn = FnSerializer.get_by_name(task_meta['fn_name'])
         self.alias = self.fn.__name__
         if 'alias' in task_meta:
@@ -145,6 +154,12 @@ class FnTask:
             result_name += "." + transforms_post_str
         return result_name
 
+    def serialize(self, as_dict=False):
+        if as_dict:
+            return json.dumps(self.task_meta)
+        else:
+            return self.get_name()
+
     def de_serialize(self):
         for kw_name in self.kwargs.keys():
             if type(self.kwargs[kw_name]) == dict and 'type' in self.kwargs[kw_name]:
@@ -165,7 +180,7 @@ class JobTaskWrapper:
             self.data_cache = data_cache
         self.job_meta = job_meta
 
-        if self.job_meta['n_jobs'] == 1:
+        if self.job_meta['n_jobs'] == 1 and self.job_meta['output_folder'] is None:
             self.output_callback = self.__sequential_jobs_feature_output_callback
         else:
             self.output_callback = self.__concurrent_jobs_feature_output_callback
@@ -191,7 +206,7 @@ class JobTaskWrapper:
             if not self.job_meta['benchmark']:
                 feature_output_file_name = self.output_callback(
                     self.job_meta,
-                    t.get_name(),
+                    t,
                     feature_output
                 )
                 results.append(feature_output_file_name)
@@ -199,15 +214,18 @@ class JobTaskWrapper:
         return results
 
     @staticmethod
-    def __concurrent_jobs_feature_output_callback(job_meta, fn_name, fn_output):
-        feature_output_file = base64.b32encode(bytes(fn_name, "UTF-8")).decode("UTF-8")
+    def __concurrent_jobs_feature_output_callback(job_meta, task: FnTask, fn_output: np.ndarray):
+        feature_output_file = base64.b32encode(bytes(task.serialize(as_dict=False), "UTF-8")).decode("UTF-8")
+        if job_meta['name_as_dict']:
+            with open(os.path.join(job_meta['output_folder'], "feature_info", feature_output_file), "w") as f:
+                f.write(task.serialize(as_dict=job_meta['name_as_dict']))
         feature_output_path = os.path.join(job_meta['output_folder'], feature_output_file)
         fn_output.tofile(feature_output_path)
         return feature_output_file
 
     @staticmethod
-    def __sequential_jobs_feature_output_callback(job_meta, fn_name, fn_output):
-        return [fn_name, fn_output]
+    def __sequential_jobs_feature_output_callback(job_meta, task: FnTask, fn_output: np.ndarray):
+        return [task.serialize(as_dict=False), fn_output]
 
     def get_data(self):
         is_file = type(self.job_meta['input_data']) == str
@@ -331,11 +349,16 @@ class JobOutput:
 
         return self.__load_output_folder_data(self.output_folder)
 
+    def get_info(self):
+        if self.output_folder is not None:
+            for item in self.__load_info_folder_data(self.output_folder):
+                yield item
+
     def count_results(self):
         if self.results is not None:
             return len(self.results)
 
-        return len(os.listdir(self.output_folder + "/"))
+        return len(os.listdir(self.output_folder + "/")) - 1  # minus feature_info folder
 
     def __build_pandas_dataframe(self, results):
         d = {}
@@ -353,15 +376,26 @@ class JobOutput:
 
     @staticmethod
     def __load_output_folder_data(output_folder):
-        files = os.listdir(output_folder + "/")
-        for f in files:
-            yield [base64.b32decode(f).decode("UTF-8"), np.fromfile(os.path.join(output_folder, f))]
+        files = os.listdir(output_folder)
+        for fname in files:
+            if fname.endswith('feature_info'):
+                continue
+            yield (base64.b32decode(fname).decode("UTF-8"), np.fromfile(os.path.join(output_folder, fname)))
+
+    @staticmethod
+    def __load_info_folder_data(output_folder):
+        file_folder = os.path.join(output_folder, 'feature_info')
+        files = os.listdir(file_folder)
+        for fname in files:
+            with open(os.path.join(file_folder, fname), 'r') as f:
+                yield (base64.b32decode(fname).decode("UTF-8"), json.load(f))
 
 
 class JobManager:
     def __init__(self, data: pd.DataFrame, config: Dict,
                  n_jobs=1, batch_size=200, benchmark=False, temp_folder=None,
-                 python_executable=None, debug=False
+                 python_executable=None, debug=False,
+                 add_feature_ids=False, name_as_dict=False
                  ):
         if n_jobs != 1 and temp_folder is None:
             raise AttributeError("temp_folder is required for parallel_execution")
@@ -379,17 +413,26 @@ class JobManager:
             n_jobs=n_jobs,
             temp_folder=temp_folder,
             batch_size=batch_size,
-            benchmark=benchmark
+            benchmark=benchmark,
+            add_feature_ids=add_feature_ids
         )
         self.job_meta['debug'] = debug
+        self.job_meta['name_as_dict'] = name_as_dict
         self.python_executable = python_executable
 
     def run_job(self):
         if self.job_meta['n_jobs'] == 1:
-            return JobOutput(
-                results=JobHandler(self.job_meta).run_job(),
-                index=self.job_meta['index_data']
-            )
+            if 'output_folder' in self.job_meta and self.job_meta['output_folder'] is not None:
+                JobHandler(self.job_meta).run_job()
+                return JobOutput(
+                    output_folder=self.job_meta['output_folder'],
+                    index=self.job_meta['index_data']
+                )
+            else:
+                return JobOutput(
+                    results=JobHandler(self.job_meta).run_job(),
+                    index=self.job_meta['index_data']
+                )
         else:
             python_path = self.python_executable if self.python_executable is not None else sys.executable
             arg_str = json.dumps(self.job_meta)
@@ -424,112 +467,120 @@ class JobManager:
         data_file_path = os.path.join(job_folder, data_file_name)
 
         output_folder = os.path.join(job_folder, 'out')
+        feature_info = os.path.join(output_folder, 'feature_info')
         task_folder = os.path.join(job_folder, 'tasks')
 
         os.mkdir(job_folder)
         os.mkdir(output_folder)
+        os.mkdir(feature_info)
         os.mkdir(task_folder)
 
         return data_file_path, task_folder, output_folder, job_folder
 
     def create_job(
             self, data: pd.DataFrame, config: Dict, n_jobs=1, temp_folder=None, batch_size=1000,
-            verbose=0, benchmark=False
+            verbose=0, benchmark=False, add_feature_ids=False
     ):
-        is_tmp_folder = False
-        try:
-            if n_jobs != 1:
-                (
-                    data_file_path,
-                    task_folder,
-                    output_folder,
-                    job_folder
-                ) = self.__init_folders(temp_folder)
+        output_folder = None
+        if n_jobs != 1 or temp_folder is not None:
+            (
+                data_file_path,
+                task_folder,
+                output_folder,
+                job_folder
+            ) = self.__init_folders(temp_folder)
 
-            fn_parallel_list = []
-            inputs_set = set()
+        fn_parallel_list = []
+        inputs_set = set()
 
-            for prefix, fn_settings_list in config.items():
-                for fn_settings in fn_settings_list:
-                    fn_name = FnSerializer.get_full_name(fn_settings['fn'])
-                    pg = fn_settings['pg']
-                    dm = fn_settings['dm']
-                    transforms_post = []
-                    if 'tr' in fn_settings and fn_settings['tr'] is not None:
-                        transforms_post = [t.to_dict() for t in fn_settings['tr']]
+        for prefix, fn_settings_list in config.items():
+            for fn_settings in fn_settings_list:
+                fn_name = FnSerializer.get_full_name(fn_settings['fn'])
+                pg = fn_settings['pg']
+                dm = fn_settings['dm']
+                transforms_post = []
+                if 'tr' in fn_settings and fn_settings['tr'] is not None:
+                    transforms_post = [t.to_dict() for t in fn_settings['tr']]
 
-                    kwargs_list = list(ParameterGrid({**pg, **dm}))
+                kwargs_list = list(ParameterGrid({**pg, **dm}))
 
-                    for kwargs in kwargs_list:
-                        input_params = dict()
-                        input_names = dict()
-                        for kw_name in list(kwargs.keys()):
-                            if kw_name in pg:
-                                input_params[kw_name] = kwargs[kw_name]
-                            if kw_name in dm:
-                                if type(kwargs[kw_name]) == str:
-                                    # automatic "col_name" -> km.col("col_name")
-                                    kwargs[kw_name] = km.col(kwargs[kw_name])
+                feature_num = 0
+                for kwargs in kwargs_list:
+                    input_params = dict()
+                    for kw_name in list(kwargs.keys()):
+                        if kw_name in pg:
+                            input_params[kw_name] = kwargs[kw_name]
+                        if kw_name in dm:
+                            if type(kwargs[kw_name]) == str:
+                                # automatic "col_name" -> km.col("col_name")
+                                kwargs[kw_name] = km.col(kwargs[kw_name])
 
-                                inputs_set.add(kwargs[kw_name].name)
-                                kwargs[kw_name] = kwargs[kw_name].to_dict()
+                            inputs_set.add(kwargs[kw_name].name)
+                            kwargs[kw_name] = kwargs[kw_name].to_dict()
 
-                        feature_data = dict(
-                            fn_name=fn_name,
-                            prefix=prefix,
-                            input_names=input_names,
-                            params=input_params,
-                            transform_post=transforms_post,
-                            kwargs=kwargs
-                        )
-                        if 'alias' in fn_settings and fn_settings['alias'] is not None:
-                            feature_data['alias'] = fn_settings['alias']
+                    feature_data = dict(
+                        fn_name=fn_name,
+                        prefix=prefix,
+                        params=input_params,
+                        transform_post=transforms_post,
+                        kwargs=kwargs
+                    )
+                    if 'alias' in fn_settings and fn_settings['alias'] is not None:
+                        feature_data['alias'] = fn_settings['alias']
 
-                        fn_parallel_list.append(feature_data)
+                    if add_feature_ids:
+                        if 'alias' not in feature_data:
+                            feature_data['alias'] = fn_settings['fn'] if type(fn_settings['fn']) == str\
+                                else fn_settings['fn'].__name__
+                        feature_data['alias'] = f"{feature_num}-{feature_data['alias']}"
 
-            if n_jobs != 1:
-                # dump task files
-                task_files = [json_to_folder(chnk, task_folder) for chnk in chunks(fn_parallel_list, batch_size)]
+                    feature_num += 1
+                    fn_parallel_list.append(feature_data)
 
-            if verbose == 1:
-                print(len(task_files))
+        if n_jobs != 1:
+            # dump task files
+            task_files = [json_to_folder(chnk, task_folder) for chnk in chunks(fn_parallel_list, batch_size)]
 
-            if "index" in inputs_set:
-                data_index = data.index
-                if isinstance(data_index, pd.DatetimeIndex):
-                    data_index = data_index.to_pydatetime()
-                data['index'] = data_index
+        if verbose == 1:
+            print(len(task_files))
 
-            if n_jobs == 1:
-                return dict(
-                    n_jobs=n_jobs,
-                    task_list=fn_parallel_list,
-                    input_data=data[list(inputs_set)].values,
-                    index_data=data.index,
-                    data_columns=list(inputs_set),
-                    benchmark=benchmark
-                )
-            else:
-                __data_file_path = np_to_file(data_file_path, data[list(inputs_set)].values)
-                __index_file_path = np_to_file(f'{data_file_path}.index', data.index.values)
-                return dict(
-                    n_jobs=n_jobs,
-                    job_folder=job_folder,
-                    input_data=__data_file_path,
-                    index_data=__index_file_path,
-                    output_folder=output_folder,
-                    task_folder=task_folder,
-                    data_columns=list(inputs_set),
-                    benchmark=benchmark
-                )
+        if "index" in inputs_set:
+            data_index = data.index
+            if isinstance(data_index, pd.DatetimeIndex):
+                data_index = data_index.to_pydatetime()
+            data['index'] = data_index
 
-        finally:
-            if is_tmp_folder:
-                os.remove(temp_folder)
-            else:
-                try:
-                    os.remove(job_folder)
-                    os.remove(task_folder)
-                    os.remove(data_file_path)
-                except Exception:
-                    pass
+        if n_jobs == 1:
+            return dict(
+                n_jobs=n_jobs,
+                task_list=fn_parallel_list,
+                input_data=data[list(inputs_set)].values,
+                index_data=data.index,
+                data_columns=list(inputs_set),
+                benchmark=benchmark,
+                output_folder=output_folder,
+            )
+        else:
+            __data_file_path = np_to_file(data_file_path, data[list(inputs_set)].values)
+            __index_file_path = np_to_file(f'{data_file_path}.index', data.index.values)
+            return dict(
+                n_jobs=n_jobs,
+                job_folder=job_folder,
+                input_data=__data_file_path,
+                index_data=__index_file_path,
+                output_folder=output_folder,
+                task_folder=task_folder,
+                data_columns=list(inputs_set),
+                benchmark=benchmark
+            )
+
+        # finally:
+        #     if is_tmp_folder:
+        #         os.remove(temp_folder)
+        #     else:
+        #         try:
+        #             os.remove(job_folder)
+        #             os.remove(task_folder)
+        #             os.remove(data_file_path)
+        #         except Exception:
+        #             raise

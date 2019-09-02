@@ -59,6 +59,12 @@ class TransformObj:
     def get_name(self):
         return f"{self.fn_name}{kwargs_to_str(self.kwargs)}"
 
+    def __repr__(self):
+        return self.get_name()
+
+    def __str__(self):
+        return self.get_name()
+
     def to_dict(self):
         return dict(
             type='TransformObj',
