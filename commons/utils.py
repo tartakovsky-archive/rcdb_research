@@ -33,7 +33,7 @@ def get_df_from_hdf_bytes(hdf_bytes: bytes, key: str = "table") -> pd.DataFrame:
 
 def np_to_file(path_to_file: str, ndarray: np.ndarray) -> str:
     dtype = str(ndarray.dtype)
-    fpath = f'{path_to_file}.dtype{dtype}'
+    fpath = f'{path_to_file}-npdata-.dtype{dtype}'
     shape = str(list(ndarray.shape))
     fpath = f'{fpath}.shape{shape}'
     # with open(fpath, "wb") as f:
@@ -46,10 +46,7 @@ def np_from_file(path_to_file: str) -> np.array:
     path_to_dtype, shape = path_to_file.split(".shape")
     _, dtype = path_to_dtype.split(".dtype")
     shape = json.loads(shape)
-    if dtype == "datetime64[ns]":
-        return np.fromfile(path_to_file, dtype=np.int64).reshape(*shape).astype(dtype)
-    else:
-        return np.fromfile(path_to_file, dtype=getattr(np, dtype)).reshape(*shape)
+    return np.fromfile(path_to_file, dtype=dtype).reshape(*shape)
 
 
 def kwargs_to_str(kwargs, brackets=True):
@@ -86,9 +83,28 @@ class FnSerializer:
     def get_full_name(fn: Union[Callable, str]) -> str:
         if type(fn) == str:
             return fn
+
         return f'{inspect.getmodule(fn).__name__}.{fn.__name__}'
 
     @staticmethod
     def get_by_name(name):
         module_name, fn_name = name.rsplit(".", 1)
         return getattr(importlib.import_module(module_name), fn_name)
+
+
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
+def generate_constraints_function(constraints_string):
+    """
+    Generates constraints function by eval
+    :param constraints_string: string with python expression
+    :return: lambda function
+    """
+    # Be careful with constraints string! it must be safe!
+    return eval(
+        f"lambda p: {constraints_string}", {"__builtins__": {"all": all, "any": any}}
+    )

@@ -13,7 +13,8 @@ import subprocess
 
 from typing import List, Dict, Callable
 from sklearn.model_selection import ParameterGrid
-from commons.utils import np_to_file, np_from_file, kwargs_to_str, json_from_file, json_to_folder, chunks, FnSerializer
+from commons.utils import np_to_file, np_from_file, kwargs_to_str, json_from_file, \
+    json_to_folder, chunks, FnSerializer, AttrDict, generate_constraints_function
 from commons.features.transformations import TransformObj, Transforms, TransformsMixin, TransformDelayed
 
 
@@ -217,10 +218,12 @@ class JobTaskWrapper:
     def __concurrent_jobs_feature_output_callback(job_meta, task: FnTask, fn_output: np.ndarray):
         feature_output_file = base64.b32encode(bytes(task.serialize(as_dict=False), "UTF-8")).decode("UTF-8")
         if job_meta['name_as_dict']:
-            with open(os.path.join(job_meta['output_folder'], "feature_info", feature_output_file), "w") as f:
-                f.write(task.serialize(as_dict=job_meta['name_as_dict']))
+            json.dump(
+                open(os.path.join(job_meta['output_folder'], "feature_info", feature_output_file), "w"),
+                task.serialize(as_dict=job_meta['name_as_dict'])
+            )
         feature_output_path = os.path.join(job_meta['output_folder'], feature_output_file)
-        fn_output.tofile(feature_output_path)
+        np_to_file(feature_output_path, fn_output)
         return feature_output_file
 
     @staticmethod
@@ -380,7 +383,10 @@ class JobOutput:
         for fname in files:
             if fname.endswith('feature_info'):
                 continue
-            yield (base64.b32decode(fname).decode("UTF-8"), np.fromfile(os.path.join(output_folder, fname)))
+            yield (
+                base64.b32decode(fname.split("-npdata-")[0]).decode("UTF-8"),
+                np_from_file(os.path.join(output_folder, fname))
+            )
 
     @staticmethod
     def __load_info_folder_data(output_folder):
@@ -496,13 +502,16 @@ class JobManager:
         for prefix, fn_settings_list in config.items():
             for fn_settings in fn_settings_list:
                 fn_name = FnSerializer.get_full_name(fn_settings['fn'])
-                pg = fn_settings['pg']
+                pg = fn_settings.get('pg', km())
                 dm = fn_settings['dm']
+                cn = fn_settings.pop('cn', None)
+
                 transforms_post = []
                 if 'tr' in fn_settings and fn_settings['tr'] is not None:
                     transforms_post = [t.to_dict() for t in fn_settings['tr']]
 
                 kwargs_list = list(ParameterGrid({**pg, **dm}))
+                constraint = generate_constraints_function(cn) if cn else None
 
                 feature_num = 0
                 for kwargs in kwargs_list:
@@ -517,6 +526,9 @@ class JobManager:
 
                             inputs_set.add(kwargs[kw_name].name)
                             kwargs[kw_name] = kwargs[kw_name].to_dict()
+
+                    if constraint is not None and not constraint(AttrDict(input_params)):
+                        continue
 
                     feature_data = dict(
                         fn_name=fn_name,

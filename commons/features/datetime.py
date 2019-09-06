@@ -1,7 +1,15 @@
 import numpy as np
 
 
+def convert_dt_type(datetimes: np.array) -> np.array:
+    if datetimes.dtype == 'datetime64[ns]':
+        return datetimes.astype('datetime64[s]')
+    return datetimes
+
+
 def _get_obj_attr(objs: np.array, attr: str, func: bool = False) -> np.array:
+    objs = convert_dt_type(objs)
+
     if func:
         return np.array([getattr(dt, attr)() for dt in objs.tolist()])
 
@@ -59,7 +67,7 @@ def day_of_year(datetimes: np.array) -> np.array:
     :param datetimes:
     :return:
     """
-    return np.array([dt.timetuple().tm_yday for dt in datetimes.tolist()])
+    return np.array([dt.timetuple().tm_yday for dt in convert_dt_type(datetimes).tolist()])
 
 
 _week_of_month = np.vectorize(
@@ -77,7 +85,7 @@ def week_of_month(datetimes: np.array) -> np.array:
     :param datetimes:
     :return:
     """
-    return _week_of_month(datetimes)
+    return _week_of_month(convert_dt_type(datetimes).tolist())
 
 
 def week_of_year(datetimes: np.array) -> np.array:
@@ -86,7 +94,7 @@ def week_of_year(datetimes: np.array) -> np.array:
     :param datetimes:
     :return:
     """
-    return np.array([dt.isocalendar()[1] for dt in datetimes.tolist()])
+    return np.array([dt.isocalendar()[1] for dt in convert_dt_type(datetimes).tolist()])
 
 
 def month_of_year(datetimes: np.array) -> np.array:
@@ -95,4 +103,4 @@ def month_of_year(datetimes: np.array) -> np.array:
     :param datetimes:
     :return:
     """
-    return _get_obj_attr(datetimes, "month")
+    return _get_obj_attr(convert_dt_type(datetimes), "month")

@@ -1,5 +1,6 @@
 import pytest
 
+import numpy as np
 import pandas as pd
 
 from commons.features.parallel_calc_all import JobManager, km, t
@@ -76,3 +77,91 @@ def test_JobManager_df_with_tz_index(ohlcv_df):
         JobManager(ohlcv_df, {})
         assert ex.match("Timezones not allowed in the input DataFrame. Use `df.index = pd.to_datetime(df.index)"
                         ".tz_localize(None)` to remove tz info.")
+
+
+def str_func(x):
+    return np.array([str(i) for i in x])
+
+
+def mul2_func(x):
+    return x * 2
+
+
+def inc_func(x):
+    return x + 1
+
+
+@pytest.mark.parametrize(
+    'func, input, test_res',
+    [
+        (
+            str_func,
+            np.array([1, 2, 3, 4]),
+            np.array(['1', '2', '3', '4'])
+        ),
+        (
+            mul2_func,
+            np.array([1.25, 2.25, 3.25, 4.25]),
+            np.array([2.5, 4.5, 6.5, 8.5])
+        ),
+        (
+            inc_func,
+            np.array([1, 2, 3, 4]),
+            np.array([2, 3, 4, 5])
+        )
+    ]
+)
+def test_output_type(func, input, test_res, tmp_path):
+    job_config = dict(
+        f=[
+            dict(
+                fn=func,
+                pg=km(),
+                dm=km(x=['input'])
+            )
+        ]
+    )
+
+    jm = JobManager(
+        pd.DataFrame(dict(input=input), index=pd.date_range(start='1/1/2018', end='1/04/2018')),
+        config=job_config,
+        n_jobs=-1,
+        temp_folder=tmp_path.resolve(),
+        batch_size=300,
+        benchmark=False,
+        debug=False
+    )
+
+    job_result = jm.run_job()
+    res_df = job_result.get_pandas()
+
+    assert np.array_equal(
+        test_res, res_df[res_df.columns[0]].values
+    )
+
+
+def test_constraints():
+    test_config = dict(
+        f=[
+            dict(
+                fn=inc_func,
+                pg=km(a=[1, 2, 3], b=[1, 2, 3], c=[1, -1]),
+                dm=km(x=['input']),
+                cn='p.a < p.b and p.c != -1'
+            )
+        ]
+    )
+
+    test_params = [
+        dict(a=1, b=2, c=1),
+        dict(a=1, b=3, c=1),
+        dict(a=2, b=3, c=1),
+    ]
+
+    jm = JobManager(
+        pd.DataFrame(dict(input=np.arange(30)), index=pd.date_range(start='1/1/2018', end='1/30/2018')),
+        test_config
+    )
+
+    for task, test_params in zip(jm.job_meta['task_list'], test_params):
+        assert task['params'] == test_params
