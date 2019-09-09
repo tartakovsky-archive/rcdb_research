@@ -4,7 +4,6 @@ import json
 import uuid
 import copy
 import flock
-import base64
 import joblib
 import pandas as pd
 import numpy as np
@@ -216,14 +215,14 @@ class JobTaskWrapper:
 
     @staticmethod
     def __concurrent_jobs_feature_output_callback(job_meta, task: FnTask, fn_output: np.ndarray):
-        feature_output_file = base64.b32encode(bytes(task.serialize(as_dict=False), "UTF-8")).decode("UTF-8")
+        feature_output_file = str(uuid.uuid4().hex)
+        task_serialized = task.serialize(as_dict=False)
         if job_meta['name_as_dict']:
-            json.dump(
-                open(os.path.join(job_meta['output_folder'], "feature_info", feature_output_file), "w"),
-                task.serialize(as_dict=job_meta['name_as_dict'])
-            )
+            with open(os.path.join(job_meta['output_folder'], "feature_info", feature_output_file), "w") as f:
+                json.dump({**task.task_meta, '_name': task_serialized}, f)
+
         feature_output_path = os.path.join(job_meta['output_folder'], feature_output_file)
-        np_to_file(feature_output_path, fn_output)
+        pd.Series(fn_output, name=task_serialized).to_pickle(feature_output_path)
         return feature_output_file
 
     @staticmethod
@@ -364,12 +363,9 @@ class JobOutput:
         return len(os.listdir(self.output_folder + "/")) - 1  # minus feature_info folder
 
     def __build_pandas_dataframe(self, results):
-        d = {}
-        for [k, v] in results:
-            d[k] = v
-        df = pd.DataFrame(d)
+        df = pd.DataFrame({name: v for name, v in results})
         if self.index is not None:
-            df.set_index(self.index, inplace=True)
+            df.index = self.index
         return df
 
     @staticmethod
@@ -383,10 +379,9 @@ class JobOutput:
         for fname in files:
             if fname.endswith('feature_info'):
                 continue
-            yield (
-                base64.b32decode(fname.split("-npdata-")[0]).decode("UTF-8"),
-                np_from_file(os.path.join(output_folder, fname))
-            )
+
+            series = pd.read_pickle(os.path.join(output_folder, fname))
+            yield series.name, series
 
     @staticmethod
     def __load_info_folder_data(output_folder):
@@ -394,7 +389,8 @@ class JobOutput:
         files = os.listdir(file_folder)
         for fname in files:
             with open(os.path.join(file_folder, fname), 'r') as f:
-                yield (base64.b32decode(fname).decode("UTF-8"), json.load(f))
+                data = json.load(f)
+                yield data.pop('_name'), data
 
 
 class JobManager:

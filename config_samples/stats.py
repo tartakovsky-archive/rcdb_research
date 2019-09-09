@@ -6,7 +6,7 @@ from commons.features.parallel_calc_all import km
 
 
 window = np.array(utils.pct_range(2, 100, 1, mult_step=0.03)).astype(int).tolist()
-stats_conf = dict(
+stats_config = dict(
     stats=[
         dict(
             fn=stats.cmean,

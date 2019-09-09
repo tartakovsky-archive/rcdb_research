@@ -17,7 +17,7 @@ $ pip install numpy==1.16.4
 Run the following in the terminal, you'll be prompted for github credentials:
 
 ```bash
-$ pip install -U --user --extra-index-url https://pypi-private:***TOKEN***@pkgs.dev.azure.com/rcdb/_packaging/pypi-private/pypi/simple/ git+https://github.com/tartakovsky-archive/research-notebooks
+$ pip install -U --extra-index-url https://pypi-private:***TOKEN***@pkgs.dev.azure.com/rcdb/_packaging/pypi-private/pypi/simple/ git+https://github.com/tartakovsky-archive/research-notebooks
 ```
 
 ## Installation for development
@@ -27,7 +27,7 @@ $ pip install -U --user --extra-index-url https://pypi-private:***TOKEN***@pkgs.
 `$ pip install --extra-index-url $(cat extra-index-url) -e <git url>` - install requirements from git  
 `$ jupyter notebook` - start jupyter  
 
-## Custom constrains for config parameters
+## Custom constraints for config parameters
 ```python
 test_config = dict(
         f=[
