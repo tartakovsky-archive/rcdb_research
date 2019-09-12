@@ -88,11 +88,11 @@ class Transforms:
 
     @staticmethod
     def symroot2():
-        return TransformObj("power", p=Fraction(1/2))
+        return TransformObj("power", p=Fraction(1, 2))
 
     @staticmethod
     def symroot3():
-        return TransformObj("power", p=Fraction(1/3))
+        return TransformObj("power", p=Fraction(1, 3))
 
     @staticmethod
     def sympower2():
