@@ -5,6 +5,7 @@ import logging
 from collections import namedtuple
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 import retrying
 import requests
@@ -227,3 +228,37 @@ class RcdbData:
         :return:
         """
         cls._instance = None
+
+    ##########
+    # Dataframe validation
+    ##########
+    @staticmethod
+    def is_rcdb_data(df):
+        # Usage:
+        # assert ft.is_rcdb_data(data)[0], f'Missing columns: {ft.is_rcdb_data(data)[1]}'
+        required_columns = pd.Series(data=[
+            'open', 'high', 'low', 'close', 'volume', 'volume_buy', 'volume_sell',
+            'volume_quote', 'volume_quote_buy', 'volume_quote_sell', 'ticks', 'ticks_buy', 'ticks_sell'
+        ])
+
+        mask = pd.Series(required_columns).isin(df.columns)
+        missing_columns = list(required_columns[mask.index[mask is False]])
+
+        is_valid = len(missing_columns) == 0
+
+        return (is_valid, missing_columns)
+
+    @staticmethod
+    def check_consistency(df, verbose=False):
+        missing = df.isnull().sum().where(lambda x: x > 0).dropna()
+        infs = np.isinf(df).sum().where(lambda x: x > 0).dropna()
+        duplicates = df.T[df.T.duplicated()].T.columns
+
+        is_consistent = len(missing) == 0 and len(infs) == 0 and len(duplicates) == 0
+
+        if verbose:
+            print(f'\nColumns with missing values:\n {missing}')
+            print(f'\nColumns with inf values:\n {infs}')
+            print(f'\nDuplicated columns:\n {duplicates}')
+
+        return (is_consistent, missing, infs, duplicates)
