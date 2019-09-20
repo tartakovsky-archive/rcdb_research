@@ -36,15 +36,39 @@ class WalkForwardCV(BaseCrossValidator):
     TRAIN: [0 1 2 3 4] TEST: [6 7]
     TRAIN: [0 1 2 3 4 5 6] TEST: [8 9]
     """
-    def __init__(self, n_splits, test_size, gap_size=.0, expanding=False):
+    def __init__(self, n_splits, test_size=None, train_size=None, gap_size=0, expanding=False, is_fixed=False):
 
-        if not (test_size > 0 and 0 < gap_size + test_size < 1):
-            raise ValueError("Not enough train part")
+        if not (train_size or test_size):
+            raise ValueError("Please provide test_size or/and train_size parameter")
+
+        if is_fixed and train_size and test_size:
+            self.all_fixed_sizes_set = True
+            test_size = int(test_size)
+            train_size = int(train_size)
+            gap_size = int(gap_size)
+        else:
+            self.all_fixed_sizes_set = False
+
+        if not is_fixed:
+            if train_size and test_size:
+                raise ValueError("Please provide only test_size or train_size parameter")
+
+            if train_size is not None:
+                check_size = train_size
+                msg_part = "test"
+            else:
+                check_size = test_size
+                msg_part = "train"
+
+            if not (check_size > 0 and 0 < gap_size + check_size < 1):
+                raise ValueError(f"Not enough {msg_part} part")
 
         self.n_splits = int(n_splits)
         self.test_size = test_size
+        self.train_size = train_size
         self.gap_size = gap_size
         self.expanding = expanding
+        self.is_fixed = is_fixed
 
     def get_n_splits(self, X=None, y=None, groups=None):
         """
@@ -71,6 +95,45 @@ class WalkForwardCV(BaseCrossValidator):
         a = offset_pct * (n_splits - 1)
         return (n_samples / a) / (1.0 + 1.0 / a)
 
+    def _calculate_sizes_fixed(self, n_samples):
+        """
+        Calculate split parts if sizes is bars count
+        :param n_samples: input data size
+        :return: tuple of n_wf_split, n_train, n_gap, n_test
+        """
+        n_test = self.test_size or int((n_samples - self.train_size) / self.n_splits)
+        n_wf_split = n_samples - (self.n_splits - 1) * n_test
+        n_train = n_wf_split - n_test
+        return n_wf_split, n_train, self.gap_size, n_test
+
+    def _calculate_sizes(self, n_samples):
+        """
+        Calculate split parts if sizes is percents
+        :param n_samples: input data size
+        :return: tuple of n_wf_split, n_train, n_gap, n_test
+        """
+        if self.n_splits == 1:
+            n_wf_split = n_samples
+        else:
+            test_size_percents = self.test_size or (1.0 - self.train_size - self.gap_size)
+
+            n_wf_split = self.get_n_wf_split(
+                n_samples,
+                test_size_percents,
+                self.n_splits
+            )
+
+        if self.test_size:
+            raw_n_test = n_wf_split * self.test_size
+            raw_n_train = n_wf_split - raw_n_test
+        else:
+            raw_n_train = n_wf_split * self.train_size
+            raw_n_test = n_wf_split - raw_n_train
+
+        raw_n_gap = n_wf_split * self.gap_size
+
+        return int(n_wf_split), int(raw_n_train), int(raw_n_gap), int(raw_n_test)
+
     def split(self, X, y=None, groups=None):
         """
         Generate indices to split data into training and test set.
@@ -92,33 +155,31 @@ class WalkForwardCV(BaseCrossValidator):
                 f" than the number of samples: n_samples={n_samples}."
             )
 
+        if self.all_fixed_sizes_set \
+                and self.train_size + self.gap_size + self.n_splits * self.test_size > n_samples:
+            raise ValueError("Provide more data")
+
         indices = np.arange(n_samples)
 
-        if self.n_splits == 1:
-            n_wf_split = n_samples
+        (n_wf_split, n_train, n_gap, n_test)\
+            = self._calculate_sizes_fixed(n_samples) if self.is_fixed else self._calculate_sizes(n_samples)
 
-        else:
-            n_wf_split = self.get_n_wf_split(
-                n_samples, self.test_size, self.n_splits
-            )
-
-        raw_n_test = n_wf_split * self.test_size
-        raw_n_gap = n_wf_split * self.gap_size
-        raw_n_train = n_wf_split - raw_n_test - raw_n_gap
-
-        n_test = int(raw_n_test)
-        n_gap = int(raw_n_gap)
-        n_train = int(raw_n_train)
-
-        if not n_test or not n_train:
+        if n_test <= 0 or n_train <= 0:
             raise ValueError(
                 f"Couldn't build splits(n_train={n_train}, n_test={n_test}). "
-                f"Set less n_splits or provide much data"
+                f"Set less n_splits or provide more data"
             )
 
+        if self.test_size:
+            n_train -= n_gap
+        else:
+            n_test -= n_gap
+
         rest = n_samples - int(n_wf_split) - (n_test * (self.n_splits - 1))
+        # print("n_wf_split", n_wf_split, "n_train", n_train, "n_gap", n_gap, "n_test", n_test, "rest", rest)
 
         train_start = 0
+        rest_pieces = (rest // self.n_splits) or 1
         for split_number in range(1, self.n_splits + 1):
             train_end = train_start + n_train
             test_start = train_end + n_gap
@@ -129,11 +190,17 @@ class WalkForwardCV(BaseCrossValidator):
             else:
                 test_end = test_start + n_test
                 if rest:
-                    test_end += 1
-                    rest -= 1
-                    additional_train_start = 1
+                    test_end += rest_pieces
+                    rest -= rest_pieces
+                    additional_train_start = rest_pieces
 
             train_set_slice_start = 0 if self.expanding else train_start
+
+            if self.all_fixed_sizes_set and not self.expanding:
+                train_set_slice_start = train_end - self.train_size
+                if train_set_slice_start < 0:
+                    train_set_slice_start = 0
+
             train_split = indices[train_set_slice_start:train_end]
             test_split = indices[test_start:test_end]
 
