@@ -1,7 +1,6 @@
 import numba # noqa
 import numpy as np
 from commons.utils import kwargs_to_str
-from fractions import Fraction
 
 
 @numba.jit
@@ -13,6 +12,11 @@ def symlog2_(x):
 @numba.jit
 def power(x, p):
     return np.sign(x) * np.abs(x)**p
+
+
+@numba.jit
+def root(x, p):
+    return power(x, 1/p)
 
 
 @numba.jit
@@ -38,6 +42,7 @@ def none(x):
 name_to_fn = dict(
     symlog=symlog2_,
     power=power,
+    root=root,
     symlog_symlog=symlog_symlog,
     clip=clip,
     none=none
@@ -88,11 +93,11 @@ class Transforms:
 
     @staticmethod
     def symroot2():
-        return TransformObj("power", p=Fraction(1, 2))
+        return TransformObj("root", p=2)
 
     @staticmethod
     def symroot3():
-        return TransformObj("power", p=Fraction(1, 3))
+        return TransformObj("root", p=3)
 
     @staticmethod
     def sympower2():
@@ -121,11 +126,11 @@ class TransformsMixin:
         return self
 
     def symroot2(self):
-        self.t([TransformObj("power", p=Fraction(1/2))])
+        self.t([TransformObj("root", p=2)])
         return self
 
     def symroot3(self):
-        self.t([TransformObj("power", p=Fraction(1/3))])
+        self.t([TransformObj("root", p=3)])
         return self
 
     def sympower2(self):
