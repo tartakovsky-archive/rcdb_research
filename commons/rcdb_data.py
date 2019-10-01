@@ -233,23 +233,24 @@ class RcdbData:
     # Dataframe validation
     ##########
     @staticmethod
-    def is_rcdb_data(df):
-        # Usage:
-        # assert ft.is_rcdb_data(data)[0], f'Missing columns: {ft.is_rcdb_data(data)[1]}'
-        required_columns = pd.Series(data=[
+    def missed_columns(df: pd.DataFrame) -> list:
+        """
+        Check dataframe columns
+        :param df:  input dataframe
+        :return: list of missed columns
+        """
+        required_columns = {
             'open', 'high', 'low', 'close', 'volume', 'volume_buy', 'volume_sell',
             'volume_quote', 'volume_quote_buy', 'volume_quote_sell', 'ticks', 'ticks_buy', 'ticks_sell'
-        ])
-
-        mask = pd.Series(required_columns).isin(df.columns)
-        missing_columns = list(required_columns[mask.index[mask is False]])
-
-        is_valid = len(missing_columns) == 0
-
-        return (is_valid, missing_columns)
+        }
+        return list((required_columns & set(df.columns)) ^ required_columns)
 
     @staticmethod
-    def check_consistency(df, verbose=False):
+    def check_consistency(df) -> bool:
+        return np.isfinite(df).all().all()
+
+    @staticmethod
+    def consistency_info(df, verbose=False) -> tuple:
         missing = df.isnull().sum().where(lambda x: x > 0).dropna()
         infs = np.isinf(df).sum().where(lambda x: x > 0).dropna()
         duplicates = df.T[df.T.duplicated()].T.columns
