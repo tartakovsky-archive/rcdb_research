@@ -1,7 +1,9 @@
 import pytest
 import numpy as np
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
 
-from commons.cross_validators import WalkForwardCV
+from commons.cross_validators import WalkForwardCV, cross_val_predict_splits, CVResult
 
 
 @pytest.fixture
@@ -75,3 +77,54 @@ def test_walkforward_split_to_many_splits():
         list(
             cv.split(np.arange(25))
         )
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        dict(
+            estimator=DecisionTreeClassifier(),
+            X=np.random.uniform(1, 10, (10, 2)),
+            y=np.random.randint(0, 2, 10),
+            n_jobs=1
+        ),
+        dict(
+            estimator=DecisionTreeClassifier(),
+            X=np.random.uniform(1, 10, (10, 2)),
+            y=np.random.randint(0, 2, 10),
+            n_jobs=-1
+        )
+    ]
+)
+def test_cross_val_predict_splits(params):
+    assert len(cross_val_predict_splits(**params))
+
+
+@pytest.fixture(scope='module')
+def cv_result():
+    return CVResult(
+        y_pred=np.random.randint(0, 2, 10),
+        y_true=np.random.randint(0, 2, 10)
+    )
+
+
+def test_CVResult_init(cv_result):
+    assert not cv_result.data.empty
+
+
+@pytest.mark.parametrize(
+    "metric_name, params",
+    [
+        ("accuracy", dict(window=5)),
+        ("precision", dict(window=5)),
+        ("recall", dict(window=5)),
+        ("positives", dict()),
+        ("negatives", dict()),
+        ("tp", dict()),
+        ("fp", dict()),
+        ("tn", dict()),
+        ("fn", dict()),
+    ]
+)
+def test_CVResult_metrics(cv_result, metric_name, params):
+    assert len(getattr(cv_result, metric_name)(**params))

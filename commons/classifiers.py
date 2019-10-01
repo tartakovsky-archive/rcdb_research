@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.base import ClassifierMixin, BaseEstimator
 
+
 class ThresholdClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, clf, threshold):
         """Replaces all features with `clf.predict_proba(X)`"""

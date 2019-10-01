@@ -3,6 +3,7 @@ import pandas as pd
 import json_tricks as jsont
 import warnings
 
+
 class HOTrial:
     """
     Class for representing one trial gathered from hyperopt.fmin(...)
@@ -79,7 +80,6 @@ class HOTrial:
         return pd.DataFrame({**self.result}, index=[self._tid])
 
 
-
 class HOExperiment:
     """
     Class for representing a set of trials gathered from hyperopt.fmin(...)
@@ -140,7 +140,6 @@ class HOExperiment:
     def results(self):
         return [t.result for t in self.trials]
 
-
     ######
     # Pandas Dataframes
     ######
@@ -179,7 +178,7 @@ class HOAnalysis:
 
         best_ids = best.index.tolist()
 
-        indexed_trials = dict(map((lambda t: (t.tid, t)), self.experiment.trials)) 
+        indexed_trials = dict(map((lambda t: (t.tid, t)), self.experiment.trials))
         best_trials = [indexed_trials[idx] for idx in best_ids]
 
         return HOExperiment(best_trials)

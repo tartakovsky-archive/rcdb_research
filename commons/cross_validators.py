@@ -143,6 +143,7 @@ class WalkForwardCV(BaseCrossValidator):
 
             train_start = train_start + n_test + additional_train_start
 
+
 def cross_val_predict_splits(estimator, X, y=None, groups=None, cv='warn',
                              n_jobs=None, verbose=0, fit_params=None,
                              pre_dispatch='2*n_jobs', method='predict'):
