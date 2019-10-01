@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 
 from commons.cross_validators import WalkForwardCV, cross_val_predict_splits, CVResult
