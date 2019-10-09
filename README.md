@@ -1,4 +1,4 @@
-# research-notebooks
+# rcdb_research
 
 ## Dependencies
 First install [ta-lib`s dependencies](http://mrjbq7.github.io/ta-lib/install.html):
@@ -17,7 +17,7 @@ $ pip install numpy==1.16.4
 Run the following in the terminal, you'll be prompted for github credentials:
 
 ```bash
-$ pip install -U --extra-index-url https://pypi-private:***TOKEN***@pkgs.dev.azure.com/rcdb/_packaging/pypi-private/pypi/simple/ git+https://github.com/tartakovsky-archive/research-notebooks
+$ pip install -U --extra-index-url https://pypi-private:***TOKEN***@pkgs.dev.azure.com/rcdb/_packaging/pypi-private/pypi/simple/ git+https://github.com/tartakovsky-archive/rcdb_research
 ```
 
 ## Installation for development
