@@ -1,7 +1,7 @@
 from fnlib import entropy
 
 from . import utils
-from commons.features.parallel_calc_all import km
+from rcdb_research.features.parallel_calc_all import km
 
 
 window = utils.pct_range(1, 100, 1, mult_step=0.03)

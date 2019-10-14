@@ -1,4 +1,4 @@
-from commons import bars
+from rcdb_research import bars
 
 
 if __name__ == "__main__":
@@ -6,7 +6,7 @@ if __name__ == "__main__":
     import time
 
     logging.basicConfig(level=logging.DEBUG)
-    from commons.rcdb_data import RcdbData
+    from rcdb_research.rcdb_data import RcdbData
 
     df = RcdbData.fetch("BTC", "UST", "bitfinex",
                         ohlcv_api_url="https://europe-west1-rcdb-prod.cloudfunctions.net/kaiko")

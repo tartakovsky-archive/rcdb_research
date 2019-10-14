@@ -1,6 +1,6 @@
 from . import utils
 from . import osc
-from commons.features.parallel_calc_all import km, t
+from rcdb_research.features.parallel_calc_all import km, t
 
 diff_step = utils.pct_range(1, 50, 1, mult_step=0.1)
 window = utils.pct_range(1, 100, 1, mult_step=0.03)

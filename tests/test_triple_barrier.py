@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from commons.labeling import triple_barrier_labeling
+from rcdb_research.labeling import triple_barrier_labeling
 
 
 CLOSE = pd.Series(

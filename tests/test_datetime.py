@@ -3,7 +3,7 @@ from datetime import datetime as dt
 import pytest
 import numpy as np
 
-from commons.features import datetime
+from rcdb_research.features import datetime
 
 
 TEST_ARRAY = np.array([

@@ -1,5 +1,5 @@
-from commons.features import fracdim
-from commons.features.parallel_calc_all import km, t
+from rcdb_research.features import fracdim
+from rcdb_research.features.parallel_calc_all import km, t
 
 
 window = [50]

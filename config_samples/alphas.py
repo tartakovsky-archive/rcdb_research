@@ -1,5 +1,5 @@
 from fnlib import alphas101
-from commons.features.parallel_calc_all import km, t, col
+from rcdb_research.features.parallel_calc_all import km, t, col
 
 
 alphas_config = dict(

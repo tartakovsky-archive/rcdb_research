@@ -1,4 +1,4 @@
-from commons.features import stattests
+from rcdb_research.features import stattests
 
 stattests_config = {
     'stattests': [

@@ -1,6 +1,6 @@
 from . import utils
 from fnlib import tulip
-from commons.features.parallel_calc_all import km, t, col
+from rcdb_research.features.parallel_calc_all import km, t, col
 
 
 window = utils.pct_range(3, 50, 10, mult_step=0.03)

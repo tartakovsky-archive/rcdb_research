@@ -1,5 +1,5 @@
-from commons.features import datetime
-from commons.features.parallel_calc_all import km
+from rcdb_research.features import datetime
+from rcdb_research.features.parallel_calc_all import km
 
 
 datetime_config = dict(
