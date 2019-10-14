@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import urllib
 import logging
 from collections import namedtuple
 from typing import Optional
@@ -93,7 +94,8 @@ class RcdbData:
         # )
         exchange = getattr(ohlcv_config, 'exchange')
         symbol = (getattr(ohlcv_config, 'base') + getattr(ohlcv_config, 'quote')).lower()
-        return f"{self.ohlcv_api_url}?exchange={exchange}&symbol={symbol}"
+        get_query = urllib.parse.urlencode(dict(exchange=exchange, symbol=symbol, timeframe='3s'))
+        return f"{self.ohlcv_api_url}?{get_query}"
 
     # def fetch_from_local_cache(self, ohlcv_config: OHLCV.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
     #     """
