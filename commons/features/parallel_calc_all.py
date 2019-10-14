@@ -520,6 +520,15 @@ class JobManager:
                                 # automatic "col_name" -> km.col("col_name")
                                 kwargs[kw_name] = km.col(kwargs[kw_name])
 
+                            if not (str(data[kwargs[kw_name].name].values.dtype).startswith("int") or # noqa
+                                    str(data[kwargs[kw_name].name].values.dtype).startswith("float")): # noqa
+                                raise ValueError(f"Unsupported input ({kwargs[kw_name].name}) type or array "
+                                                 f"contains unsupported values (None, strings, etc)")
+
+                            if not np.isfinite(data[kwargs[kw_name].name]).all():
+                                raise ValueError(f"{kwargs[kw_name].name} series contains non-finite values, "
+                                                 f"e.g. np.inf or np.nan (np.isfinite)")
+
                             inputs_set.add(kwargs[kw_name].name)
                             kwargs[kw_name] = kwargs[kw_name].to_dict()
 
