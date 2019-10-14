@@ -15,7 +15,7 @@ WORKDIR /requirements
 COPY ./requirements /requirements
 COPY extra-index-url /requirements
 
-RUN pip install numpy==1.16.4 && \
+RUN pip install -r requirements.pre.txt && \
     pip install --extra-index-url $(cat extra-index-url) --no-cache-dir -r requirements.txt  -r requirements.dev.txt
 
 COPY ./ /code

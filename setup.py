@@ -22,26 +22,18 @@ def parse_reqs(path):
 
 INSTALL_REQUIREMENTS = parse_reqs(os.path.join(REQUIREMENTS_DIR, "requirements.txt"))
 DEV_REQUIREMENTS = parse_reqs(os.path.join(REQUIREMENTS_DIR, "requirements.dev.txt"))
+SETUP_REQUIREMENTS = parse_reqs(os.path.join(REQUIREMENTS_DIR, "requirements.pre.txt"))
 
 
-def get_numpy():
-    for reqs in [INSTALL_REQUIREMENTS, DEV_REQUIREMENTS]:
-        for i, req in enumerate(reqs):
-            if req.startswith("numpy"):
-                return reqs.pop(i)
+for build_req in SETUP_REQUIREMENTS:
+    print(f'{build_req} installation...')
+    install(build_req)
 
 
-numpy = get_numpy()
-if not numpy:
-    raise ValueError("No numpy in requirements")
-
-print(f"Installing {numpy}")
-
-install(numpy)
 setup(
     name='commons',
     packages=find_packages(include=["commons*"]),
-    install_requires=INSTALL_REQUIREMENTS,
+    install_requires=INSTALL_REQUIREMENTS + SETUP_REQUIREMENTS,
     extras_require={
         "dev": DEV_REQUIREMENTS
     },
