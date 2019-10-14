@@ -247,7 +247,7 @@ class RcdbData:
 
     @staticmethod
     def check_consistency(df) -> bool:
-        return np.isfinite(df).all().all()
+        return (df.dtypes != 'object').all() and np.isfinite(df).all().all()
 
     @staticmethod
     def consistency_info(df, verbose=False) -> tuple:

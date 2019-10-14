@@ -121,6 +121,7 @@ def test_method__missed_columns(input_df, test_result):
     'input_df, test_result',
     [
         (pd.DataFrame(dict(a=[1, 2, 3])), True),
+        (pd.DataFrame(dict(a=[1, 2, 3], b=['a', 'b', 'c'])), False),
         (pd.DataFrame(dict(a=[1, None, 3])), False),
         (pd.DataFrame(dict(a=[1, np.nan, 3])), False),
 
