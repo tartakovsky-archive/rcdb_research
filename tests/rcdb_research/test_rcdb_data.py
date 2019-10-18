@@ -37,6 +37,20 @@ def test_init(test_url="test_url", test_cache_path="test_cache_path"):
     assert ohlcv.local_cache_path == test_cache_path
 
 
+def test_get_ohlcv_url_method(test_url="test_url", test_cache_path="test_cache_path"):
+    ohlcv = RcdbData(ohlcv_api_url=test_url, local_cache_path=test_cache_path)
+    config = RcdbData.OHLCVConfig(
+        exchange="bf",
+        base="usd",
+        quote="btc",
+        timeframe="3s",
+        start=None,
+        end=None,
+        is_whole_period=True
+    )
+    assert ohlcv.get_ohlcv_url(config) == "test_url?exchange=bf&symbol=usdbtc&timeframe=3s"
+
+
 @pytest.mark.parametrize(
     "args",
     [(None, "param"), ("param", None), (None, None)]
