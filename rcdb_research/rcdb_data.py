@@ -24,7 +24,7 @@ class RcdbData:
         "OHLCVConfig", ["base", "quote", "exchange", "timeframe", "start", "end", "is_whole_period"]
     )
 
-    LOCAL_CACHE_FILENAME = "{exchange}__{base}_{quote}.hdf"
+    LOCAL_CACHE_FILENAME = "{exchange}__{base}_{quote}_{timeframe}.hdf"
 
     def __init__(self, ohlcv_api_url: str, local_cache_path: str):
         """
