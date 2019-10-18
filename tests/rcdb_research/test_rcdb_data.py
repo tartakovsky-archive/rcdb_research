@@ -25,7 +25,7 @@ def clean_ohlcv():
 
 @pytest.fixture
 def mock_storage_url(requests_mock):
-    with resources.open_binary("tests.datasets", "bitfinex__BTC_USD.hdf") as f:
+    with resources.open_binary("tests.datasets", "bitfinex_btcusd.csv.gz") as f:
         yield requests_mock.get(
             re.compile(TEST_OHLCV_API_URL), content=f.read()
         )
@@ -42,7 +42,7 @@ def test_init(test_url="test_url", test_cache_path="test_cache_path"):
     [(None, "param"), ("param", None), (None, None)]
 )
 def test_fail_init(args):
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         RcdbData(*args)
 
 
@@ -51,7 +51,7 @@ def fetch_params(local_cache_path):
     return {
         "base": "BTC",
         "quote": "USD",
-        # "timeframe": "1m",
+        "timeframe": "1m",
         "exchange": "bitfinex",
         "ohlcv_api_url": TEST_OHLCV_API_URL,
         "local_cache_path": local_cache_path
