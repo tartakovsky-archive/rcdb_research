@@ -164,7 +164,7 @@ class RcdbData:
         base: str,
         quote: str,
         exchange: str,
-        timeframe: str = '3s',
+        timeframe: str = '10s',
         start: Optional[str] = None,
         end: Optional[str] = None,
         ohlcv_api_url: Optional[str] = None,
