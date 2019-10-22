@@ -3,7 +3,8 @@ import os
 from importlib import resources
 
 import pytest
-
+import numpy as np
+import pandas as pd
 
 from rcdb_research.rcdb_data import RcdbData
 
@@ -90,3 +91,59 @@ class TestFetch:
             res = RcdbData.fetch(**fetch_params)
             assert not res.empty
             assert not mock_storage_url.called
+
+
+@pytest.mark.parametrize(
+    "input_df, test_result",
+    [
+        (
+            pd.DataFrame(columns=[
+                'open', 'high', 'low', 'close', 'volume', 'volume_buy', 'volume_sell',
+                'volume_quote', 'volume_quote_buy', 'volume_quote_sell', 'ticks', 'ticks_buy', 'ticks_sell'
+            ]),
+            []
+        ),
+
+        (
+            pd.DataFrame(columns=[
+                'open', 'high', 'low', 'close', 'volume', 'volume_buy', 'volume_sell',
+                'volume_quote', 'volume_quote_buy', 'volume_quote_sell', 'ticks', 'ticks_buy', 'ticks_sell',
+                'some-columns'
+            ]),
+            []
+        ),
+        (
+            pd.DataFrame(columns=[
+                'open', 'high', 'low', 'close', 'volume', 'volume_buy', 'volume_sell',
+                'volume_quote', 'volume_quote_buy', 'volume_quote_sell', 'ticks'
+            ]),
+            ['ticks_buy', 'ticks_sell']
+        ),
+
+    ],
+    ids=[
+        'test_method__missed_columns[same columns]',
+        'test_method__missed_columns[additional columns]',
+        'test_method__missed_columns[missed columns]',
+    ]
+)
+def test_method__missed_columns(input_df, test_result):
+    assert set(RcdbData.missed_columns(input_df)) == set(test_result)
+
+
+@pytest.mark.parametrize(
+    'input_df, test_result',
+    [
+        (pd.DataFrame(dict(a=[1, 2, 3])), True),
+        (pd.DataFrame(dict(a=[1., 2, 3])), True),
+        (pd.DataFrame(dict(a=np.array([1, 2, 3]))), True),
+        (pd.DataFrame(dict(a=np.array([1., 2, 3]))), True),
+        (pd.DataFrame(dict(a=[1, 2, 3], b=['a', 'b', 'c'])), False),
+        (pd.DataFrame(dict(a=[1, None, 3])), False),
+        (pd.DataFrame(dict(a=[1, np.nan, 3])), False),
+        (pd.DataFrame(dict(a=[pd.datetime.now()])), False),
+
+    ]
+)
+def test_method__check_consistency(input_df, test_result):
+    assert RcdbData.check_consistency(input_df) == test_result
