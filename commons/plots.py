@@ -53,6 +53,23 @@ def plot_scores(scores, threshold=0, title='', xlabel='Observations', ylabel='Sc
     plt.grid(color='lightgray', linestyle='-.', linewidth=0.5)
     plt.show()
 
+def plot_predictions_over_bars(cvres):
+    def rgb_to_percents(l):
+        return [c / 255 for c in l]
+
+    blue = rgb_to_percents([116, 173, 209])
+    orange = rgb_to_percents([244, 109, 67])
+
+    fig, ax = plt.subplots(2, figsize=(13, 2.5))
+    ax[0].set_xlim(0, cvres.tp().size)
+    ax[0].plot(cvres.tp(), linewidth=1, markersize=2, color=blue)
+    ax[0].set_title('tp over bars')
+    ax[1].set_xlim(0, cvres.tp().size)
+    ax[1].plot(cvres.fp(), linewidth=1, markersize=2, color=orange)
+    ax[1].set_title('fp over bars')
+    plt.tight_layout()
+    plt.show()
+
 def plot_cv_splits(cv, X, y=None):
     train_sets = pd.DataFrame(columns=['start', 'size', 'end'])
     test_sets = pd.DataFrame(columns=['start', 'size', 'end'])
