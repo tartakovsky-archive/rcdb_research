@@ -143,6 +143,7 @@ class RcdbData:
             compression="gzip"
         )
         df.index = pd.to_datetime(df.index)
+        df.sort_index(inplace=True)
         self._cache_write_local_file(ohlcv_config, df)
         return df
 
@@ -165,7 +166,7 @@ class RcdbData:
         base: str,
         quote: str,
         exchange: str,
-        timeframe: str = '10s',
+        timeframe: str = '1s',
         start: Optional[str] = None,
         end: Optional[str] = None,
         ohlcv_api_url: Optional[str] = None,
