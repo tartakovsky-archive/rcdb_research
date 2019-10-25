@@ -142,8 +142,12 @@ class RcdbData:
             index_col="timestamp",
             compression="gzip"
         )
+
+        # df preparing
+        df = df[df.index != 'timestamp'].apply(pd.to_numeric, errors='coerce')
         df.index = pd.to_datetime(df.index)
         df.sort_index(inplace=True)
+
         self._cache_write_local_file(ohlcv_config, df)
         return df
 
