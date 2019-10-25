@@ -140,7 +140,8 @@ class RcdbData:
         df = pd.read_csv(
             io.BytesIO(resp.content),
             index_col="timestamp",
-            compression="gzip"
+            compression="gzip",
+            low_memory=False
         )
 
         # df preparing
