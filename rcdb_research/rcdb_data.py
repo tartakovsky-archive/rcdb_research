@@ -146,12 +146,12 @@ class RcdbData:
                 pd.read_csv(
                     io.BytesIO(resp.content),
                     index_col="timestamp",
+                    parse_dates=True,
                     compression="gzip"
                 )
             )
 
         # df preparing
-        df.index = pd.to_datetime(df.index)
         logging.debug("Sort df")
         df.sort_index(inplace=True)
 
