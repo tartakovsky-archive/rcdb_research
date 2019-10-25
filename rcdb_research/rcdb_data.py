@@ -133,20 +133,20 @@ class RcdbData:
         :return: dataframe with ohlcv data
         :rtype: pd.DataFrame or None
         """
-        logging.debug(f"-> fetch_remote")
+        logging.warning(f"Fetch remote {ohlcv_config}")
         resp = requests.get(
             self.get_ohlcv_url(ohlcv_config)
         )
         resp.raise_for_status()
 
         urls = resp.json()
-        logging.debug(f"Shards {urls}")
+        logging.warning(f"Start fetching {urls}")
 
         with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
             df = pd.concat(pool.map(self.remote_read_df, urls))
 
         # df preparing
-        logging.debug("Sort df")
+        logging.warning("Sort df")
         df.sort_index(inplace=True)
 
         self._cache_write_local_file(ohlcv_config, df)
@@ -252,13 +252,16 @@ class RcdbData:
 
     @staticmethod
     def remote_read_df(url):
-        logging.debug(f'Fetch shard {url}')
+        logging.warning(f'Fetch shard {url}')
         resp = requests.get(url)
         resp.raise_for_status()
 
-        return pd.read_csv(
+        logging.warning(f'Prepare {url}')
+        df = pd.read_csv(
             io.BytesIO(resp.content),
             index_col="timestamp",
-            parse_dates=True,
             compression="gzip"
         )
+        df.index = pd.to_datetime(df.index, unit='s')
+        logging.warning(f'{url} finished')
+        return df
