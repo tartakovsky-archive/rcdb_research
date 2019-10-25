@@ -4,6 +4,7 @@ import os
 import io
 import urllib
 import logging
+import multiprocessing
 from collections import namedtuple
 from typing import Optional
 
@@ -138,18 +139,11 @@ class RcdbData:
         )
         resp.raise_for_status()
 
-        df = pd.DataFrame([])
-        for url in resp.json():
-            logging.debug(f'Fetch shard {url}')
-            resp = requests.get(url)
-            df = df.append(
-                pd.read_csv(
-                    io.BytesIO(resp.content),
-                    index_col="timestamp",
-                    parse_dates=True,
-                    compression="gzip"
-                )
-            )
+        urls = resp.json()
+        logging.debug(f"Shards {urls}")
+
+        with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+            df = pd.concat(pool.map(self.remote_read_df, urls))
 
         # df preparing
         logging.debug("Sort df")
@@ -255,3 +249,16 @@ class RcdbData:
             print(f'\nDuplicated columns:\n {duplicates}')
 
         return (is_consistent, missing, infs, duplicates)
+
+    @staticmethod
+    def remote_read_df(url):
+        logging.debug(f'Fetch shard {url}')
+        resp = requests.get(url)
+        resp.raise_for_status()
+
+        return pd.read_csv(
+            io.BytesIO(resp.content),
+            index_col="timestamp",
+            parse_dates=True,
+            compression="gzip"
+        )
