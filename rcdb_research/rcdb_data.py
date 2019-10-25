@@ -137,16 +137,22 @@ class RcdbData:
             self.get_ohlcv_url(ohlcv_config)
         )
         resp.raise_for_status()
-        df = pd.read_csv(
-            io.BytesIO(resp.content),
-            index_col="timestamp",
-            compression="gzip",
-            low_memory=False
-        )
+
+        df = pd.DataFrame([])
+        for url in resp.json():
+            logging.debug(f'Fetch shard {url}')
+            resp = requests.get(url)
+            df = df.append(
+                pd.read_csv(
+                    io.BytesIO(resp.content),
+                    index_col="timestamp",
+                    compression="gzip"
+                )
+            )
 
         # df preparing
-        df = df[df.index != 'timestamp'].apply(pd.to_numeric, errors='coerce')
         df.index = pd.to_datetime(df.index)
+        logging.debug("Sort df")
         df.sort_index(inplace=True)
 
         self._cache_write_local_file(ohlcv_config, df)
