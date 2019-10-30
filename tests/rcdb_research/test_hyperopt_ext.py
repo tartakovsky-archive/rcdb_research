@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 
-from commons.hyperopt_ext import HOTrial, HOExperiment, HOAnalysis
+from rcdb_research.hyperopt_ext import HOTrial, HOExperiment, HOAnalysis
 
 
 def test_HOTrial_init(mocker):
@@ -24,7 +24,7 @@ def test_HOTrial_from_trial(mocker):
             'vals': {}
         }
     }
-    mock = mocker.patch('commons.hyperopt_ext.space_eval', autospec=True)
+    mock = mocker.patch('rcdb_research.hyperopt_ext.space_eval', autospec=True)
     assert isinstance(HOTrial.from_trial(trial, []), HOTrial)
     mock.assert_called_once()
 

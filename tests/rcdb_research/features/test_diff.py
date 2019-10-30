@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from commons.features import diff
+from rcdb_research.features import diff
 
 TEST_SERIES = np.array([1., 2., 12., 5., 5.5, 2.])
 
