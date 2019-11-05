@@ -129,7 +129,7 @@ class TestFetch:
     ]
 )
 def test_method__missed_columns(input_df, test_result):
-    assert set(RcdbData.missed_columns(input_df)) == set(test_result)
+    assert set(RcdbData.missing_columns(input_df)) == set(test_result)
 
 
 @pytest.mark.parametrize(

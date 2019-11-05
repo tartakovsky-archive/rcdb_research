@@ -219,7 +219,7 @@ class RcdbData:
     # Dataframe validation
     ##########
     @staticmethod
-    def missed_columns(df: pd.DataFrame) -> list:
+    def missing_columns(df: pd.DataFrame) -> list:
         """
         Check dataframe columns
         :param df:  input dataframe
