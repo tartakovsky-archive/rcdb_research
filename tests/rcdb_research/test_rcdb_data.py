@@ -148,3 +148,18 @@ def test_method__missed_columns(input_df, test_result):
 )
 def test_method__check_consistency(input_df, test_result):
     assert RcdbData.check_consistency(input_df) == test_result
+
+
+def test_add_rcdb_data(ohlcv_df):
+    assert set(ohlcv_df.columns) == {
+        'open', 'high', 'low', 'close',
+        'volume_sell', 'volume_buy',
+        'volume_quote_sell', 'volume_quote_buy',
+        'ticks_sell', 'ticks_buy'
+    }
+
+    RcdbData.add_rcdb_columns(ohlcv_df)
+
+    assert (ohlcv_df['volume'] == ohlcv_df.volume_buy + ohlcv_df.volume_sell).all()
+    assert (ohlcv_df['ticks'] == ohlcv_df.ticks_buy + ohlcv_df.ticks_sell).all()
+    assert (ohlcv_df['volume_quote'] == ohlcv_df.volume_quote_buy + ohlcv_df.volume_quote_sell).all()

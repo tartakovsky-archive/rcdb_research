@@ -102,22 +102,44 @@ def test_cross_val_predict_splits(params):
 @pytest.fixture(scope='module')
 def cv_result():
     return CVResult(
-        y_pred=np.random.randint(0, 2, 10),
-        y_true=np.random.randint(0, 2, 10)
+        y_pred=np.array([0, 1, 0, 1, 0, 0, 1, 1, 0, 1]),
+        y_true=np.array([0, 1, 0, 0, 1, 0, 0, 1, 1, 1]),
+        index=np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
     )
 
 
 def test_CVResult_init(cv_result):
-    assert not cv_result.data.empty
+    assert cv_result.y_true.size == 10
+    assert cv_result.y_pred.size == 10
+    assert cv_result.y_true_dense.size == 5
+    assert cv_result.y_pred_dense.size == 5
+
+
+def test_CVResult_head(cv_result: CVResult, n=8):
+    cv_result_head = cv_result.head(n)
+    assert (cv_result_head.y_true == cv_result.y_true[:n]).all()
+    assert (cv_result_head.y_pred == cv_result.y_pred[:n]).all()
+    assert (cv_result_head.index == cv_result.index[:n]).all()
+
+
+def test_CVResult_tail(cv_result: CVResult, n=8):
+    cv_result_tail = cv_result.tail(n)
+    assert (cv_result_tail.y_true == cv_result.y_true[-n:]).all()
+    assert (cv_result_tail.y_pred == cv_result.y_pred[-n:]).all()
+    assert (cv_result_tail.index == cv_result.index[-n:]).all()
 
 
 @pytest.mark.parametrize(
     "metric_name, params",
     [
         ("accuracy", dict(window=5)),
+        ("accuracy", dict(window=5, sparse=False)),
         ("precision", dict(window=5)),
+        ("precision", dict(window=5, sparse=False)),
         ("recall", dict(window=5)),
+        ("recall", dict(window=5, sparse=False)),
         ("positives", dict()),
+        ("positives", dict(sparse=False)),
         ("negatives", dict()),
         ("tp", dict()),
         ("fp", dict()),
@@ -126,7 +148,12 @@ def test_CVResult_init(cv_result):
     ]
 )
 def test_CVResult_metrics(cv_result, metric_name, params):
-    assert len(getattr(cv_result, metric_name)(**params))
+    v, idx = getattr(cv_result, metric_name)(**params)
+    assert v.size != 0 and v.size == idx.size
+    # print("\r\n Metric:", metric_name)
+    # print(v)
+    # print("\r\n IDs")
+    # print(idx)
 
 @pytest.mark.parametrize(
     'cv_params, test_res',

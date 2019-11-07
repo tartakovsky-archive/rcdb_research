@@ -176,6 +176,7 @@ class RcdbData:
         end: Optional[str] = None,
         ohlcv_api_url: Optional[str] = None,
         local_cache_path: str = "../data",
+        rcdb_columns: bool = False
     ) -> Optional[pd.DataFrame]:
         """
         if OHLCV instance don`t exists then init it. Fetch df by parameters.
@@ -187,6 +188,7 @@ class RcdbData:
         :param str end: end timestamp filter
         :param str local_cache_path: path lo local cache dir
         :param str ohlcv_api_url: currency service url. Default None. if default is try get from env var OHLCV_API_URL
+        :param bool rcdb_columns: if True adds `volume` and `volume_quote` columns to df
         :return: dataframe with olcv
         :rtype: pd.DataFrame or None
         """
@@ -205,7 +207,12 @@ class RcdbData:
             )
             logging.debug("OHLCV -> inited")
 
-        return cls._instance.fetch_df(ohlcv_config)
+        df = cls._instance.fetch_df(ohlcv_config)
+
+        if rcdb_columns:
+            cls.add_rcdb_columns(df)
+
+        return df
 
     @classmethod
     def clean_up(cls):
@@ -264,4 +271,17 @@ class RcdbData:
         )
         df.index = pd.to_datetime(df.index, unit='s')
         logging.warning(f'{url} finished')
+        return df
+
+    @staticmethod
+    def add_rcdb_columns(df: pd.DataFrame) -> pd.DataFrame:
+        if 'volume' not in df.columns and 'volume_buy' in df.columns and 'volume_sell' in df.columns:
+            df['volume'] = df.volume_buy + df.volume_sell
+
+        if 'ticks' not in df.columns and 'ticks_buy' in df.columns and 'ticks_sell' in df.columns:
+            df['ticks'] = df.ticks_buy + df.ticks_sell
+
+        if 'volume_quote' not in df.columns and 'volume_quote_buy' in df.columns and 'volume_quote_sell' in df.columns:
+            df['volume_quote'] = df.volume_quote_buy + df.volume_quote_sell
+
         return df

@@ -4,6 +4,8 @@ from sklearn.base import is_classifier, clone
 from sklearn.model_selection import BaseCrossValidator, check_cv
 from sklearn.model_selection._validation import indexable, _num_samples, _fit_and_predict
 from joblib import Parallel, delayed
+from .numpy_ext import rolling_apply
+
 
 class WalkForwardCV(BaseCrossValidator):
     """
@@ -321,9 +323,39 @@ class CVResult:
     ############
     # Initialization
     ############
-    def __init__(self, y_pred, y_true):
-        self.data = pd.DataFrame(dict(y_pred=y_pred, y_true=y_true))
-        self.data.index = y_true
+    def __init__(self, y_pred, y_true, index=None):
+        self.y_pred = y_pred
+        self.y_true = y_true
+
+        self.index = index
+        if self.index is None:
+            self.index = np.arange(self.y_true.size)
+
+        (
+            self.y_pred_dense,
+            self.y_true_dense,
+            self.index_dense
+        ) = self.get_dense(self.y_pred, self.y_true, self.index)
+
+    def head(self, n: int) -> 'CVResult':
+        return CVResult(
+            y_pred=self.y_pred[:n],
+            y_true=self.y_true[:n],
+            index=self.index[:n]
+        )
+
+    def tail(self, n: int) -> 'CVResult':
+        return CVResult(
+            y_pred=self.y_pred[-n:],
+            y_true=self.y_true[-n:],
+            index=self.index[-n:]
+        )
+
+    @staticmethod
+    def get_dense(y_pred, y_true, index):
+        df = pd.DataFrame(dict(y_pred=y_pred, y_true=y_true, index=index))
+        df = df[df.y_pred != 0]
+        return df.y_pred.values, df.y_true.values, df.index.values
 
     @classmethod
     def from_cross_val_predict_results(cls, cvp_results):
@@ -375,22 +407,19 @@ class CVResult:
             fn = cls.fn(y_true, y_pred).sum()
             return tp / (tp + fn) if (tp + fn) > 0 else 0
 
-    @staticmethod
-    def get_score_wrapper(score_fn):
-        def score_wrapper(data):
-            return score_fn(data.index.values, data.values)
-        return score_wrapper
-
     def score(self, score_fn, window=None, sparse=True):
-        score_wrapper = self.get_score_wrapper(score_fn)
-        v = self.data.y_pred
-        if not sparse:
-            v = self.data.y_pred[self.data.y_pred.values != 0]
-
         if window is None:
-            return score_wrapper(v)
+            if sparse:
+                return score_fn(self.y_true, self.y_pred), self.index
+            else:
+                return score_fn(self.y_pred_dense, self.y_true_dense), self.index_dense
 
-        return v.rolling(window).apply(score_wrapper, raw=False).values
+        if sparse:
+            return rolling_apply(
+                score_fn, window, self.y_pred, self.y_true), self.index
+        else:
+            return rolling_apply(
+                score_fn, window, self.y_pred_dense, self.y_true_dense), self.index_dense
 
     ############
     # Public methods
@@ -406,10 +435,14 @@ class CVResult:
         return self.score(self.scores.recall_score, window=window, sparse=sparse)
 
     def positives(self, sparse=True):
-        return self.tp(sparse=sparse) - self.fp(sparse=sparse)
+        tp, idx = self.tp(sparse=sparse)
+        fp, _ = self.fp(sparse=sparse)
+        return tp - fp, idx
 
     def negatives(self, sparse=True):
-        return self.tn(sparse=sparse) - self.fn(sparse=sparse)
+        tn, idx = self.tn(sparse=sparse)
+        fn, _ = self.fn(sparse=sparse)
+        return tn - fn, idx
 
     def tp(self, sparse=True):
         return self.score(self.scores.tp, window=None, sparse=sparse)
@@ -422,11 +455,3 @@ class CVResult:
 
     def fn(self, sparse=True):
         return self.score(self.scores.fn, window=None, sparse=sparse)
-
-    @property
-    def y_pred(self):
-        return self.data.y_pred.values
-
-    @property
-    def y_true(self):
-        return self.data.y_true.values
