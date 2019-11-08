@@ -361,14 +361,15 @@ class CVResult:
     @classmethod
     def from_cross_val_predict_results(cls, cvp_results, index=None):
         y_pred, y_true = cls.__unpack_predictions(cvp_results)
+        
+        if index is not None:
+            if y_true.size > index.size:
+                raise ValueError("Index size should be equal to cvp_results.size")
 
-        if y_true.size > index.size:
-            raise ValueError("Index size should be equal to cvp_results.size")
-
-        if y_true.size != index.size:
-            logging.warning(f"`index` size large then `y`. Index would be truncated to match y_true.size")
-
-        return cls(y_pred, y_true, index[-y_true.size:])
+            if y_true.size != index.size:
+                logging.warning(f"`index` size large then `y`. Index would be truncated to match y_true.size")
+        
+        return cls(y_pred, y_true, index[-y_true.size:] if index is not None else None)
 
     @staticmethod
     def __unpack_predictions(cvp_results):
