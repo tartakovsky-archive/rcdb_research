@@ -200,3 +200,18 @@ def test_all_fixed_sizes_set_too_much_sizes():
     with pytest.raises(ValueError) as ex:
         next(cv.split(np.arange(20)))
         assert ex.value is 'Provide more data'
+
+
+def test_from_cv_results():
+    cvp_results = [[
+        np.array([0, 1, 0, 1, 0, 0, 1, 1, 0, 1]),
+        np.array([0, 1, 0, 0, 1, 0, 0, 1, 1, 1]),
+    ]]
+    index = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+    cvres = CVResult.from_cross_val_predict_results(cvp_results, index)
+
+    tp, idx = cvres.tp(sparse=False)
+
+    assert list(tp) == [1, 0, 0, 1, 1]
+    assert list(idx) == [2, 4, 7, 8, 10]

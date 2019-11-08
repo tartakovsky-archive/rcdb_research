@@ -405,7 +405,7 @@ class JobManager:
         if n_jobs == -1:
             n_jobs = joblib.cpu_count()
 
-        if data.index.tz is not None:
+        if hasattr(data.index, "tz") and data.index.tz is not None:
             raise ValueError("Timezones not allowed in the input DataFrame. "
                              "Use `df.index = pd.to_datetime(df.index).tz_localize(None)` to remove tz info.")
 

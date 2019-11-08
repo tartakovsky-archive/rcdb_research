@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import pandas as pd
 from sklearn.base import is_classifier, clone
@@ -353,13 +354,21 @@ class CVResult:
 
     @staticmethod
     def get_dense(y_pred, y_true, index):
-        df = pd.DataFrame(dict(y_pred=y_pred, y_true=y_true, index=index))
+        df = pd.DataFrame(dict(y_pred=y_pred, y_true=y_true, index_vals=index))
         df = df[df.y_pred != 0]
-        return df.y_pred.values, df.y_true.values, df.index.values
+        return df.y_pred.values, df.y_true.values, df.index_vals.values
 
     @classmethod
-    def from_cross_val_predict_results(cls, cvp_results):
-        return cls(*cls.__unpack_predictions(cvp_results))
+    def from_cross_val_predict_results(cls, cvp_results, index=None):
+        y_pred, y_true = cls.__unpack_predictions(cvp_results)
+
+        if y_true.size > index.size:
+            raise ValueError("Index size should be equal to cvp_results.size")
+
+        if y_true.size != index.size:
+            logging.warning(f"`index` size large then `y`. Index would be truncated to match y_true.size")
+
+        return cls(y_pred, y_true, index[-y_true.size:])
 
     @staticmethod
     def __unpack_predictions(cvp_results):
