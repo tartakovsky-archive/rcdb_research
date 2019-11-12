@@ -8,12 +8,12 @@ class ThresholdClassifier(BaseEstimator, ClassifierMixin):
         self.clf = clf
         self.threshold = threshold
 
-    def fit(self, X, y):
-        self.clf.fit(X, y)
+    def fit(self, X, y, *args, **kwargs):
+        self.clf.fit(X, y, *args, **kwargs)
         return self
 
-    def predict(self, X):
-        predicts = self.clf.predict_proba(X)[:, 1]
+    def predict(self, X, *args, **kwargs):
+        predicts = self.clf.predict_proba(X, *args, **kwargs)[:, 1]
         predicts = np.where(predicts < self.threshold, 0, 1)
         return predicts
 
