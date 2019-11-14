@@ -12,6 +12,7 @@ TEST_LIST = [
 MULTIPLE_COLUMN_DF = pd.DataFrame({"val1": TEST_LIST, "val2": TEST_LIST})
 SINGLE_COLUMN_DF = pd.DataFrame(TEST_LIST * 20, columns=["val"])
 
+
 @pytest.mark.parametrize(
     "data,param_set,window,column_names",
     [

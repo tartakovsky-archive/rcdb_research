@@ -1,6 +1,7 @@
 import numpy as np
 from ..utils import rolling_window
 
+
 def sum_of_direction(series: np.array, window: int) -> np.array:
     """
     Calculate sum of last bars directions
@@ -18,6 +19,7 @@ def sum_of_direction(series: np.array, window: int) -> np.array:
     direction[is_down] = -1
 
     return np.sum(rolling_window(direction, window), axis=1)
+
 
 def direction(o, c):
     return np.where(c > o, 1, 0)

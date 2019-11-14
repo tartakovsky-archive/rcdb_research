@@ -4,6 +4,7 @@ import matplotlib.ticker as ticker
 
 from . import palette
 
+
 def _edges_of_nans(array):
     # display(array)
     # > [1, nan, nan, 2, 3, nan, 1, nan, nan, nan]
@@ -18,6 +19,7 @@ def _edges_of_nans(array):
     edges = np.unique(ranges.ravel())
     # > [1 2 5 7 9]
     return edges
+
 
 def curve(array, threshold=0, title=None, xlabel=None, ylabel=None,
           pos_color=palette.blue, neg_color=palette.red,
@@ -62,6 +64,7 @@ def curve(array, threshold=0, title=None, xlabel=None, ylabel=None,
         plt.tight_layout()
         plt.show()
 
+
 def splits(cv, X, y=None, train_color=palette.blue, test_color=palette.red, ax=None):
 
     train_start = []
@@ -104,6 +107,7 @@ def splits(cv, X, y=None, train_color=palette.blue, test_color=palette.red, ax=N
         plt.tight_layout()
         plt.show()
 
+
 def histogram(array, nbins=100, nticks=50, color=palette.blue, ax=None):
     fig, ax1 = plt.subplots(figsize=(12, 5), dpi=100) if ax is None else (None, ax)
 
@@ -132,6 +136,7 @@ def histogram(array, nbins=100, nticks=50, color=palette.blue, ax=None):
     if ax is None:
         plt.tight_layout()
         plt.show()
+
 
 def add_second_index(ax, x2, xlabel=None, rotation=0):
     x1 = list(ax.lines[0].get_xdata())

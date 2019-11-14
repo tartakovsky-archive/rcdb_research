@@ -4,8 +4,10 @@ from matplotlib.lines import Line2D
 from . import primitives
 from . import palette
 
+
 def _datestring(index_array):
     return [d.strftime('%Y-%m-%d') for d in index_array]
+
 
 def cv_report(cvresult, window, threshold, show_dates=False, dpi=150):
     precision = cvresult.precision(window=window, sparse=False).fillna(threshold)
@@ -32,7 +34,6 @@ def cv_report(cvresult, window, threshold, show_dates=False, dpi=150):
                      pos_color=palette.blue,
                      neg_color=palette.red,
                      ax=axes[1])
-
 
     primitives.curve(cvresult.fp()*-1,
                      xlabel=None if show_dates else 'Bar number',

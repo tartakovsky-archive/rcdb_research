@@ -9,7 +9,6 @@ import pandas as pd
 from typing import Dict, List, Callable
 
 
-
 def get_inputs(features_list, exclude=[]):
     inputs = set()
     for f in features_list:
