@@ -1,10 +1,13 @@
 import logging
+from typing import Union, Callable
+
 import numpy as np
 import pandas as pd
 from sklearn.base import is_classifier, clone
 from sklearn.model_selection import BaseCrossValidator, check_cv
 from sklearn.model_selection._validation import indexable, _num_samples, _fit_and_predict
 from joblib import Parallel, delayed
+
 from .numpy_ext import rolling_apply
 
 
@@ -41,6 +44,7 @@ class WalkForwardCV(BaseCrossValidator):
     TRAIN: [0 1 2 3 4] TEST: [6 7]
     TRAIN: [0 1 2 3 4 5 6] TEST: [8 9]
     """
+
     def __init__(self, n_splits, test_size=None, train_size=None, gap_size=0, expanding=False, is_fixed=False):
 
         if not (train_size or test_size):
@@ -214,9 +218,9 @@ class WalkForwardCV(BaseCrossValidator):
             train_start = train_start + n_test + additional_train_start
 
 
-def cross_val_predict_splits(estimator, X, y=None, groups=None, cv='warn',
-                             n_jobs=None, verbose=0, fit_params=None,
-                             pre_dispatch='2*n_jobs', method='predict'):
+def cross_val_predict_timeseries_splits(estimator, X, y=None, groups=None, cv='warn',
+                                        n_jobs=None, verbose=0, fit_params=None,
+                                        pre_dispatch='2*n_jobs', method='predict', flatten=True):
     """
     Modification of:
     https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_val_predict.html
@@ -290,18 +294,21 @@ def cross_val_predict_splits(estimator, X, y=None, groups=None, cv='warn',
         in sorted order.
     Returns
     -------
-    predictions : ndarray
+    Tuple (y_true, y_pred) if flatten=True
+    Array of by-split y_true, y_pred if flatten=False
+
+    y_true : ndarray
+    y_pred : ndarray
         This is the result of calling ``method``
-    Examples
-    --------
-    >>> from sklearn import datasets, linear_model
-    >>> from sklearn.model_selection import cross_val_predict
-    >>> diabetes = datasets.load_diabetes()
-    >>> X = diabetes.data[:150]
-    >>> y = diabetes.target[:150]
-    >>> lasso = linear_model.Lasso()
-    >>> y_pred = cross_val_predict(lasso, X, y, cv=3)
     """
+    def unpack(cvps_results):
+        y_pred_all = []
+        y_true_all = []
+        for (y_pred, y_true) in cvps_results:
+            y_pred_all += list(y_pred)
+            y_true_all += list(y_true)
+        return np.array(y_true_all), np.array(y_pred_all)
+
     X, y, groups = indexable(X, y, groups)
 
     cv = check_cv(cv, y, classifier=is_classifier(estimator))
@@ -314,154 +321,300 @@ def cross_val_predict_splits(estimator, X, y=None, groups=None, cv='warn',
         clone(estimator), X, y, train, test, verbose, fit_params, method)
         for train, test in cv.split(X, y, groups))
 
-    return [(pred_block_i, y[indxs]) for pred_block_i, indxs in prediction_blocks]
+    result = [(pred_block_i, y[indxs]) for pred_block_i, indxs in prediction_blocks]
+
+    return unpack(result) if flatten else result
 
 
 class CVResult:
     """
     Class for working with cv results gathered from cross_val_predict_splits(...)
+
+    Expects results of binary classification labeled 1 and 0 for positive and negative class.
     """
     ############
     # Initialization
     ############
-    def __init__(self, y_pred, y_true, index=None):
-        self.y_pred = y_pred
-        self.y_true = y_true
 
-        self.index = index
-        if self.index is None:
-            self.index = np.arange(self.y_true.size)
+    def __init__(self, y_true: np.array, y_pred: np.array, index: np.array = None):
 
-        (
-            self.y_pred_dense,
-            self.y_true_dense,
-            self.index_dense
-        ) = self.get_dense(self.y_pred, self.y_true, self.index)
+        if index is not None:
+            index = index.copy()
+
+            if y_true.size > index.size:
+                raise ValueError(f'index.size={index.size} should be >= y_true.size={y_true.size}')
+
+            if y_true.size != index.size:
+                logging.warning(
+                    f' Last {y_true.size} out of {index.size} '
+                    'elements will be taken from index to match y_true size'
+                )
+
+            index = index[-y_true.size:]
+
+        if y_pred.size != y_true.size:
+            raise ValueError(f"Size of y_pred should be same size with y_true")
+
+        self.y_true = pd.Series(y_true, index=index)
+        self.y_pred = pd.Series(y_pred, index=index)
 
     def head(self, n: int) -> 'CVResult':
+        """
+        Returns copy of CVResult with first n items
+        :param n: number of first items
+        :return:
+        """
         return CVResult(
-            y_pred=self.y_pred[:n],
-            y_true=self.y_true[:n],
-            index=self.index[:n]
+            y_true=self.y_true.head(n).values[:],
+            y_pred=self.y_pred.head(n).values[:],
+            index=self.y_true.head(n).index[:]
         )
 
     def tail(self, n: int) -> 'CVResult':
+        """
+        Returns copy of CVResult with last n items
+        :param n: number of last items
+        :return:
+        """
         return CVResult(
-            y_pred=self.y_pred[-n:],
-            y_true=self.y_true[-n:],
-            index=self.index[-n:]
+            y_true=self.y_true.tail(n).values[:],
+            y_pred=self.y_pred.tail(n).values[:],
+            index=self.y_true.tail(n).index[:]
         )
-
-    @staticmethod
-    def get_dense(y_pred, y_true, index):
-        df = pd.DataFrame(dict(y_pred=y_pred, y_true=y_true, index_vals=index))
-        df = df[df.y_pred != 0]
-        return df.y_pred.values, df.y_true.values, df.index_vals.values
-
-    @classmethod
-    def from_cross_val_predict_results(cls, cvp_results, index=None):
-        y_pred, y_true = cls.__unpack_predictions(cvp_results)
-        
-        if index is not None:
-            if y_true.size > index.size:
-                raise ValueError("Index size should be equal to cvp_results.size")
-
-            if y_true.size != index.size:
-                logging.warning(f"`index` size large then `y`. Index would be truncated to match y_true.size")
-        
-        return cls(y_pred, y_true, index[-y_true.size:] if index is not None else None)
-
-    @staticmethod
-    def __unpack_predictions(cvp_results):
-        y_pred_all = []
-        y_true_all = []
-        for (y_pred, y_true) in cvp_results:
-            y_pred_all += list(y_pred)
-            y_true_all += list(y_true)
-        return np.array(y_pred_all), np.array(y_true_all)
 
     ############
     # Scoring
     ############
 
-    class scores:
+    class Scores:
         @staticmethod
-        def tp(y_true, y_pred):
+        def tp_score(y_true: np.array, y_pred: np.array) -> np.array:
             return np.where((y_pred == 1) & (y_true == 1), 1, 0)
 
         @staticmethod
-        def fp(y_true, y_pred):
+        def fp_score(y_true: np.array, y_pred: np.array) -> np.array:
             return np.where((y_pred == 1) & (y_true == 0), 1, 0)
 
         @staticmethod
-        def tn(y_true, y_pred):
+        def tn_score(y_true: np.array, y_pred: np.array) -> np.array:
             return np.where((y_pred == 0) & (y_true == 0), 1, 0)
 
         @staticmethod
-        def fn(y_true, y_pred):
+        def fn_score(y_true: np.array, y_pred: np.array) -> np.array:
             return np.where((y_pred == 0) & (y_true == 1), 1, 0)
 
         @classmethod
-        def accuracy_score(cls, y_true, y_pred):
+        def n_tp_score(cls, y_true: np.array, y_pred: np.array) -> int:
+            return cls.tp_score(y_true, y_pred).sum()
+
+        @classmethod
+        def n_fp_score(cls, y_true: np.array, y_pred: np.array) -> int:
+            return cls.fp_score(y_true, y_pred).sum()
+
+        @classmethod
+        def n_tn_score(cls, y_true: np.array, y_pred: np.array) -> int:
+            return cls.tn_score(y_true, y_pred).sum()
+
+        @classmethod
+        def n_fn_score(cls, y_true: np.array, y_pred: np.array) -> int:
+            return cls.fn_score(y_true, y_pred).sum()
+
+        @classmethod
+        def positives_score(cls, y_true: np.array, y_pred: np.array) -> np.array:
+            return cls.tp_score(y_true, y_pred) - cls.fp_score(y_true, y_pred)
+
+        @classmethod
+        def negatives_score(cls, y_true: np.array, y_pred: np.array) -> np.array:
+            return cls.tn_score(y_true, y_pred) - cls.fn_score(y_true, y_pred)
+
+        @classmethod
+        def n_positives_score(cls, y_true: np.array, y_pred: np.array) -> int:
+            return np.count_nonzero(cls.positives_score(y_true, y_pred))
+
+        @classmethod
+        def n_negatives_score(cls, y_true: np.array, y_pred: np.array) -> int:
+            return np.count_nonzero(cls.negatives_score(y_true, y_pred))
+
+        @classmethod
+        def accuracy_score(cls, y_true: np.array, y_pred: np.array) -> np.array:
             return np.where(y_true == y_pred, 1, 0).sum() / y_true.size
 
         @classmethod
-        def precision_score(cls, y_true, y_pred):
-            tp = cls.tp(y_true, y_pred).sum()
-            fp = cls.fp(y_true, y_pred).sum()
+        def precision_score(cls, y_true: np.array, y_pred: np.array) -> float:
+            tp = cls.n_tp_score(y_true, y_pred)
+            fp = cls.n_fp_score(y_true, y_pred)
             return tp / (tp + fp) if (tp + fp) > 0 else 0
 
         @classmethod
-        def recall_score(cls, y_true, y_pred):
-            tp = cls.tp(y_true, y_pred).sum()
-            fn = cls.fn(y_true, y_pred).sum()
+        def recall_score(cls, y_true: np.array, y_pred: np.array) -> float:
+            tp = cls.n_tp_score(y_true, y_pred)
+            fn = cls.n_fn_score(y_true, y_pred)
             return tp / (tp + fn) if (tp + fn) > 0 else 0
 
-    def score(self, score_fn, window=None, sparse=True):
-        if window is None:
-            if sparse:
-                return score_fn(self.y_true, self.y_pred), self.index
-            else:
-                return score_fn(self.y_pred_dense, self.y_true_dense), self.index_dense
-
+    def score(
+        self,
+        score_fn: Callable,
+        window: int = None,
+        sparse: bool = True,
+        raw: bool = False
+    ) -> Union[pd.Series, tuple, float]:
+        """
+        Calculates score function
+        :param score_fn: score function
+        :param window: rolling window size, if is not None, score calculates on rolling window
+        :param sparse: if False then cleans data from zeroes
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
         if sparse:
-            return rolling_apply(
-                score_fn, window, self.y_pred, self.y_true), self.index
+            index = self.y_true.index
+            y_true = self.y_true.values
+            y_pred = self.y_pred.values
         else:
-            return rolling_apply(
-                score_fn, window, self.y_pred_dense, self.y_true_dense), self.index_dense
+            index = self.y_pred[self.y_pred != 0].index
+            y_true = self.y_true[index].values
+            y_pred = self.y_pred[index].values
+
+        if window is None:
+            sc = score_fn(y_true, y_pred)
+        else:
+            sc = rolling_apply(score_fn, window, y_true, y_pred)
+
+        if type(sc) is np.ndarray:
+            return (sc, index) if raw else pd.Series(sc, index=index)
+        else:
+            return sc
 
     ############
     # Public methods
     ############
 
-    def accuracy(self, window=None, sparse=True):
-        return self.score(self.scores.accuracy_score, window=window, sparse=sparse)
+    def accuracy(self, window: int = None, raw: bool = False) -> Union[pd.Series, tuple, float]:
+        """
+        accuracy
+        :param window: rolling window size, if window is None then returns scalar
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.accuracy_score, window=window, raw=raw)
 
-    def precision(self, window=None, sparse=True):
-        return self.score(self.scores.precision_score, window=window, sparse=sparse)
+    def precision(self, window=None, sparse=True, raw=False) -> Union[pd.Series, tuple, float]:
+        """
+        precision
+        :param window: rolling window size, if window is None then returns scalar
+        :param sparse: if False then cleans data from zeroes
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.precision_score, window=window, sparse=sparse, raw=raw)
 
-    def recall(self, window=None, sparse=True):
-        return self.score(self.scores.recall_score, window=window, sparse=sparse)
+    def recall(self, window=None, raw=False) -> Union[pd.Series, tuple, float]:
+        """
+        recall
+        :param window: rolling window size, if window is None then returns scalar
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.recall_score, window=window, raw=raw)
 
-    def positives(self, sparse=True):
-        tp, idx = self.tp(sparse=sparse)
-        fp, _ = self.fp(sparse=sparse)
-        return tp - fp, idx
+    def positives(self, raw=False) -> Union[pd.Series, tuple]:
+        """
+        positives
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.positives_score, raw=raw)
 
-    def negatives(self, sparse=True):
-        tn, idx = self.tn(sparse=sparse)
-        fn, _ = self.fn(sparse=sparse)
-        return tn - fn, idx
+    def negatives(self, raw=False) -> Union[pd.Series, tuple]:
+        """
+        negatives
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.negatives_score, raw=raw)
 
-    def tp(self, sparse=True):
-        return self.score(self.scores.tp, window=None, sparse=sparse)
+    def n_positives(self, window=None, raw=False) -> Union[pd.Series, tuple, float]:
+        """
+        n_positives
+        :param window: rolling window size, if window is None then returns scalar
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.n_positives_score, window=window, raw=raw)
 
-    def fp(self, sparse=True):
-        return self.score(self.scores.fp, window=None, sparse=sparse)
+    def n_negatives(self, window=None, raw=False) -> Union[pd.Series, tuple, float]:
+        """
+        n_negatives
+        :param window: rolling window size, if window is None then returns scalar
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.n_negatives_score, window=window, raw=raw)
 
-    def tn(self, sparse=True):
-        return self.score(self.scores.tn, window=None, sparse=sparse)
+    def tp(self, raw=False) -> Union[pd.Series, tuple]:
+        """
+        tp
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.tp_score, raw=raw)
 
-    def fn(self, sparse=True):
-        return self.score(self.scores.fn, window=None, sparse=sparse)
+    def fp(self, raw=False) -> Union[pd.Series, tuple]:
+        """
+        fp
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.fp_score, raw=raw)
+
+    def tn(self, raw=False) -> Union[pd.Series, tuple]:
+        """
+        tn
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.tn_score, raw=raw)
+
+    def fn(self, raw=False) -> Union[pd.Series, tuple]:
+        """
+        fn
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.fn_score, raw=raw)
+
+    def n_tp(self, window=None, raw=False) -> Union[pd.Series, tuple, float]:
+        """
+        Number of true positives
+        :param window: rolling window size, if window is None then returns scalar
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.n_tp_score, window=window, raw=raw)
+
+    def n_fp(self, window=None, raw=False) -> Union[pd.Series, tuple, float]:
+        """
+        Number of false positives
+        :param window: rolling window size, if window is None then returns scalar
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.n_fp_score, window=window, raw=raw)
+
+    def n_tn(self, window=None, raw=False) -> Union[pd.Series, tuple, float]:
+        """
+        Number of true negatives
+        :param window: rolling window size, if window is None then returns scalar
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.n_tn_score, window=window, raw=raw)
+
+    def n_fn(self, window=None, raw=False) -> Union[pd.Series, tuple, float]:
+        """
+        Number of false negatives
+        :param window: rolling window size, if window is None then returns scalar
+        :param raw: if True returns tuple of np.array and index, otherwise pd.Series
+        :return:
+        """
+        return self.score(self.Scores.n_fn_score, window=window, raw=raw)

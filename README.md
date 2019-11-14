@@ -50,7 +50,6 @@ Result parameters sets:
 ]
 ```
 
-
 ## Consolidators
 The `commons.bars` is a module that contains consolidators 
 set for creation trade bars of different types. 
