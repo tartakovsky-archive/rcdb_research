@@ -138,6 +138,78 @@ def histogram(array, nbins=100, nticks=50, color=palette.blue, ax=None):
         plt.show()
 
 
+def bars(array, threshold=0, title=None, xlabel=None, ylabel=None,
+         pos_color=palette.blue, neg_color=palette.red,
+         percent=False, showx=True, figsize=(16, 4), ax=None):
+
+    x = list(range(array.size))
+    y = array
+
+    if percent:
+        y = y*100
+        threshold = threshold*100
+
+    fig, ax1 = plt.subplots(figsize=figsize) if ax is None else (None, ax)
+
+    ax1.set_frame_on(False)
+    ax1.grid(color='lightgray', linestyle='-.', linewidth=0.5)
+
+    formatter = ticker.PercentFormatter(decimals=0) if percent else ticker.FormatStrFormatter('%.2f')
+    ax1.yaxis.set_major_formatter(formatter)
+    if not showx:
+        ax1.xaxis.set_major_formatter(ticker.NullFormatter())
+
+    ax1.set_title(title)
+    ax1.set_xlabel(xlabel, fontsize=12, labelpad=15)
+    ax1.set_ylabel(ylabel, fontsize=12, labelpad=15)
+
+    if np.where(y >= threshold)[0].size > 0:
+        y_pos = np.where(y >= threshold, y, threshold)
+        ax1.bar(x, y_pos, color=pos_color, linewidth=1)
+
+    if np.where(y <= threshold)[0].size > 0:
+        y_neg = np.where(y <= threshold, y, threshold)
+        ax1.bar(x, y_neg, color=neg_color, linewidth=1)
+
+    if ax is None:
+        plt.tight_layout()
+        plt.show()
+
+
+def area(array, array2, title=None, xlabel=None, ylabel=None,
+         color=palette.blue, percent=False, showx=True, figsize=(16, 4), ax=None):
+
+    x = list(range(array.size))
+    y = array
+    y2 = array2
+
+    if percent:
+        y = y*100
+        y2 = y2*100
+
+    fig, ax1 = plt.subplots(figsize=figsize) if ax is None else (None, ax)
+
+    ax1.set_frame_on(False)
+    ax1.grid(color='lightgray', linestyle='-.', linewidth=0.5)
+
+    formatter = ticker.PercentFormatter(decimals=0) if percent else ticker.FormatStrFormatter('%.2f')
+    ax1.yaxis.set_major_formatter(formatter)
+    if not showx:
+        ax1.xaxis.set_major_formatter(ticker.NullFormatter())
+
+    ax1.set_title(title)
+    ax1.set_xlabel(xlabel, fontsize=12, labelpad=15)
+    ax1.set_ylabel(ylabel, fontsize=12, labelpad=15)
+
+    ax1.plot(x, y, color=color, linewidth=1)
+    ax1.plot(x, y2, color=color, linewidth=1)
+    ax1.fill_between(x, y, y2, facecolor=color, alpha=0.7)
+
+    if ax is None:
+        plt.tight_layout()
+        plt.show()
+
+
 def add_second_index(ax, x2, xlabel=None, rotation=0):
     x1 = list(ax.lines[0].get_xdata())
 
