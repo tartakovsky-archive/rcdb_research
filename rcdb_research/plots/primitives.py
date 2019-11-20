@@ -2,45 +2,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-from . import palette
-
-
-def _edges_of_nans(array):
-    # display(array)
-    # > [1, nan, nan, 2, 3, nan, 1, nan, nan, nan]
-    isnan = np.concatenate(([0], np.isnan(array), [0]))
-    # > [0 0 1 1 0 0 1 0 1 1 1 0]
-    changes = np.abs(np.diff(isnan))
-    # > [0 1 0 1 0 1 1 1 0 0 1]
-    ranges = np.where(changes == 1)[0].reshape(-1, 2)
-    # > [[ 1  3], [ 5  6], [ 7 10]]
-    ranges[:, 1] = ranges[:, 1] - 1
-    # > [[1 2], [5 5], [7 9]]
-    edges = np.unique(ranges.ravel())
-    # > [1 2 5 7 9]
-    return edges
+from .style import Style, ColorMap
 
 
 def curve(array, threshold=0, title=None, xlabel=None, ylabel=None,
-          pos_color=palette.blue, neg_color=palette.red,
-          fill=False, percent=False, showx=True, figsize=(16, 4), ax=None):
+          style=Style(), colors=ColorMap(), ax=None):
 
     x = list(range(array.size))
     y = array
 
-    if percent:
+    if style.percent:
         y = y*100
         threshold = threshold*100
 
-    fig, ax1 = plt.subplots(figsize=figsize) if ax is None else (None, ax)
-
-    ax1.set_frame_on(False)
-    ax1.grid(color='lightgray', linestyle='-.', linewidth=0.5)
-
-    formatter = ticker.PercentFormatter(decimals=0) if percent else ticker.FormatStrFormatter('%.2f')
-    ax1.yaxis.set_major_formatter(formatter)
-    if not showx:
-        ax1.xaxis.set_major_formatter(ticker.NullFormatter())
+    fig, ax1 = plt.subplots(figsize=style.fig_size, dpi=style.dpi, facecolor="w") if ax is None else (None, ax)
+    _configure_axis(ax1, style)
 
     ax1.set_title(title)
     ax1.set_xlabel(xlabel, fontsize=12, labelpad=15)
@@ -49,23 +25,23 @@ def curve(array, threshold=0, title=None, xlabel=None, ylabel=None,
     if np.where(y >= threshold)[0].size > 0:
         y_pos = np.where(y >= threshold, y, np.nan)
         y_pos[_edges_of_nans(y_pos)] = threshold
-        ax1.plot(x, y_pos, color=pos_color, linewidth=1)
+        ax1.plot(x, y_pos, color=colors.positive, linewidth=1)
 
     if np.where(y <= threshold)[0].size > 0:
         y_neg = np.where(y <= threshold, y, np.nan)
         y_neg[_edges_of_nans(y_neg)] = threshold
-        ax1.plot(x, y_neg, color=neg_color, linewidth=1)
+        ax1.plot(x, y_neg, color=colors.negative, linewidth=1)
 
-    if fill:
-        ax1.fill_between(x, threshold, y, where=(y >= threshold), facecolor=pos_color, alpha=0.7)
-        ax1.fill_between(x, threshold, y, where=(y <= threshold), facecolor=neg_color, alpha=0.7)
+    if style.fill:
+        ax1.fill_between(x, threshold, y, where=(y >= threshold), facecolor=colors.positive, alpha=0.7)
+        ax1.fill_between(x, threshold, y, where=(y <= threshold), facecolor=colors.negative, alpha=0.7)
 
     if ax is None:
         plt.tight_layout()
         plt.show()
 
 
-def splits(cv, X, y=None, train_color=palette.blue, test_color=palette.red, ax=None):
+def splits(cv, X, y=None, style=Style(), colors=ColorMap(), ax=None):
 
     train_start = []
     train_size = []
@@ -79,11 +55,8 @@ def splits(cv, X, y=None, train_color=palette.blue, test_color=palette.red, ax=N
 
     index = list(range(1, len(train_start) + 1))
 
-    fig, ax1 = plt.subplots(figsize=(12, 5), dpi=150) if ax is None else (None, ax)
-
-    # Background
-    ax1.set_frame_on(False)
-    ax1.grid(color='lightgray', linestyle='-.', linewidth=0.5)
+    fig, ax1 = plt.subplots(figsize=style.fig_size, dpi=style.dpi, facecolor="w") if ax is None else (None, ax)
+    _configure_axis(ax1, style)
 
     # Title
     ax1.set_title('CV splits over number of bars')
@@ -97,8 +70,10 @@ def splits(cv, X, y=None, train_color=palette.blue, test_color=palette.red, ax=N
     ax1.set_xlabel('Bars', fontsize=12, labelpad=15)
 
     # Bars
-    ax1.barh(y=index, height=0.75, width=train_size, left=train_start, label='Train set', color=train_color)
-    ax1.barh(y=index, height=0.75, width=test_size, left=test_start, label='Test set', color=test_color)
+    ax1.barh(y=index, height=0.75, width=train_size, left=train_start,
+             label='Train set', color=colors.train_set)
+    ax1.barh(y=index, height=0.75, width=test_size, left=test_start,
+             label='Test set', color=colors.test_set)
 
     # Legend
     ax1.legend(loc='lower right')
@@ -108,109 +83,87 @@ def splits(cv, X, y=None, train_color=palette.blue, test_color=palette.red, ax=N
         plt.show()
 
 
-def histogram(array, nbins=100, nticks=50, color=palette.blue, ax=None):
-    fig, ax1 = plt.subplots(figsize=(12, 5), dpi=100) if ax is None else (None, ax)
+def histogram(array, nbins=100, nticks=50, style=Style(), colors=ColorMap(), ax=None):
+
+    fig, ax1 = plt.subplots(figsize=style.fig_size, dpi=style.dpi, facecolor="w") if ax is None else (None, ax)
+    _configure_axis(ax1, style)
 
     hist, bins = np.histogram(array, bins=nbins)
     width = 0.75 * (bins[1] - bins[0])
     x = (bins[:-1] + bins[1:]) / 2
 
-    # Background
-    ax1.set_frame_on(False)
-    ax1.grid(color='lightgray', linestyle='-.', linewidth=0.5)
-
-    # Title
+    # Setup labels
     ax1.set_title('Histogram')
+    ax1.set_ylabel('Number of occurences', fontsize=style.label_size, labelpad=15)
+    ax1.set_xlabel('Value bins', fontsize=style.label_size, labelpad=15)
 
-    # Y Axis
-    ax1.set_ylabel('Number of occurences', fontsize=12, labelpad=15)
-
-    # X Axis
-    ax1.set_xlabel('Value bins', fontsize=12, labelpad=15)
     ax1.xaxis.set_major_locator(ticker.MaxNLocator(nticks))
     plt.xticks(rotation=50)
 
     # Bars
-    ax1.bar(x=x, height=hist, width=width, color=color)
+    ax1.bar(x=x, height=hist, width=width, color=colors.positive)
 
     if ax is None:
         plt.tight_layout()
         plt.show()
 
 
-def bars(array, threshold=0, title=None, xlabel=None, ylabel=None,
-         pos_color=palette.blue, neg_color=palette.red,
-         percent=False, showx=True, figsize=(16, 4), ax=None):
+def bars(array, threshold=0, title=None, xlabel=None, ylabel=None, style=Style(), colors=ColorMap(), ax=None):
 
     x = list(range(array.size))
     y = array
 
-    if percent:
+    if style.percent:
         y = y*100
         threshold = threshold*100
 
-    fig, ax1 = plt.subplots(figsize=figsize) if ax is None else (None, ax)
-
-    ax1.set_frame_on(False)
-    ax1.grid(color='lightgray', linestyle='-.', linewidth=0.5)
-
-    formatter = ticker.PercentFormatter(decimals=0) if percent else ticker.FormatStrFormatter('%.2f')
-    ax1.yaxis.set_major_formatter(formatter)
-    if not showx:
-        ax1.xaxis.set_major_formatter(ticker.NullFormatter())
+    fig, ax1 = plt.subplots(figsize=style.fig_size, facecolor="w") if ax is None else (None, ax)
+    _configure_axis(ax1, style)
 
     ax1.set_title(title)
-    ax1.set_xlabel(xlabel, fontsize=12, labelpad=15)
-    ax1.set_ylabel(ylabel, fontsize=12, labelpad=15)
+    ax1.set_xlabel(xlabel, fontsize=style.label_size, labelpad=15)
+    ax1.set_ylabel(ylabel, fontsize=style.label_size, labelpad=15)
 
     if np.where(y >= threshold)[0].size > 0:
-        y_pos = np.where(y >= threshold, y, threshold)
-        ax1.bar(x, y_pos, color=pos_color, linewidth=1)
+        y_pos = np.where(y >= threshold, y-threshold, np.nan)
+        ax1.bar(x, height=y_pos, bottom=threshold, color=colors.positive, linewidth=1)
 
     if np.where(y <= threshold)[0].size > 0:
-        y_neg = np.where(y <= threshold, y, threshold)
-        ax1.bar(x, y_neg, color=neg_color, linewidth=1)
+        y_neg = np.where(y <= threshold, y-threshold, np.nan)
+        ax1.bar(x, height=y_neg, bottom=threshold, color=colors.negative, linewidth=1)
 
     if ax is None:
         plt.tight_layout()
         plt.show()
 
 
-def area(array, array2, title=None, xlabel=None, ylabel=None,
-         color=palette.blue, percent=False, showx=True, figsize=(16, 4), ax=None):
+def area(array, array2, title=None, xlabel=None, ylabel=None, style=Style(), colors=ColorMap(), ax=None):
 
     x = list(range(array.size))
     y = array
     y2 = array2
 
-    if percent:
+    if style.percent:
         y = y*100
         y2 = y2*100
 
-    fig, ax1 = plt.subplots(figsize=figsize) if ax is None else (None, ax)
-
-    ax1.set_frame_on(False)
-    ax1.grid(color='lightgray', linestyle='-.', linewidth=0.5)
-
-    formatter = ticker.PercentFormatter(decimals=0) if percent else ticker.FormatStrFormatter('%.2f')
-    ax1.yaxis.set_major_formatter(formatter)
-    if not showx:
-        ax1.xaxis.set_major_formatter(ticker.NullFormatter())
+    fig, ax1 = plt.subplots(figsize=style.fig_size, facecolor="w") if ax is None else (None, ax)
+    _configure_axis(ax1, style)
 
     ax1.set_title(title)
-    ax1.set_xlabel(xlabel, fontsize=12, labelpad=15)
-    ax1.set_ylabel(ylabel, fontsize=12, labelpad=15)
+    ax1.set_xlabel(xlabel, fontsize=style.label_size, labelpad=15)
+    ax1.set_ylabel(ylabel, fontsize=style.label_size, labelpad=15)
 
-    ax1.plot(x, y, color=color, linewidth=1)
-    ax1.plot(x, y2, color=color, linewidth=1)
-    ax1.fill_between(x, y, y2, facecolor=color, alpha=0.7)
+    ax1.plot(x, y, color=colors.positive, linewidth=1)
+    ax1.plot(x, y2, color=colors.positive, linewidth=1)
+    ax1.fill_between(x, y, y2, facecolor=colors.positive, alpha=style.fill_alpha)
 
     if ax is None:
         plt.tight_layout()
         plt.show()
 
 
-def add_second_index(ax, x2, xlabel=None, rotation=0):
+def second_index(ax, x2, xlabel=None, rotation=0):
     x1 = list(ax.lines[0].get_xdata())
 
     x1_tick_locs = ax.get_xticks()
@@ -229,3 +182,36 @@ def add_second_index(ax, x2, xlabel=None, rotation=0):
     ax2.set_xlabel(xlabel, fontsize=12, labelpad=15)
 
     plt.xticks(rotation=0)
+
+#######
+# Utility functions
+#######
+
+
+def _configure_axis(ax, style):
+    ax.set_frame_on(False)
+    ax.grid(color='lightgray', linestyle='-.', linewidth=0.5)
+
+    formatter = ticker.PercentFormatter(decimals=0) if style.percent else ticker.FormatStrFormatter('%.2f')
+    ax.yaxis.set_major_formatter(formatter)
+    if not style.show_x:
+        ax.xaxis.set_major_formatter(ticker.NullFormatter())
+    if not style.show_y:
+        ax.yaxis.set_major_formatter(ticker.NullFormatter())
+    ax.tick_params(axis='both', which='major', labelsize=style.tick_size)
+
+
+def _edges_of_nans(array):
+    # display(array)
+    # > [1, nan, nan, 2, 3, nan, 1, nan, nan, nan]
+    isnan = np.concatenate(([0], np.isnan(array), [0]))
+    # > [0 0 1 1 0 0 1 0 1 1 1 0]
+    changes = np.abs(np.diff(isnan))
+    # > [0 1 0 1 0 1 1 1 0 0 1]
+    ranges = np.where(changes == 1)[0].reshape(-1, 2)
+    # > [[ 1  3], [ 5  6], [ 7 10]]
+    ranges[:, 1] = ranges[:, 1] - 1
+    # > [[1 2], [5 5], [7 9]]
+    edges = np.unique(ranges.ravel())
+    # > [1 2 5 7 9]
+    return edges
