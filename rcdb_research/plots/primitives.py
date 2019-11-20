@@ -22,19 +22,18 @@ def curve(array, threshold=0, title=None, xlabel=None, ylabel=None,
     ax1.set_xlabel(xlabel, fontsize=12, labelpad=15)
     ax1.set_ylabel(ylabel, fontsize=12, labelpad=15)
 
-    if np.where(y >= threshold)[0].size > 0:
-        y_pos = np.where(y >= threshold, y, np.nan)
-        y_pos[_edges_of_nans(y_pos)] = threshold
-        ax1.plot(x, y_pos, color=colors.positive, linewidth=1)
+    y_pos = np.where(y >= threshold, y, np.nan)
+    y_neg = np.where(y < threshold, y, np.nan)
 
-    if np.where(y <= threshold)[0].size > 0:
-        y_neg = np.where(y <= threshold, y, np.nan)
-        y_neg[_edges_of_nans(y_neg)] = threshold
-        ax1.plot(x, y_neg, color=colors.negative, linewidth=1)
+    y_pos[_edges_of_nans(y_pos)] = threshold
+    y_neg[_edges_of_nans(y_neg)] = threshold
+
+    ax1.plot(x, y_pos, color=colors.positive, linewidth=1)
+    ax1.plot(x, y_neg, color=colors.negative, linewidth=1)
 
     if style.fill:
-        ax1.fill_between(x, threshold, y, where=(y >= threshold), facecolor=colors.positive, alpha=0.7)
-        ax1.fill_between(x, threshold, y, where=(y <= threshold), facecolor=colors.negative, alpha=0.7)
+        ax1.fill_between(x, threshold, y_pos, facecolor=colors.positive, alpha=0.7)
+        ax1.fill_between(x, threshold, y_neg, facecolor=colors.negative, alpha=0.7)
 
     if ax is None:
         plt.tight_layout()
