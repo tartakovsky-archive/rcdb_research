@@ -97,7 +97,7 @@ def trading_report(analysis, show_dates=False, style=Style(fig_size=(16, 9)), co
                      ax=ax1)
 
     if show_dates:
-        primitives.add_second_index(ax1, _datestring(analysis.cum_return.index))
+        primitives.second_index(ax1, _datestring(analysis.cum_return.index))
 
     primitives.curve(analysis.returns,
                      ylabel='Returns, %',
@@ -106,7 +106,7 @@ def trading_report(analysis, show_dates=False, style=Style(fig_size=(16, 9)), co
                      ax=ax2)
 
     if show_dates:
-        primitives.add_second_index(ax2, _datestring(analysis.cum_return.index), xlabel='Bar number / Date')
+        primitives.second_index(ax2, _datestring(analysis.cum_return.index), xlabel='Bar number / Date')
 
     plt.tight_layout()
     plt.show()
