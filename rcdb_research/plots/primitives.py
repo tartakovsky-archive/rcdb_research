@@ -48,9 +48,9 @@ def splits(cv, X, y=None, style=Style(), colors=ColorMap(), ax=None):
     test_size = []
     for i, (train, test) in enumerate(cv.split(X=X, y=y)):
         train_start.append(train[0])
-        train_size.append(train[-1]-train[0])
+        train_size.append(train[-1]-train[0]+1)
         test_start.append(test[0])
-        test_size.append(test[-1]-test[0])
+        test_size.append(test[-1]-test[0]+1)
 
     index = list(range(1, len(train_start) + 1))
 
