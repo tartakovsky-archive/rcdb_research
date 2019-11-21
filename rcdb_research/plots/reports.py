@@ -16,7 +16,7 @@ def cv_report(cvresult, window, threshold, show_dates=False, style=Style(), colo
     fig_size = style.fig_size
     h_pad = None
     if show_dates:
-        fig_size[1] += 1
+        fig_size = (fig_size[0], fig_size[1]+1)
         h_pad = 3
 
     fig, axes = plt.subplots(2, 1, figsize=fig_size, gridspec_kw={'height_ratios': [5, 2]}, dpi=style.dpi)
