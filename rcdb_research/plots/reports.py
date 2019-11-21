@@ -11,7 +11,7 @@ def _datestring(index_array):
     return [d.strftime('%Y-%m-%d') for d in index_array]
 
 
-def cv_report(cvresult, window, threshold, show_dates=False, style=Style(), colors=ColorMap()):
+def cv_report(cvresult, window, threshold, show_dates=False, style=Style(fig_size=(16, 6)), colors=ColorMap()):
     precision = cvresult.precision(window=window, sparse=False).fillna(threshold)
 
     fig_size = style.fig_size
@@ -54,7 +54,7 @@ def cv_report(cvresult, window, threshold, show_dates=False, style=Style(), colo
     plt.show()
 
 
-def trading_report(analysis, show_dates=False, style=Style(), colors=ColorMap()):
+def trading_report(analysis, show_dates=False, style=Style(fig_size=(16, 9)), colors=ColorMap()):
 
     fig, (ax0, ax1, ax2) = plt.subplots(
         3, 1, figsize=style.fig_size,
