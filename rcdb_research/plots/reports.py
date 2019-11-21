@@ -11,7 +11,7 @@ def _datestring(index_array):
     return [d.strftime('%Y-%m-%d') for d in index_array]
 
 
-def cv_report(cvresult, window, threshold, show_dates=False, style=Style(), colors=ColorMap()):
+def cv_report(cvresult, window, threshold, show_dates=False, style=Style(fig_size=(16, 6)), colors=ColorMap()):
     precision = cvresult.precision(window=window, sparse=False).fillna(threshold)
 
     fig_size = style.fig_size
@@ -54,7 +54,7 @@ def cv_report(cvresult, window, threshold, show_dates=False, style=Style(), colo
     plt.show()
 
 
-def trading_report(analysis, show_dates=False, style=Style(), colors=ColorMap()):
+def trading_report(analysis, show_dates=False, style=Style(fig_size=(16, 9)), colors=ColorMap()):
 
     fig, (ax0, ax1, ax2) = plt.subplots(
         3, 1, figsize=style.fig_size,
@@ -97,7 +97,7 @@ def trading_report(analysis, show_dates=False, style=Style(), colors=ColorMap())
                      ax=ax1)
 
     if show_dates:
-        primitives.add_second_index(ax1, _datestring(analysis.cum_return.index))
+        primitives.second_index(ax1, _datestring(analysis.cum_return.index))
 
     primitives.curve(analysis.returns,
                      ylabel='Returns, %',
@@ -106,7 +106,7 @@ def trading_report(analysis, show_dates=False, style=Style(), colors=ColorMap())
                      ax=ax2)
 
     if show_dates:
-        primitives.add_second_index(ax2, _datestring(analysis.cum_return.index), xlabel='Bar number / Date')
+        primitives.second_index(ax2, _datestring(analysis.cum_return.index), xlabel='Bar number / Date')
 
     plt.tight_layout()
     plt.show()
