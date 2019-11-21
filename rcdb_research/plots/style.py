@@ -27,7 +27,7 @@ class ColorMap():
 
 class Style():
     def __init__(self, tick_size=12, label_size=14, fill=False, fill_alpha=0.2,
-                 show_x=True, show_y=True, percent=False, fig_size=(16, 4),
+                 show_x=True, show_y=True, percent=False, fig_size=(16, 5),
                  dpi=150):
 
         self.tick_size = tick_size
