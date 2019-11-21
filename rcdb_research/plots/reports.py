@@ -1,3 +1,4 @@
+from copy import deepcopy
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
@@ -21,7 +22,7 @@ def cv_report(cvresult, window, threshold, show_dates=False, style=Style(), colo
 
     fig, axes = plt.subplots(2, 1, figsize=fig_size, gridspec_kw={'height_ratios': [5, 2]}, dpi=style.dpi)
 
-    precision_style = style.copy()
+    precision_style = deepcopy(style)
     precision_style.fill = True
     precision_style.percent = True
     primitives.curve(precision,
@@ -60,10 +61,10 @@ def trading_report(analysis, show_dates=False, style=Style(), colors=ColorMap())
         gridspec_kw={'height_ratios': [3, 1, 1]}, dpi=style.dpi
     )
 
-    percent_style = style.copy()
+    percent_style = deepcopy(style)
     percent_style.percent = True
 
-    percent_fill_style = style.copy()
+    percent_fill_style = deepcopy(style)
     percent_fill_style.percent = True
     percent_fill_style.fill = True
 
@@ -72,7 +73,7 @@ def trading_report(analysis, show_dates=False, style=Style(), colors=ColorMap())
                      colors=colors,
                      ax=ax0)
 
-    cr_style = style.copy()
+    cr_style = deepcopy(style)
     cr_style.percent = True
     cr_style.fill = True
     primitives.curve(analysis.cum_return,
