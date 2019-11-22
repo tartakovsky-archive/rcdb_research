@@ -1,40 +1,9 @@
-import os
-import sys
 import time
-import inspect
 
 import numpy as np
 import pandas as pd
 
-from typing import Dict, List, Callable
-
-
-def get_inputs(features_list, exclude=[]):
-    inputs = set()
-    for f in features_list:
-        for name, param in inspect.signature(f).parameters.items():
-            if param.annotation == np.array and name not in exclude:
-                inputs.add(name)
-    return tuple(sorted(inputs))
-
-
-def get_namespaces_around(file):
-    """Returens subneamespaces list around file.
-
-    Looking for python modules that locates around file. If the module name
-    doesn't start with "_" then the returned list contains that name.
-    You should to name your util modules beginning with "_" if you going to use
-    this function.
-
-    :param file: the file around which subnamespaces are located
-    :return: list of namespaces
-    """
-    path = os.path.dirname(os.path.abspath(file))
-    namespaces = [
-        file.replace('.py', '') for file in os.listdir(path)
-        if os.path.isfile(os.path.join(path, file)) and file[0] != '_'
-    ]
-    return namespaces
+from typing import Dict, List
 
 
 def _rolling_window(a: np.array, window: int):
@@ -59,22 +28,6 @@ def rolling_window(a: np.array, window: int, cache: dict = None) -> np.ndarray:
 
     cache[cache_key] = res
     return res
-
-
-def feature_filter(o):
-    try:
-        if inspect.isfunction(o) and o.__name__[0] == "f":
-            int(o.__name__[1:])
-            return True
-
-    except ValueError:
-        pass
-
-    return False
-
-
-def get_feature_funcs(module_name):
-    return dict(inspect.getmembers(sys.modules[module_name], feature_filter))
 
 
 def measure_elapsed(f, *args, **kwargs):
@@ -133,10 +86,6 @@ def generate_calc_all(prefix: str, feature_funcs: dict):
             return df, measurements
 
     return calc_all
-
-
-def apply_to_window(series: np.array, window: int, func: Callable, *args, **kwargs) -> np.array:
-    return np.array([func(x, *args, **kwargs) for x in rolling_window(series, window)])
 
 
 def feature_registrator_factory(features_dict):
