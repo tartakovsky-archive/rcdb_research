@@ -146,7 +146,7 @@ class TradingSimulation:
 
     @property
     def expected_cum_return(self) -> pd.Series:
-        values = np.array(self.cvres.y_true.size) * self.expectancy_times_recall * self.position_size
+        values = np.array(range(self.cvres.y_true.size)) * self.expectancy_times_recall * self.position_size
         return pd.Series(values, self.cvres.y_true.index)
 
     @property
