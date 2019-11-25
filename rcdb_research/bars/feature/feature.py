@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import uuid
 
+
 def feature(
             df: pd.DataFrame,
             column_name: str,

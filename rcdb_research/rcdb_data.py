@@ -13,7 +13,7 @@ import pandas as pd
 import retrying
 import requests
 
-from rcdb_research import utils
+from . import utils
 
 
 class RcdbData:

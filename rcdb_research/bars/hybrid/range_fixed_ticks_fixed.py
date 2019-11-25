@@ -1,4 +1,4 @@
-from rcdb_research import bars
+from ... import bars
 
 
 class RangeFixedTicksFixedConsolidator(bars.range.RangeFixedConsolidator):

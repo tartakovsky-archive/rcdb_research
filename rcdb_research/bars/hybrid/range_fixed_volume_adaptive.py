@@ -1,4 +1,4 @@
-from rcdb_research import bars
+from ... import bars
 
 
 class RangeFixedVolumeAdaptiveConsolidator(bars.range.RangeFixedConsolidator):

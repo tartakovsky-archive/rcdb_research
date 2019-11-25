@@ -1,6 +1,6 @@
 import numpy as np
 
-from rcdb_research import bars
+from ... import bars
 
 
 class AdaptiveVolumeConsolidator(bars.base.BaseConsolidator):

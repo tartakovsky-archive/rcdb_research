@@ -29,10 +29,20 @@ for build_req in SETUP_REQUIREMENTS:
     print(f'{build_req} installation...')
     install(build_req)
 
+module_name = 'rcdb_research'
+prefix_dev = os.environ.get('DEV_PREFIX')
+
+if prefix_dev:
+    new_module_name = f'{prefix_dev}_{module_name}'
+    if 'egg_info' in sys.argv:
+        os.rename(module_name, new_module_name)
+
+    module_name = new_module_name
+
 
 setup(
-    name='rcdb_research',
-    packages=find_packages(include=["rcdb_research*"]),
+    name=module_name,
+    packages=find_packages(include=[f"{module_name}*"]),
     install_requires=INSTALL_REQUIREMENTS + SETUP_REQUIREMENTS,
     extras_require={
         "dev": DEV_REQUIREMENTS

@@ -27,6 +27,12 @@ $ pip install -U --extra-index-url https://pypi-private:***TOKEN***@pkgs.dev.azu
 `$ pip install --extra-index-url $(cat extra-index-url) -e <git url>` - install requirements from git  
 `$ jupyter notebook` - start jupyter  
 
+For installation another branch into current pip use environment variable `DEV_PREFIX` with prefix name 
+e.g. install lib from `dev` branch to `development_rcdb_research`:
+```bash
+$ DEV_PREFIX=development pip install -U --extra-index-url https://pypi-private:***TOKEN***@pkgs.dev.azure.com/rcdb/_packaging/pypi-private/pypi/simple/ git+https://github.com/tartakovsky-archive/rcdb_research@dev
+```
+
 ## Custom constraints for config parameters
 ```python
 test_config = dict(
@@ -48,12 +54,4 @@ Result parameters sets:
     dict(a=1, b=3, c=1),
     dict(a=2, b=3, c=1),
 ]
-```
-
-## Consolidators
-The `commons.bars` is a module that contains consolidators 
-set for creation trade bars of different types. 
-```python
-# Bars that contains volume above 500 btc.
-df = bars.volume.fixed(btc_usd, 500, by_quote=False)
 ```
