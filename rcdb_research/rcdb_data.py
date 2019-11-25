@@ -23,7 +23,7 @@ class RcdbData:
     _instance: RcdbData = None  # noqa
 
     OHLCVConfig = namedtuple(
-        "OHLCVConfig", ["base", "quote", "exchange", "timeframe", "start", "end", "is_whole_period"]
+        "OHLCVConfig", ["base", "quote", "exchange", "timeframe", "start", "end", "is_whole_period", "is_force"]
     )
 
     LOCAL_CACHE_FILENAME = "{exchange}__{base}_{quote}_{timeframe}.hdf"
@@ -50,10 +50,15 @@ class RcdbData:
         :return: dataframe with ohlcv data
         :rtype: None or pd.DataFrame
         """
-        for fetch_func in [
+        fetch_funcs = [
             self.fetch_from_local_file_cache,
             self.fetch_remote
-        ]:
+        ]
+        if ohlcv_config.is_force:
+            logging.warning("Force mode enabled. It will ignore local and gcs cache")
+            fetch_funcs = [self.fetch_remote]
+
+        for fetch_func in fetch_funcs:
             logging.debug(f"Try fetch by {fetch_func.__name__}")
             df = fetch_func(ohlcv_config)
 
@@ -99,9 +104,11 @@ class RcdbData:
             dict(
                 exchange=ohlcv_config.exchange,
                 symbol=(ohlcv_config.base + ohlcv_config.quote).lower(),
-                timeframe=ohlcv_config.timeframe
+                timeframe=ohlcv_config.timeframe,
             )
         )
+        if ohlcv_config.is_force:
+            get_query += '&force'
         return f"{self.ohlcv_api_url}?{get_query}"
 
     def fetch_from_local_file_cache(self, ohlcv_config: RcdbData.OHLCVConfig) -> Optional[pd.DataFrame]:  # noqa
@@ -133,7 +140,7 @@ class RcdbData:
         :return: dataframe with ohlcv data
         :rtype: pd.DataFrame or None
         """
-        logging.warning(f"Fetch remote {ohlcv_config}")
+        logging.warning("Remote fetch. It will take some time.")
         resp = requests.get(
             self.get_ohlcv_url(ohlcv_config)
         )
@@ -176,7 +183,8 @@ class RcdbData:
         end: Optional[str] = None,
         ohlcv_api_url: Optional[str] = None,
         local_cache_path: str = "../data",
-        rcdb_columns: bool = False
+        rcdb_columns: bool = False,
+        force: bool = False
     ) -> Optional[pd.DataFrame]:
         """
         if OHLCV instance don`t exists then init it. Fetch df by parameters.
@@ -189,6 +197,7 @@ class RcdbData:
         :param str local_cache_path: path lo local cache dir
         :param str ohlcv_api_url: currency service url. Default None. if default is try get from env var OHLCV_API_URL
         :param bool rcdb_columns: if True adds `volume` and `volume_quote` columns to df
+        :param bool force: ignore local cache and gcs cache
         :return: dataframe with olcv
         :rtype: pd.DataFrame or None
         """
@@ -196,7 +205,7 @@ class RcdbData:
             os.makedirs(local_cache_path)
 
         ohlcv_config = cls.OHLCVConfig(
-            base, quote, exchange, timeframe, start, end, is_whole_period=(not start and not end))
+            base, quote, exchange, timeframe, start, end, is_whole_period=(not start and not end), is_force=force)
 
         logging.debug(f"Fetch by params: {ohlcv_config._asdict()}")
 
