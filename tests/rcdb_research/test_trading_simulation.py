@@ -193,7 +193,11 @@ def trading_simulation(request):  # noqa
         (
             'expected_cum_return',
             None,
-            np.array([-1.1886904761904762] * 10)
+            np.array(
+                [-0.0, -0.11886904761904761, -0.23773809523809522, -0.35660714285714284,
+                 -0.47547619047619044, -0.5943452380952381, -0.7132142857142857,
+                 -0.8320833333333333, -0.9509523809523809, -1.0698214285714285]
+            )
         ),
 
     )
@@ -213,6 +217,8 @@ def test_TradingSimulation_metrics(
 
     res = getattr(trading_simulation, tradingsimulator_attr)
     assert np.array_equal(res.index, test_index)
+    print(res.values.tolist())
+    print(test_result_values)
     assert np.array_equal(res.values, test_result_values)
 
 
