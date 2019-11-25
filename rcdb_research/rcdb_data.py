@@ -239,21 +239,30 @@ class RcdbData:
         return list((required_columns & set(df.columns)) ^ required_columns)
 
     @staticmethod
-    def check_consistency(df) -> bool:
-        return all(dtype in [float, int] for dtype in df.dtypes) and np.isfinite(df).all().all()
+    def check_consistency(df: pd.DataFrame) -> bool:
+        return all(dtype in [float, int] for dtype in df.dtypes) \
+            and np.isfinite(df).all().all() \
+            and not df.index.duplicated().any() \
+            and not len(df.T[df.T.duplicated()].T.columns)
 
     @staticmethod
     def consistency_info(df, verbose=False) -> tuple:
+        if not all(dtype in [float, int] for dtype in df.dtypes):
+            logging.warning(f'Object columns in df: {df.dtypes}')
+            return (False, None, None, None)
+
         missing = df.isnull().sum().where(lambda x: x > 0).dropna()
         infs = np.isinf(df).sum().where(lambda x: x > 0).dropna()
         duplicates = df.T[df.T.duplicated()].T.columns
+        duplicates_indexes = df.index[df.index.duplicated()].unique()
 
-        is_consistent = len(missing) == 0 and len(infs) == 0 and len(duplicates) == 0
+        is_consistent = all(len(x) == 0 for x in (missing, infs, duplicates, duplicates_indexes))
 
         if verbose:
             print(f'\nColumns with missing values:\n {missing}')
             print(f'\nColumns with inf values:\n {infs}')
             print(f'\nDuplicated columns:\n {duplicates}')
+            print(f'\nDuplicated indexes:\n {duplicates_indexes}')
 
         return (is_consistent, missing, infs, duplicates)
 

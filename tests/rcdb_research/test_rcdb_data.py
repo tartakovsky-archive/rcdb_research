@@ -135,7 +135,7 @@ def test_method__missed_columns(input_df, test_result):
 @pytest.mark.parametrize(
     'input_df, test_result',
     [
-        (pd.DataFrame(dict(a=[1, 2, 3])), True),
+        (pd.DataFrame(dict(a=[1, 2, 3, 3])), True),
         (pd.DataFrame(dict(a=[1., 2, 3])), True),
         (pd.DataFrame(dict(a=np.array([1, 2, 3]))), True),
         (pd.DataFrame(dict(a=np.array([1., 2, 3]))), True),
@@ -143,11 +143,12 @@ def test_method__missed_columns(input_df, test_result):
         (pd.DataFrame(dict(a=[1, None, 3])), False),
         (pd.DataFrame(dict(a=[1, np.nan, 3])), False),
         (pd.DataFrame(dict(a=[pd.datetime.now()])), False),
-
+        (pd.DataFrame(dict(a=[1, 1, 2, 3], b=[1, 1, 2, 3])), False),
+        (pd.DataFrame(dict(a=[1, 4, 2, 3]), index=[1, 1, 2, 3]), False),
     ]
 )
 def test_method__check_consistency(input_df, test_result):
-    assert RcdbData.check_consistency(input_df) == test_result
+    assert RcdbData.check_consistency(input_df) == test_result and RcdbData.consistency_info(input_df)[0] == test_result
 
 
 def test_add_rcdb_data(ohlcv_df):
