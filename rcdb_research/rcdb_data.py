@@ -249,14 +249,14 @@ class RcdbData:
 
     @staticmethod
     def check_consistency(df: pd.DataFrame) -> bool:
-        return all(dtype in [float, int] for dtype in df.dtypes) \
+        return all(any((n in str(dtype)) for n in ['float', 'int']) for dtype in df.dtypes) \
             and np.isfinite(df).all().all() \
             and not df.index.duplicated().any() \
             and not len(df.T[df.T.duplicated()].T.columns)
 
     @staticmethod
     def consistency_info(df, verbose=False) -> tuple:
-        if not all(dtype in [float, int] for dtype in df.dtypes):
+        if not all(any((n in str(dtype)) for n in ['float', 'int']) for dtype in df.dtypes):
             logging.warning(f'Object columns in df: {df.dtypes}')
             return (False, None, None, None)
 

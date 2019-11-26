@@ -160,6 +160,7 @@ def test_method__missed_columns(input_df, test_result):
     'input_df, test_result',
     [
         (pd.DataFrame(dict(a=[1, 2, 3, 3])), True),
+        (pd.DataFrame(dict(a=np.array([1, 2, 3, 3], dtype='int8'))), True),
         (pd.DataFrame(dict(a=[1., 2, 3])), True),
         (pd.DataFrame(dict(a=np.array([1, 2, 3]))), True),
         (pd.DataFrame(dict(a=np.array([1., 2, 3]))), True),
