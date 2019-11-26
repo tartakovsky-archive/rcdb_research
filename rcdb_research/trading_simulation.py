@@ -1,7 +1,23 @@
 import pandas as pd
 import numpy as np
+import numba
 
 from .cross_validators import CVResult
+
+
+@numba.njit
+def calculate_equity(equity, compounded, position_size, initial_equity, returns):
+    if compounded:
+        for i in range(1, equity.size):
+            equity[i] = equity[i - 1] * (1 + returns[i] * position_size)
+    else:
+        for i in range(1, equity.size):
+            _position_size = position_size * initial_equity
+            if equity[i - 1] >= _position_size:
+                equity[i] = equity[i - 1] + _position_size * returns[i]
+            else:
+                # Stop trading if there is not enough money left for a full position
+                equity[i] = equity[i - 1]
 
 
 class TradingSimulation:
@@ -172,6 +188,22 @@ class TradingSimulation:
                         equity[i] = equity[i - 1]
 
             self.cache[key] = equity
+
+        return self.cache[key]
+
+    @property
+    def _equity(self) -> pd.Series:
+        key = 'equity'
+
+        if key not in self.cache:
+            size = self.returns.size
+
+            equity = np.empty(size)
+            equity[0] = self.initial_equity
+
+            calculate_equity(equity, self.compounded, self.position_size, self.initial_equity, self.returns.values)
+            return pd.Series(equity, self.returns.index)
+            # self.cache[key] = equity
 
         return self.cache[key]
 
