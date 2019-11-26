@@ -4,7 +4,6 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -17,10 +16,6 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install talib
-      run: |
-        chmod +x install_talib.sh
-        sudo ./install_talib.sh
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip

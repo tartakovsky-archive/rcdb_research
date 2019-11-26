@@ -19,4 +19,3 @@ git+https://github.com/statsmodels/statsmodels@5bb70aa#egg=statsmodels
 tulipindicators
 python-mne_features @ git+https://github.com/mne-tools/mne-features.git@629dad6345a61769c97a526c3878bd81c4d50ab6#egg=python-mne_features
 tsfresh==0.12.0
-TA-Lib==0.4.17

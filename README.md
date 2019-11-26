@@ -1,11 +1,6 @@
 # rcdb_research
 
 ## Dependencies
-First install [ta-lib`s dependencies](http://mrjbq7.github.io/ta-lib/install.html):
-```bash
-$ chomd +x install_talib.sh
-$ sudo ./install_talib.sh
-```  
 
 Install numpy:
 ```bash
