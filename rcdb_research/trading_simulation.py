@@ -5,24 +5,6 @@ import numba
 from .cross_validators import CVResult
 
 
-@numba.njit
-def calculate_equity(compounded, position_size, initial_equity, returns):
-    equity = np.empty(returns.size)
-    equity[0] = initial_equity
-    if compounded:
-        for i in range(1, equity.size):
-            equity[i] = equity[i - 1] * (1 + returns[i] * position_size)
-    else:
-        for i in range(1, equity.size):
-            _position_size = position_size * initial_equity
-            if equity[i - 1] >= _position_size:
-                equity[i] = equity[i - 1] + _position_size * returns[i]
-            else:
-                # Stop trading if there is not enough money left for a full position
-                equity[i] = equity[i - 1]
-    return equity
-
-
 class TradingSimulation:
     """
     Class for simulating trades from ml model predictions
@@ -169,7 +151,7 @@ class TradingSimulation:
 
     @property
     def equity(self) -> pd.Series:
-        equity = calculate_equity(self.compounded, self.position_size, self.initial_equity, self.returns.values)
+        equity = self.calculate_equity(self.compounded, self.position_size, self.initial_equity, self.returns.values)
         return pd.Series(equity, self.returns.index)
 
     @property
@@ -180,3 +162,21 @@ class TradingSimulation:
     def drawdown(self) -> pd.Series:
         equity = self.equity
         return equity / np.maximum.accumulate(equity) - 1
+
+    @staticmethod
+    @numba.njit
+    def calculate_equity(compounded, position_size, initial_equity, returns):
+        equity = np.empty(returns.size)
+        equity[0] = initial_equity
+        if compounded:
+            for i in range(1, equity.size):
+                equity[i] = equity[i - 1] * (1 + returns[i] * position_size)
+        else:
+            for i in range(1, equity.size):
+                _position_size = position_size * initial_equity
+                if equity[i - 1] >= _position_size:
+                    equity[i] = equity[i - 1] + _position_size * returns[i]
+                else:
+                    # Stop trading if there is not enough money left for a full position
+                    equity[i] = equity[i - 1]
+        return equity
