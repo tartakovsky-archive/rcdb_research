@@ -122,7 +122,6 @@ class TradingSimulation:
         self.fees = fees
 
         self.compounded = compounded
-        self.cache = dict()
 
     ############
     # Public interface
@@ -167,45 +166,13 @@ class TradingSimulation:
 
     @property
     def equity(self) -> pd.Series:
-        key = 'equity'
+        size = self.returns.size
 
-        if key not in self.cache:
-            size = self.returns.size
+        equity = np.empty(size)
+        equity[0] = self.initial_equity
 
-            equity = pd.Series(0.0, self.returns.index)
-            equity[0] = self.initial_equity
-
-            if self.compounded:
-                for i in range(1, size):
-                    equity[i] = equity[i - 1] * (1 + self.returns[i] * self.position_size)
-            else:
-                for i in range(1, size):
-                    position_size = self.position_size * self.initial_equity
-                    if equity[i - 1] >= position_size:
-                        equity[i] = equity[i - 1] + position_size * self.returns[i]
-                    else:
-                        # Stop trading if there is not enough money left for a full position
-                        equity[i] = equity[i - 1]
-
-            self.cache[key] = equity
-
-        return self.cache[key]
-
-    @property
-    def _equity(self) -> pd.Series:
-        key = 'equity'
-
-        if key not in self.cache:
-            size = self.returns.size
-
-            equity = np.empty(size)
-            equity[0] = self.initial_equity
-
-            calculate_equity(equity, self.compounded, self.position_size, self.initial_equity, self.returns.values)
-            return pd.Series(equity, self.returns.index)
-            # self.cache[key] = equity
-
-        return self.cache[key]
+        calculate_equity(equity, self.compounded, self.position_size, self.initial_equity, self.returns.values)
+        return pd.Series(equity, self.returns.index)
 
     @property
     def cum_return(self) -> pd.Series:
