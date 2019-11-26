@@ -6,7 +6,9 @@ from .cross_validators import CVResult
 
 
 @numba.njit
-def calculate_equity(equity, compounded, position_size, initial_equity, returns):
+def calculate_equity(compounded, position_size, initial_equity, returns):
+    equity = np.empty(returns.size)
+    equity[0] = initial_equity
     if compounded:
         for i in range(1, equity.size):
             equity[i] = equity[i - 1] * (1 + returns[i] * position_size)
@@ -18,6 +20,7 @@ def calculate_equity(equity, compounded, position_size, initial_equity, returns)
             else:
                 # Stop trading if there is not enough money left for a full position
                 equity[i] = equity[i - 1]
+    return equity
 
 
 class TradingSimulation:
@@ -166,12 +169,7 @@ class TradingSimulation:
 
     @property
     def equity(self) -> pd.Series:
-        size = self.returns.size
-
-        equity = np.empty(size)
-        equity[0] = self.initial_equity
-
-        calculate_equity(equity, self.compounded, self.position_size, self.initial_equity, self.returns.values)
+        equity = calculate_equity(self.compounded, self.position_size, self.initial_equity, self.returns.values)
         return pd.Series(equity, self.returns.index)
 
     @property
