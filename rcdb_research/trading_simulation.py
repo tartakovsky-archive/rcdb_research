@@ -1,7 +1,26 @@
 import pandas as pd
 import numpy as np
+import numba
 
 from .cross_validators import CVResult
+
+
+@numba.njit
+def calculate_equity(compounded, position_size, initial_equity, returns):
+    equity = np.empty(returns.size)
+    equity[0] = initial_equity
+    if compounded:
+        for i in range(1, equity.size):
+            equity[i] = equity[i - 1] * (1 + returns[i] * position_size)
+    else:
+        for i in range(1, equity.size):
+            _position_size = position_size * initial_equity
+            if equity[i - 1] >= _position_size:
+                equity[i] = equity[i - 1] + _position_size * returns[i]
+            else:
+                # Stop trading if there is not enough money left for a full position
+                equity[i] = equity[i - 1]
+    return equity
 
 
 class TradingSimulation:
@@ -106,7 +125,6 @@ class TradingSimulation:
         self.fees = fees
 
         self.compounded = compounded
-        self.cache = dict()
 
     ############
     # Public interface
@@ -151,29 +169,8 @@ class TradingSimulation:
 
     @property
     def equity(self) -> pd.Series:
-        key = 'equity'
-
-        if key not in self.cache:
-            size = self.returns.size
-
-            equity = pd.Series(0.0, self.returns.index)
-            equity[0] = self.initial_equity
-
-            if self.compounded:
-                for i in range(1, size):
-                    equity[i] = equity[i - 1] * (1 + self.returns[i] * self.position_size)
-            else:
-                for i in range(1, size):
-                    position_size = self.position_size * self.initial_equity
-                    if equity[i - 1] >= position_size:
-                        equity[i] = equity[i - 1] + position_size * self.returns[i]
-                    else:
-                        # Stop trading if there is not enough money left for a full position
-                        equity[i] = equity[i - 1]
-
-            self.cache[key] = equity
-
-        return self.cache[key]
+        equity = calculate_equity(self.compounded, self.position_size, self.initial_equity, self.returns.values)
+        return pd.Series(equity, self.returns.index)
 
     @property
     def cum_return(self) -> pd.Series:
