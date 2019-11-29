@@ -9,9 +9,7 @@ from ..numpy_ext import rolling_apply
 
 class Predictions:
     """
-    Class for working with cv results gathered from cross_val_predict_splits(...)
-
-    Expects results of binary classification labeled 1 and 0 for positive and negative class.
+    Class for analyzing predictions of ML models
     """
     ############
     # Initialization
@@ -38,30 +36,6 @@ class Predictions:
 
         self.y_true = pd.Series(y_true, index=index)
         self.y_pred = pd.Series(y_pred, index=index)
-
-    def head(self, n: int) -> 'Predictions':
-        """
-        Returns copy of Predictions with first n items
-        :param n: number of first items
-        :return:
-        """
-        return Predictions(
-            y_true=self.y_true.head(n).values[:],
-            y_pred=self.y_pred.head(n).values[:],
-            index=self.y_true.head(n).index[:]
-        )
-
-    def tail(self, n: int) -> 'Predictions':
-        """
-        Returns copy of Predictions with last n items
-        :param n: number of last items
-        :return:
-        """
-        return Predictions(
-            y_true=self.y_true.tail(n).values[:],
-            y_pred=self.y_pred.tail(n).values[:],
-            index=self.y_true.tail(n).index[:]
-        )
 
     ############
     # Scoring
@@ -198,7 +172,10 @@ class Predictions:
             y_true = self.y_true.values
             y_pred = self.y_pred.values
         else:
-            index = self.y_pred[self.y_pred != 0].index
+            if label == 'all':
+                index = self.y_pred[self.y_pred != neg_label].index
+            else:
+                index = self.y_pred[self.y_pred == label].index
             y_true = self.y_true[index].values
             y_pred = self.y_pred[index].values
 
@@ -215,6 +192,30 @@ class Predictions:
     ############
     # Public methods
     ############
+
+    def head(self, n: int) -> 'Predictions':
+        """
+        Returns copy of Predictions with first n items
+        :param n: number of first items
+        :return:
+        """
+        return Predictions(
+            y_true=self.y_true.head(n).values[:],
+            y_pred=self.y_pred.head(n).values[:],
+            index=self.y_true.head(n).index[:]
+        )
+
+    def tail(self, n: int) -> 'Predictions':
+        """
+        Returns copy of Predictions with last n items
+        :param n: number of last items
+        :return:
+        """
+        return Predictions(
+            y_true=self.y_true.tail(n).values[:],
+            y_pred=self.y_pred.tail(n).values[:],
+            index=self.y_true.tail(n).index[:]
+        )
 
     def accuracy(self, window: int = None,
                  label='all', neg_label=0, raw: bool = False) -> Union[pd.Series, tuple, float]:
