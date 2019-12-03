@@ -34,8 +34,9 @@ class Predictions:
         if y_pred.size != y_true.size:
             raise ValueError(f"Size of y_pred should be same size with y_true")
 
-        self.y_true = pd.Series(y_true, index=index)
-        self.y_pred = pd.Series(y_pred, index=index)
+        self.y_true = y_true
+        self.y_pred = y_pred
+        self.index = index
 
     ############
     # Scoring
@@ -168,16 +169,18 @@ class Predictions:
         :return:
         """
         if sparse:
-            index = self.y_true.index
-            y_true = self.y_true.values
-            y_pred = self.y_pred.values
+            index = self.index
+            y_true = self.y_true
+            y_pred = self.y_pred
         else:
             if label == 'all':
-                index = self.y_pred[self.y_pred != neg_label].index
+                ids = np.where(self.y_pred != neg_label)
             else:
-                index = self.y_pred[self.y_pred == label].index
-            y_true = self.y_true[index].values
-            y_pred = self.y_pred[index].values
+                ids = np.where(self.y_pred == label)
+
+            index = self.index[ids]
+            y_true = self.y_true[ids]
+            y_pred = self.y_pred[ids]
 
         if window is None:
             sc = score_fn(y_true, y_pred, label, neg_label)
@@ -200,9 +203,9 @@ class Predictions:
         :return:
         """
         return Predictions(
-            y_true=self.y_true.head(n).values[:],
-            y_pred=self.y_pred.head(n).values[:],
-            index=self.y_true.head(n).index[:]
+            y_true=self.y_true[:n],
+            y_pred=self.y_pred[:n],
+            index=self.index[:n]
         )
 
     def tail(self, n: int) -> 'Predictions':
@@ -212,9 +215,9 @@ class Predictions:
         :return:
         """
         return Predictions(
-            y_true=self.y_true.tail(n).values[:],
-            y_pred=self.y_pred.tail(n).values[:],
-            index=self.y_true.tail(n).index[:]
+            y_true=self.y_true[-n:],
+            y_pred=self.y_pred[-n:],
+            index=self.index[-n:]
         )
 
     def accuracy(self, window: int = None,
