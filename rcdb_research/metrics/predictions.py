@@ -155,7 +155,7 @@ class Predictions:
         window: int = None,
         label: Union[str, int] = 'all',
         neg_label: int = 0,
-        sparse: bool = True,
+        dense: bool = False,
         raw: bool = False
     ) -> Union[pd.Series, tuple, float]:
         """
@@ -164,23 +164,20 @@ class Predictions:
         :param window: rolling window size, if is not None, score calculates on rolling window
         :param label: 'all' or value of the label to calculate the score for, e.g. 1 or -1
         :param neg_label: value of the label for the negative class, usually 0
-        :param sparse: if False then cleans data from zeroes
+        :param dense: drop zeroes from the array when True
         :param raw: if True returns tuple of np.array and index, otherwise pd.Series
         :return:
         """
-        if sparse:
-            index = self.index
-            y_true = self.y_true
-            y_pred = self.y_pred
-        else:
-            if label == 'all':
-                ids = np.where(self.y_pred != neg_label)
-            else:
-                ids = np.where(self.y_pred == label)
 
-            index = self.index[ids]
-            y_true = self.y_true[ids]
-            y_pred = self.y_pred[ids]
+        index = self.index
+        y_true = self.y_true
+        y_pred = self.y_pred
+
+        if dense:
+            ids = np.where(y_pred != neg_label) if label == 'all' else np.where(y_pred == label)
+            index = index[ids]
+            y_true = y_true[ids]
+            y_pred = y_pred[ids]
 
         if window is None:
             sc = score_fn(y_true, y_pred, label, neg_label)
@@ -231,17 +228,17 @@ class Predictions:
         return self.score(self.Scores.accuracy_score, window=window, label=label, neg_label=neg_label, raw=raw)
 
     def precision(self, window=None,
-                  label='all', neg_label=0, sparse=True, raw=False) -> Union[pd.Series, tuple, float]:
+                  label='all', neg_label=0, dense=False, raw=False) -> Union[pd.Series, tuple, float]:
         """
         precision
         :param window: rolling window size, if window is None then returns scalar
-        :param sparse: if False then cleans data from zeroes
+        :param dense: drop zeroes from the array when True
         :param raw: if True returns tuple of np.array and index, otherwise pd.Series
         :return:
         """
         return self.score(self.Scores.precision_score, window=window,
                           label=label, neg_label=neg_label,
-                          sparse=sparse, raw=raw)
+                          dense=dense, raw=raw)
 
     def recall(self, window=None, label='all', neg_label=0, raw=False) -> Union[pd.Series, tuple, float]:
         """

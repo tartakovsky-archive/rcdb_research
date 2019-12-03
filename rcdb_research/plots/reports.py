@@ -17,7 +17,7 @@ def cv_report(predictions, window, threshold, show_dates=False, label='all', neg
               style=Style(fig_size=(16, 6)), colors=ColorMap()):
 
     labels = dict(label=label, neg_label=neg_label)
-    precision = predictions.precision(window=window, sparse=False, **labels).fillna(threshold)
+    precision = predictions.precision(window=window, dense=True, **labels).fillna(threshold)
 
     fig_size = style.fig_size
     h_pad = None
@@ -63,13 +63,13 @@ def cv_report(predictions, window, threshold, show_dates=False, label='all', neg
 
 
 def trading_report(trades, show_dates=False, initial=100, position_size=0.8,
-                   after_fees=True, sparse=True, compounded=False,
+                   after_fees=True, dense=False, compounded=False,
                    style=Style(fig_size=(16, 9)), colors=ColorMap()):
 
     equity_params = dict(initial=initial,
                          position_size=position_size,
                          after_fees=after_fees,
-                         sparse=sparse,
+                         dense=dense,
                          compounded=compounded)
 
     fig, (ax0, ax1, ax2) = plt.subplots(
@@ -115,7 +115,7 @@ def trading_report(trades, show_dates=False, initial=100, position_size=0.8,
     if show_dates:
         primitives.second_index(ax1, _datestring(trades.cum_return(**equity_params).index))
 
-    primitives.curve(trades.returns(after_fees=after_fees, sparse=sparse),
+    primitives.curve(trades.returns(after_fees=after_fees, dense=dense),
                      ylabel='Returns, %',
                      style=percent_style,
                      colors=colors,
