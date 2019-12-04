@@ -1,14 +1,8 @@
-import logging
-from typing import Union, Callable
-
 import numpy as np
-import pandas as pd
 from sklearn.base import is_classifier, clone
 from sklearn.model_selection import BaseCrossValidator, check_cv
 from sklearn.model_selection._validation import indexable, _num_samples, _fit_and_predict
 from joblib import Parallel, delayed
-
-from .numpy_ext import rolling_apply
 
 
 class WalkForwardCV(BaseCrossValidator):

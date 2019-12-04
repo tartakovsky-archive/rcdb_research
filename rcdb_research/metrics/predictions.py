@@ -47,34 +47,34 @@ class Predictions:
                      label: Union[str, int], neg_label: int) -> np.array:
 
             if label == 'all':
-                return np.where((y_pred == y_true) & (y_pred != neg_label), 1, 0)
+                return ((y_pred == y_true) & (y_pred != neg_label)).astype(np.int8)
             else:
-                return np.where((y_pred == label) & (y_true == label), 1, 0)
+                return ((y_pred == label) & (y_true == label)).astype(np.int8)
 
         @staticmethod
         def fp_score(y_true: np.array, y_pred: np.array,
                      label: Union[str, int], neg_label: int) -> np.array:
 
             if label == 'all':
-                return np.where((y_pred != y_true) & (y_pred != neg_label), 1, 0)
+                return ((y_pred != y_true) & (y_pred != neg_label)).astype(np.int8)
             else:
-                return np.where((y_pred == label) & (y_true != label), 1, 0)
+                return ((y_pred == label) & (y_true != label)).astype(np.int8)
 
         @staticmethod
         def tn_score(y_true: np.array, y_pred: np.array,
                      label: Union[str, int], neg_label: int) -> np.array:
             if label == 'all':
-                return np.where((y_pred == neg_label) & (y_true == neg_label), 1, 0)
+                return ((y_pred == neg_label) & (y_true == neg_label)).astype(np.int8)
             else:
-                return np.where((y_pred != label) & (y_true != label), 1, 0)
+                return ((y_pred != label) & (y_true != label)).astype(np.int8)
 
         @staticmethod
         def fn_score(y_true: np.array, y_pred: np.array,
                      label: Union[str, int], neg_label: int) -> np.array:
             if label == 'all':
-                return np.where((y_pred == neg_label) & (y_true != neg_label), 1, 0)
+                return ((y_pred == neg_label) & (y_true != neg_label)).astype(np.int8)
             else:
-                return np.where((y_pred != label) & (y_true == label), 1, 0)
+                return ((y_pred != label) & (y_true == label)).astype(np.int8)
 
         @classmethod
         def n_tp_score(cls, y_true: np.array, y_pred: np.array,
@@ -125,7 +125,7 @@ class Predictions:
         def accuracy_score(cls, y_true: np.array, y_pred: np.array,
                            label: Union[str, int], neg_label: int) -> np.array:
 
-            return np.where(y_true == y_pred, 1, 0).sum() / y_true.size
+            return (y_true == y_pred).sum() / y_true.size
 
         @classmethod
         def precision_score(cls, y_true: np.array, y_pred: np.array,
@@ -174,7 +174,7 @@ class Predictions:
         y_pred = self.y_pred
 
         if dense:
-            ids = np.where(y_pred != neg_label) if label == 'all' else np.where(y_pred == label)
+            ids = (y_pred != neg_label) if label == 'all' else (y_pred == label)
             index = index[ids]
             y_true = y_true[ids]
             y_pred = y_pred[ids]

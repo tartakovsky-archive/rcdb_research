@@ -7,7 +7,6 @@ from .trades import Trades
 
 
 class MetricsConverter:
-
     """
     Params
     :param exchange: str, name of the exchange used to model trades, one of ['bitmex', 'bitfinex', 'binance']
@@ -33,7 +32,7 @@ class MetricsConverter:
         supported_exchanges = ['bitmex', 'bitfinex', 'binance']
         if exchange not in supported_exchanges:
             raise ValueError(
-                f'entry_order={exchange}: unknown order. Should be one of the following: {supported_exchanges}'
+                f'exchange={exchange}: unknown exchange. Should be one of the following: {supported_exchanges}'
             )
 
         expected_fees = (self._exchange_fees[exchange]['taker'], self._exchange_fees[exchange]['maker'])

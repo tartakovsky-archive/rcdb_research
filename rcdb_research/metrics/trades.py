@@ -48,7 +48,7 @@ class Trades:
             returns = returns + self.fees
 
         if dense:
-            ids = np.where(returns != 0)
+            ids = (returns != 0)
             index = index[ids]
             returns = returns[ids]
 
@@ -58,7 +58,7 @@ class Trades:
         profits, index = self.returns(after_fees=after_fees, dense=dense, raw=True)
 
         if dense:
-            ids = np.where(profits > 0)
+            ids = (profits > 0)
             index = index[ids]
             profits = profits[ids]
         else:
@@ -70,7 +70,7 @@ class Trades:
         losses, index = self.returns(after_fees=after_fees, dense=dense, raw=True)
 
         if dense:
-            ids = np.where(losses < 0)
+            ids = (losses < 0)
             index = index[ids]
             losses = losses[ids]
         else:
@@ -155,8 +155,15 @@ class Trades:
 
         return (equity, index) if raw else pd.Series(equity, index=index)
 
-    def cum_return(self, initial: int = 100, position_size: float = 0.5,
-                   compounded: bool = False, after_fees=True, dense=False, raw: bool = False) -> Union[pd.Series, tuple]:
+    def cum_return(
+        self,
+        initial: int = 100,
+        position_size: float = 0.5,
+        compounded: bool = False,
+        after_fees: bool = True,
+        dense: bool = False,
+        raw: bool = False
+    ) -> Union[pd.Series, tuple]:
 
         equity, index = self.equity(
             initial=initial, position_size=position_size,

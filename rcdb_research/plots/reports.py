@@ -1,12 +1,11 @@
 from copy import deepcopy
+
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 
 from . import primitives
 from .style import Style, ColorMap
-
-from ..metrics import Predictions, Trades
 
 
 def _datestring(index_array):
