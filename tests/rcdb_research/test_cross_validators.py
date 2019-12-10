@@ -85,13 +85,15 @@ def test_walkforward_split_to_many_splits():
             estimator=DecisionTreeClassifier(),
             X=np.random.uniform(1, 10, (10, 2)),
             y=np.random.randint(0, 2, 10),
-            n_jobs=1
+            n_jobs=1,
+            cv=5
         ),
         dict(
             estimator=DecisionTreeClassifier(),
             X=np.random.uniform(1, 10, (10, 2)),
             y=np.random.randint(0, 2, 10),
-            n_jobs=-1
+            n_jobs=-1,
+            cv=5
         )
     ]
 )
