@@ -4,6 +4,7 @@ import os
 import io
 import urllib
 import logging
+import itertools
 import multiprocessing
 from collections import namedtuple
 from typing import Optional
@@ -248,11 +249,29 @@ class RcdbData:
         return list((required_columns & set(df.columns)) ^ required_columns)
 
     @staticmethod
+    def duplicate_columns(df, stop_after_first=True):
+        values = df.values
+        columns = df.columns
+
+        combs = itertools.combinations([x for x in range(df.shape[1])], 2)
+        if stop_after_first:
+            for first, second in combs:
+                if np.array_equal(values[:, first], values[:, second]):
+                    return True
+            return False
+
+        return [
+            (columns[first], columns[second])
+            for first, second in combs
+            if np.array_equal(values[:, first], values[:, second])
+        ]
+
+    @staticmethod
     def check_consistency(df: pd.DataFrame) -> bool:
         return all(any((n in str(dtype)) for n in ['float', 'int']) for dtype in df.dtypes) \
             and np.isfinite(df).all().all() \
             and not df.index.duplicated().any() \
-            and not len(df.T[df.T.duplicated()].T.columns)
+            and not RcdbData.duplicate_columns(df)
 
     @staticmethod
     def consistency_info(df, verbose=False) -> tuple:
@@ -262,7 +281,7 @@ class RcdbData:
 
         missing = df.isnull().sum().where(lambda x: x > 0).dropna()
         infs = np.isinf(df).sum().where(lambda x: x > 0).dropna()
-        duplicates = df.T[df.T.duplicated()].T.columns
+        duplicates = RcdbData.duplicate_columns(df, stop_after_first=False)
         duplicates_indexes = df.index[df.index.duplicated()].unique()
 
         is_consistent = all(len(x) == 0 for x in (missing, infs, duplicates, duplicates_indexes))
