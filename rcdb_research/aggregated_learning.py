@@ -132,8 +132,10 @@ def aggregate_splits(splits: List[dict], pre_agg_transforms: 'BaseEstimator') ->
     for split in splits:
         # Parse splits
         main_dataset, additional_datasets = split.values()
-        X_train, y_train, X_test, y_test = [df.values for df in main_dataset.values()]
-        add_X_trains = [d['X_train'].values for d in additional_datasets]
+        X_train, y_train, X_test, y_test = [df for df in main_dataset.values()]
+        y_test = y_test.values
+
+        add_X_trains = [d['X_train'] for d in additional_datasets]
         add_y_trains = [d['y_train'].values for d in additional_datasets]
 
         # Pre-transform main dataset
