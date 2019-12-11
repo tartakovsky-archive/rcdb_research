@@ -13,7 +13,8 @@ hyperopt==0.1.2
 json-tricks==3.13.2
 jupyter==1.0.0
 cufflinks==0.16
-
+xgboost==0.90
+lightgbm==2.2.3
 git+https://github.com/statsmodels/statsmodels@5bb70aa#egg=statsmodels
 
 tulipindicators
