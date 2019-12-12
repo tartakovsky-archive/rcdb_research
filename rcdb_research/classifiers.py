@@ -21,6 +21,9 @@ class ThresholdClassifier(BaseEstimator, ClassifierMixin):
         predicts = np.where(predicts < self.threshold, 0, 1)
         return predicts
 
+    def predict_proba(self, X, *args, **kwargs):
+        return self.clf.predict_proba(X, *args, **kwargs)
+
     def score(self, X, y, sample_weight=None):
         return self.clf.score(X, y, sample_weight)
 
@@ -37,16 +40,19 @@ class QuantileClassifier(BaseEstimator, ClassifierMixin):
         self.q = q
         self.quantile = quantile
 
-    def fit(self, X, y):
-        self.clf.fit(X, y)
-        y_train_probas = self.clf.predict_proba(X)[:, 1]
+    def fit(self, X, y, *args, **kwargs):
+        self.clf.fit(X, y, *args, **kwargs)
+        y_train_probas = self.clf.predict_proba(X, *args, **kwargs)[:, 1]
         self.quantile = np.quantile(y_train_probas, self.q)
         return self
 
-    def predict(self, X):
-        y_test_probas = self.clf.predict_proba(X)[:, 1]
+    def predict(self, X, *args, **kwargs):
+        y_test_probas = self.clf.predict_proba(X, *args, **kwargs)[:, 1]
         predicts = np.where(y_test_probas > self.quantile, 1, 0)
         return predicts
+
+    def predict_proba(self, X, *args, **kwargs):
+        return self.clf.predict_proba(X, *args, **kwargs)
 
     def score(self, X, y, sample_weight=None):
         return self.clf.score(X, y, sample_weight)

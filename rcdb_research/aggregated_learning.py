@@ -167,28 +167,44 @@ def aggregate_splits(splits: List[dict], pre_agg_transforms: 'BaseEstimator') ->
 
 
 def predict_aggregated_splits(clf: 'BaseEstimator', agg_splits: List[Tuple],
+                              predict_proba=False, predict_train=False, flatten=True,
                               n_jobs: int = -1) -> Tuple[np.array, np.array]:
     """
     Aggregated splits prediction
     :param cls: predictor
     :agg_splits: aggregated splits
+    :predict_proba: if True returns probabilities of 1 instead of binary output
+    :predict_train: if True returns predictions for train set in addition to y_true, y_pred
+    :flatten: if False returns predictions separated by splits, if True merges them into one array
     :param n_jobs: count of jobs for  joblib.Parallel
-    :returns: tuple of y predicted and true y
+    :returns: (y_true, y_pred, y_train_pred) if predict_train else (y_true, y_pred)
     """
-    def predict_split(clf, split):
+    def predict_split(clf, split, predict_proba, predict_train):
         X_train, y_train, X_test, y_test = split
 
         y_true = y_test
 
         clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
 
-        return y_true, y_pred
+        if predict_proba:
+            y_pred = clf.predict_proba(X_test)[:, 1]
+            if predict_train:
+                y_train_pred = clf.predict_proba(X_train)[:, 1]
+        else:
+            y_pred = clf.predict(X_test)
+            if predict_train:
+                y_train_pred = clf.predict(X_train)
+
+        return (y_true, y_pred, y_train_pred) if predict_train else (y_true, y_pred)
 
     parallel = Parallel(n_jobs=n_jobs)
     prediction_blocks = parallel(
-        delayed(predict_split)(clone(clf), split) for split in agg_splits
+        delayed(predict_split)(clone(clf), split, predict_proba, predict_train) for split in agg_splits
     )
 
-    y_trues, y_preds = zip(*prediction_blocks)
-    return np.concatenate(y_trues), np.concatenate(y_preds)
+    ys_tuple = tuple(np.array(t) for t in zip(*prediction_blocks))
+
+    if flatten:
+        ys_tuple = tuple(np.concatenate(arr) for arr in ys_tuple)
+
+    return ys_tuple
