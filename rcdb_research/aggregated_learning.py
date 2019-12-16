@@ -183,8 +183,6 @@ def predict_aggregated_splits(clf: 'BaseEstimator', agg_splits: List[Tuple],
     def predict_split(clf, split, predict_proba, predict_train, fit_args, predict_args):
         X_train, y_train, X_test, y_test = split
 
-        y_true = y_test
-
         clf.fit(X_train, y_train, **fit_args)
 
         if predict_proba:
@@ -196,7 +194,7 @@ def predict_aggregated_splits(clf: 'BaseEstimator', agg_splits: List[Tuple],
             if predict_train:
                 y_train_pred = clf.predict(X_train, **predict_args)
 
-        return (y_true, y_pred, y_train_pred) if predict_train else (y_true, y_pred)
+        return (y_test, y_pred, y_train, y_train_pred) if predict_train else (y_test, y_pred)
 
     parallel = Parallel(n_jobs=n_jobs)
     prediction_blocks = parallel(
