@@ -1,3 +1,3 @@
-from .primitives import curve, bars, area, histogram, splits, second_index  # noqa
+from .primitives import curve, bars, area, histogram, cmap_gradient, second_index, configure_axis  # noqa
 from .reports import cv_report, trading_report  # noqa
-from .style import Style, ColorMap, Palette  # noqa
+from .style import Style, colormap  # noqa

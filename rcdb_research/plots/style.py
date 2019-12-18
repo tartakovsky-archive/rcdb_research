@@ -1,34 +1,16 @@
-from matplotlib.colors import hsv_to_rgb
+import numpy as np
+from matplotlib.colors import hsv_to_rgb, LinearSegmentedColormap
 
 
-class Palette():
-    def __init__(
-        self,
-        blue=hsv_to_rgb((0.56, 0.7, 0.95)),  # 48B5F2
-        orange=hsv_to_rgb((0.045, 0.7, 0.95)),  # F27648
-    ):
-        self.blue = blue
-        self.orange = orange
-
-
-class ColorMap():
-    def __init__(
-        self,
-        positive=Palette().blue,
-        negative=Palette().orange,
-        train_set=Palette().blue,
-        test_set=Palette().orange,
-    ):
-        self.positive = positive
-        self.negative = negative
-        self.train_set = train_set
-        self.test_set = test_set
+def get_default_colormap():
+    colors = [hsv_to_rgb((x, 0.7, 0.95)) for x in np.linspace(0.0, 1.0, 101)]
+    cmap = LinearSegmentedColormap.from_list('default_cmap', colors)
+    return cmap
 
 
 class Style():
     def __init__(self, tick_size=12, label_size=14, fill=False, fill_alpha=0.2,
-                 show_x=True, show_y=True, percent=False, fig_size=(16, 5),
-                 dpi=150):
+                 show_x=True, show_y=True, percent=False, fig_size=(16, 5), dpi=150):
 
         self.tick_size = tick_size
         self.label_size = label_size
@@ -39,3 +21,6 @@ class Style():
         self.fig_size = fig_size
         self.percent = percent
         self.dpi = dpi
+
+
+colormap = get_default_colormap()
