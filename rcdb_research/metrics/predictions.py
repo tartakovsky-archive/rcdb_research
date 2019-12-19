@@ -1,5 +1,5 @@
 import logging
-from typing import Union, Callable
+from typing import Union, Callable, Optional
 
 import numpy as np
 import pandas as pd
@@ -217,7 +217,7 @@ class Predictions:
             index=self.index[-n:]
         )
 
-    def in_date_range(self, date_start: str = None, date_end: str = None) -> 'Predictions':
+    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> 'Predictions':
         """
         Returns copy of Predictions with items with indexes between date_start and date_end
         :param date_start: Date to drop observations before

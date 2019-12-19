@@ -2,6 +2,8 @@ import logging
 
 import numpy as np
 
+from typing import Optional
+
 from .predictions import Predictions
 
 
@@ -49,11 +51,14 @@ class Probabilities:
         y_pred = np.where(y_pred_proba > threshold, self.label, self.neg_label)
         return Predictions(y_true, y_pred, self.index)
 
-    def combined_predictions(self, threshold: float = 0.5) -> 'Predictions':
+    def combined_predictions(self, threshold: float = 0.5, inv_threshold: Optional[float] = None) -> 'Predictions':
+        if inv_threshold is None:
+            inv_threshold = threshold
+
         y_true = self.y_true
         inv_y_true = np.where(self.y_true == self.label, self.neg_label, self.label)
         y_pred = np.where(self.y_pred_proba > threshold, self.label, self.neg_label)
-        inv_y_pred = np.where((1 - self.y_pred_proba) > threshold, self.label, self.neg_label)
+        inv_y_pred = np.where((1 - self.y_pred_proba) > inv_threshold, self.label, self.neg_label)
 
         combined_y_true = y_true - inv_y_true
         combined_y_pred = y_pred - inv_y_pred
