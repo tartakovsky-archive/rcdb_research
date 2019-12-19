@@ -217,6 +217,32 @@ class Predictions:
             index=self.index[-n:]
         )
 
+    def in_date_range(self, date_start: str = None, date_end: str = None) -> 'Predictions':
+        """
+        Returns copy of Predictions with items with indexes between date_start and date_end
+        :param date_start: Date to drop observations before
+        :param date_end: Date to drop observations after
+        :return:
+        """
+
+        if not isinstance(self.index, pd.DatetimeIndex):
+            raise ValueError(f'index should be an instance of pd.DatetimeIndex to use in_date_range method')
+
+        sub_index = self.index
+        if date_start is not None:
+            sub_index = sub_index[sub_index >= date_start]
+        if date_end is not None:
+            sub_index = sub_index[sub_index < date_end]
+
+        sub_y_true = self.y_true[np.isin(self.index, sub_index)]
+        sub_y_pred = self.y_pred[np.isin(self.index, sub_index)]
+
+        return Predictions(
+            y_true=sub_y_true,
+            y_pred=sub_y_pred,
+            index=sub_index,
+        )
+
     def accuracy(self, window: int = None,
                  label='all', neg_label=0, raw: bool = False) -> Union[pd.Series, tuple, float]:
         """
