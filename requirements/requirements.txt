@@ -1,5 +1,5 @@
 matplotlib==3.1.0
-pandas==0.23.4
+pandas==0.25.3
 tables==3.5.1
 requests==2.21.0
 retrying==1.3.3
@@ -14,8 +14,7 @@ jupyter==1.0.0
 cufflinks==0.16
 xgboost==0.90
 lightgbm==2.2.3
-git+https://github.com/statsmodels/statsmodels@5bb70aa#egg=statsmodels
 
 tulipindicators
 python-mne_features @ git+https://github.com/mne-tools/mne-features.git@629dad6345a61769c97a526c3878bd81c4d50ab6#egg=python-mne_features
-tsfresh==0.12.0
+tsfresh==0.13
