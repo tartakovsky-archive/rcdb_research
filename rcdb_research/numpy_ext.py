@@ -1,6 +1,10 @@
-from typing import Callable, Any
+from typing import Callable, Any, Union, Generator
 
+from joblib import Parallel, delayed
 import numpy as np
+
+
+Number = Union[int, float]
 
 
 def drop_na(array: np.array) -> np.array:
@@ -64,7 +68,24 @@ def rolling(array: np.array, window: int) -> np.ndarray:
     return res
 
 
-def rolling_apply(func: Callable, window: int, *arrays: np.array, **kwargs) -> np.array:
+def rolling_gen(array: np.array, window: int, skip_nans: bool = False) -> Generator[np.ndarray, None, None]:
+    """
+    Creates rolling ndarray generator
+    :param array: input array
+    :param window: rolling window size
+    :param skip_nans: if True skip's first `window - 1` nans
+    :return: rolling ndarray
+    """
+    if array.size < window:
+        raise ValueError('window > array.size!')
+
+    if not skip_nans:
+        yield from (nans_array(window) for _ in np.arange(window - 1))
+
+    yield from (array[i:i + window] for i in np.arange(array.size - (window - 1)))
+
+
+def rolling_apply(func: Callable, window: int, *arrays: np.array, n_jobs=1, **kwargs) -> np.array:
     """
     Rolling apply for numpy arrays
     :param func: aggregation function
@@ -79,15 +100,13 @@ def rolling_apply(func: Callable, window: int, *arrays: np.array, **kwargs) -> n
     if len({array.size for array in arrays}) != 1:
         raise ValueError("Arrays must be the same length")
 
-    return prepend_na(
-        array=np.array(
-            [
-                func(*[array[idxs] for array in arrays], **kwargs)
-                for idxs in rolling(np.arange(len(arrays[0])), window)[window - 1:].astype(np.int)
-            ]
-        ),
-        size=window - 1
-    )
+    def apply(idxs):
+        return func(*[array[idxs.astype(np.int)] for array in arrays], **kwargs)
+
+    rolls = rolling_gen(np.arange(len(arrays[0])), window, skip_nans=True)
+    arr = Parallel(n_jobs=n_jobs)(delayed(apply)(idxs) for idxs in rolls)
+
+    return prepend_na(arr, size=window - 1)
 
 
 def nans_array(size: int) -> np.array:
@@ -99,3 +118,31 @@ def nans_array(size: int) -> np.array:
     arr = np.empty(size)
     arr.fill(np.nan)
     return arr
+
+
+def pct_range(
+    start: Number,
+    end: Number,
+    min_step: Number,
+    mult_step: Number = 1,
+    round_func: Callable = None
+) -> np.array:
+    """
+    Generates range array with pct step
+    :param start: start value
+    :param end: end value (included)
+    :param min_step: min step
+    :param mult_step: step multiplier
+    :param round_func: vectorized rounding function, e.g. np.ceil, np.floor etc.
+    :return:
+    """
+    last = start
+    values = []
+
+    while last < end:
+        values.append(last)
+        step = abs(last * mult_step)
+        last += max(step, min_step) * np.sign(mult_step)
+
+    values = np.array(values)
+    return np.unique(round_func(values)) if round_func else values
