@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from sklearn.linear_model import SGDClassifier
 
-from rcdb_research.classifiers import ThresholdClassifier
+from rcdb_research.models import ThresholdClassifier
 
 TEST_THRESHOLD = 0.5
 

@@ -2,12 +2,13 @@ import numpy as np
 import pandas as pd
 import logging
 
-from .predictions import Predictions
-from .trades import Trades
+from ..entities import Predictions, Trades
 
 
-class MetricsConverter:
+class TradingSimulator:
     """
+    Class for converting Predictions into Trades based on exchange and execution parameters.
+
     Params
     :param exchange: str, name of the exchange used to model trades, one of ['bitmex', 'bitfinex', 'binance']
     :param entry_order: str, one of ['market', 'limit']
@@ -15,6 +16,7 @@ class MetricsConverter:
     :param maker_fee: float
     :param taker_fee: float
     :param slippage: float, average slippage the execution engine incurs with typical position size and exchange
+    :param labels: dict, class labels for positive, neutral and negative classes
     """
 
     ############
@@ -26,7 +28,8 @@ class MetricsConverter:
                  no_reentry: bool = False,
                  maker_fee: float = 0.2/100,
                  taker_fee: float = -0.2/100,
-                 slippage: float = -0.025/100):
+                 slippage: float = -0.025/100,
+                 labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}):
 
         # Check that entry_order is valid
         supported_exchanges = ['bitmex', 'bitfinex', 'binance']
@@ -56,11 +59,12 @@ class MetricsConverter:
         self.maker_fee = maker_fee
         self.taker_fee = taker_fee
         self.slippage = slippage
+        self.labels = labels
 
     ############
     # Public interface
     ############
-    def convert(self, predicts: 'Predictions', ohlc: pd.DataFrame) -> 'Trades':
+    def trades(self, predicts: 'Predictions', ohlc: pd.DataFrame) -> 'Trades':
         # Warn if the test data appears to be from a different exchange
         if type(predicts.index) == pd.DatetimeIndex:
             expected_start_date = pd.Timestamp(self._exchange_history_starts[self.exchange])
@@ -86,6 +90,8 @@ class MetricsConverter:
         y_pred = predicts.y_pred.copy()
         fees = np.zeros(index.size)
 
+        pos, neu, neg = self.labels['pos'], self.labels['neu'], self.labels['neg']
+
         ohlc = ohlc[ohlc.index.isin(index)]  # TODO: rewrite selection to numpy
         o, h, l, c = ohlc['open'].values, ohlc['high'].values, ohlc['low'].values, ohlc['close'].values
         change = c / o - 1
@@ -104,7 +110,7 @@ class MetricsConverter:
         if self.no_reentry:
             # Simulate not exiting the trade when the next is in the same direction
             for i in range(y_pred.size):
-                if y_pred[i] == 0:
+                if y_pred[i] == neu:
                     continue
 
                 # Check if the observation is a beginning or an end of a sequence
@@ -112,13 +118,13 @@ class MetricsConverter:
                 is_exit = True if i == y_pred.size-1 else y_pred[i] != y_pred[i+1]
 
                 # Check whether we could've entered the trade
-                if y_pred[i] == 1:
+                if y_pred[i] == pos:
                     can_enter = can_enter_limit_long[i] if self.entry_order == 'limit' else True
-                elif y_pred[i] == -1:
+                elif y_pred[i] == neg:
                     can_enter = can_enter_limit_short[i] if self.entry_order == 'limit' else True
 
                 if is_entry and not can_enter:
-                    y_pred[i] = 0
+                    y_pred[i] = neu
                     fees[i] = 0.0
                     continue
 
@@ -130,14 +136,14 @@ class MetricsConverter:
         else:
             # Check if we can enter each separate trade with limit order
             if self.entry_order == 'limit':
-                y_pred[(y_pred == 1) & ~can_enter_limit_long] = 0
-                y_pred[(y_pred == -1) & ~can_enter_limit_short] = 0
-            fees[y_pred != 0] = entry_fee + exit_fee
+                y_pred[(y_pred == pos) & ~can_enter_limit_long] = neu
+                y_pred[(y_pred == neg) & ~can_enter_limit_short] = neu
+            fees[y_pred != neu] = entry_fee + exit_fee
 
-        long_wins = (y_pred == 1) & (y_true == 1)
-        long_losses = (y_pred == 1) & (y_true != 1)
-        short_wins = (y_pred == -1) & (y_true == -1)
-        short_losses = (y_pred == -1) & (y_true != -1)
+        long_wins = (y_pred == pos) & (y_true == pos)
+        long_losses = (y_pred == pos) & (y_true != pos)
+        short_wins = (y_pred == neg) & (y_true == neg)
+        short_losses = (y_pred == neg) & (y_true != neg)
 
         pnls = np.zeros(index.size)
         pnls[long_wins] = np.abs(change[long_wins])
@@ -150,7 +156,7 @@ class MetricsConverter:
         return trades
 
     ############
-    # Private functions
+    # Private
     ############
     @property
     def _exchange_fees(self):

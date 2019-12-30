@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 
-from rcdb_research.cross_validators import WalkForwardCV, cross_val_predict_timeseries_splits
+from rcdb_research.cross_validation.timeseries import WalkForwardCV, cross_val_predict_timeseries_splits
 
 
 @pytest.fixture

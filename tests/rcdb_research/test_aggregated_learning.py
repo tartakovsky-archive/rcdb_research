@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.tree import DecisionTreeClassifier
 
-from rcdb_research.aggregated_learning import \
+from rcdb_research.cross_validation.aggregated_learning import \
     MultiInputSplitter, aggregate_splits, predict_aggregated_splits
 
 

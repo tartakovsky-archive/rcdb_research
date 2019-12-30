@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from rcdb_research.metrics.trades import Trades
+from rcdb_research.simulation import Trades
 
 from .test_converter import raises
 
@@ -91,10 +91,18 @@ def test_Trades_metrics(
         ('n_losses', {}, 1),
         ('n_losses', dict(after_fees=False), 1),
         ('n_trades', {}, 3),
-        ('win_proba', {}, 2 / 3),
-        ('win_proba', dict(after_fees=False), 2 / 3),
-        ('loss_proba', {}, 1 / 3),
-        ('loss_proba', dict(after_fees=False), 1 / 3),
+        ('pct_wins', {}, 2 / 3),
+        ('pct_wins', dict(after_fees=False), 2 / 3),
+        ('pct_losses', {}, 1 / 3),
+        ('pct_losses', dict(after_fees=False), 1 / 3),
+        ('tail_ratio', {}, 11.122222222222224),
+        ('tail_ratio', dict(after_fees=False), 11.375000000000002),
+        ('abs_return', {}, -5.05),
+        ('abs_return', dict(after_fees=False), -5),
+        ('max_drawdown', {}, -0.09999999999999998),
+        ('max_drawdown', dict(after_fees=False), -0.0980392156862745),
+        ('mar', {}, -37890.128388017125),
+        ('mar', dict(after_fees=False), -38265.2781740371),
         ('n_bars', {}, 10),
         ('activity', {}, .3),
     )

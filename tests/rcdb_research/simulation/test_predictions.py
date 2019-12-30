@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from rcdb_research.metrics.predictions import Predictions
+from rcdb_research.simulation import Predictions
 
 
 @pytest.fixture(scope='module')
