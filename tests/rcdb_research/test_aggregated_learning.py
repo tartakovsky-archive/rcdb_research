@@ -20,7 +20,7 @@ y = pd.Series(
 
 X1 = pd.DataFrame(
     -np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
-    columns=['X1'],
+    columns=['X'],
     index=pd.DatetimeIndex(['2019-11-14', '2019-11-15', '2019-11-17', '2019-11-17', '2019-11-18',
                             '2019-11-19', '2019-11-20', '2019-11-21', '2019-11-22',
                             '2019-11-23', '2019-11-24', '2019-11-25'])
@@ -99,7 +99,7 @@ def test_aggregate_splits(empty_additional):
             main=(X, y),
         )
     res = aggregate_splits(
-        splits=splits, pre_agg_transforms=MinMaxScaler()
+        splits=splits, pre_agg_transforms=MinMaxScaler(), raw=False
     )
     assert len(res) == 3
     for agg_split, split in zip(res, splits):

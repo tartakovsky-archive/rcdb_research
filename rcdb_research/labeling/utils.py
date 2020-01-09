@@ -88,6 +88,7 @@ def triple_barrier(
     sl_arr = daily_volatility * -sl_coef
     pt_arr = daily_volatility * pt_coef
 
+    returns = np.zeros(window)
     for start in numba.prange(result_set_size):
         end = start + window
 

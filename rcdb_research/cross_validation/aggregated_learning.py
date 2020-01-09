@@ -120,7 +120,8 @@ class MultiInputSplitter(WalkForwardCV):
         return splits
 
 
-def aggregate_splits(splits: List[dict], pre_agg_transforms: 'BaseEstimator') -> List[Tuple]:
+def aggregate_splits(splits: List[dict], pre_agg_transforms: 'BaseEstimator',
+                     sort: bool = False, raw=True) -> List[Tuple]:
     """
     Aggregate splits data by some estimator
     :param splits: splits from MultiInputSplitter
@@ -133,34 +134,43 @@ def aggregate_splits(splits: List[dict], pre_agg_transforms: 'BaseEstimator') ->
         # Parse splits
         main_dataset, additional_datasets = split.values()
         X_train, y_train, X_test, y_test = [df for df in main_dataset.values()]
-        y_test = y_test.values
 
         add_X_trains = [d['X_train'] for d in additional_datasets]
-        add_y_trains = [d['y_train'].values for d in additional_datasets]
+        add_y_trains = [d['y_train'] for d in additional_datasets]
 
         # Pre-transform main dataset
         pre_agg_transforms.fit(X_train)
-        X_train = pre_agg_transforms.transform(X_train)
-        X_test = pre_agg_transforms.transform(X_test)
+        X_train = pd.DataFrame(pre_agg_transforms.transform(X_train), index=X_train.index, columns=X_train.columns)
+        X_test = pd.DataFrame(pre_agg_transforms.transform(X_test), index=X_test.index, columns=X_test.columns)
 
-        agg_X_trains = [X_train]
-        agg_y_trains = [y_train]
+        agr_X_trains = [X_train]
+        agr_y_trains = [y_train]
 
         if len(add_X_trains) > 0:
             # Pre-transform additional datasets
             for i, X_tr in enumerate(add_X_trains):
                 if X_tr.size > 0:
-                    add_X_trains[i] = pre_agg_transforms.fit_transform(X_tr)
+                    add_X_trains[i] = pd.DataFrame(
+                        pre_agg_transforms.fit_transform(X_tr),
+                        index=X_tr.index,
+                        columns=X_tr.columns
+                    )
 
-            agg_X_trains.append(np.vstack(add_X_trains))
-            agg_y_trains.append(np.hstack(add_y_trains))
+            agr_X_trains.extend(add_X_trains)
+            agr_y_trains.extend(add_y_trains)
+
+        agr_X_trains = pd.concat(agr_X_trains)
+        agr_y_trains = pd.concat(agr_y_trains)
+        if sort:
+            agr_X_trains.sort_index(inplace=True)
+            agr_y_trains.sort_index(inplace=True)
 
         # Aggregate
         aggregated_splits.append((
-            np.vstack(agg_X_trains),
-            np.hstack(agg_y_trains),
-            X_test,
-            y_test,
+            agr_X_trains.values if raw else agr_X_trains,
+            agr_y_trains.values if raw else agr_y_trains,
+            X_test.values if raw else X_test,
+            y_test.values if raw else y_test,
         ))
 
     return aggregated_splits
