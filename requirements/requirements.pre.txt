@@ -1,2 +1,2 @@
 # for mne
-numpy==1.16.4
+numpy~=1.16.4
