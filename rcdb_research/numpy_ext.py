@@ -59,6 +59,9 @@ def rolling(array: np.array, window: int) -> np.ndarray:
     :param window: rolling window size
     :return: rolling ndarray
     """
+    if not isinstance(window, int):
+        raise TypeError(f'window type is {type(window)}({window}). Required int')
+
     res = np.empty((array.size, window))
     res.fill(None)
 
@@ -76,6 +79,9 @@ def rolling_gen(array: np.array, window: int, skip_nans: bool = False) -> Genera
     :param skip_nans: if True skip's first `window - 1` nans
     :return: rolling ndarray
     """
+    if not isinstance(window, int):
+        raise TypeError(f'window type is {type(window)}({window}). Required int')
+
     if array.size < window:
         raise ValueError('window > array.size!')
 
@@ -94,6 +100,9 @@ def rolling_apply(func: Callable, window: int, *arrays: np.array, n_jobs=1, **kw
     :param kwargs: input parameters (passed to func)
     :return:
     """
+    if not isinstance(window, int):
+        raise TypeError(f'window type is {type(window)}({window}). Required int')
+
     if max(len(x.shape) for x in arrays) != 1:
         raise ValueError("Supported only 1-D arrays")
 
