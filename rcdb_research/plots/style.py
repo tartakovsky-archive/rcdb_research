@@ -1,4 +1,6 @@
 import numpy as np
+from typing import Optional
+
 from matplotlib.colors import LinearSegmentedColormap, hsv_to_rgb
 
 
@@ -12,7 +14,7 @@ class Style():
     def __init__(self, tick_size: int = 12, label_size: int = 14, title_size: int = 15, suptitle_size: int = 16,
                  fill: bool = False, fill_alpha: float = 0.7, show_x: bool = True, show_y: bool = True,
                  percent: bool = False, fig_size: tuple = (16, 5), dpi: int = 150,
-                 line_width: int = 1):
+                 line_width: int = 1, marker: Optional[str] = None):
 
         self.tick_size = tick_size
         self.label_size = label_size
@@ -26,6 +28,7 @@ class Style():
         self.percent = percent
         self.dpi = dpi
         self.line_width = line_width
+        self.marker = marker
 
 
 colormap = get_default_colormap()

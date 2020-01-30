@@ -32,14 +32,14 @@ def curve(y: np.array, x: np.array = None, threshold: float = 0, title: Optional
     if np.any(y >= threshold):
         y_pos = np.where(y >= threshold, y, np.nan)
         y_pos[_edges_of_nans(y_pos)] = threshold
-        ax1.plot(x, y_pos, color=pos_color, linewidth=style.line_width, label=pos_legend_label)
+        ax1.plot(x, y_pos, color=pos_color, linewidth=style.line_width, label=pos_legend_label, marker=style.marker)
         if style.fill:
             ax1.fill_between(x, threshold, y_pos, facecolor=pos_color, alpha=style.fill_alpha)
 
     if np.any(y < threshold):
         y_neg = np.where(y < threshold, y, np.nan)
         y_neg[_edges_of_nans(y_neg)] = threshold
-        ax1.plot(x, y_neg, color=neg_color, linewidth=style.line_width, label=neg_legend_label)
+        ax1.plot(x, y_neg, color=neg_color, linewidth=style.line_width, label=neg_legend_label, marker=style.marker)
         if style.fill:
             ax1.fill_between(x, threshold, y_neg, facecolor=neg_color, alpha=style.fill_alpha)
 

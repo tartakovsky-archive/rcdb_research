@@ -57,8 +57,8 @@ def proba_report(probas: 'Probabilities', n_bins: int = 40, show_dates: bool = F
     fig.show()
 
 
-def cv_report(predictions: 'Predictions', window: int, threshold: float = 0.5,
-              show_dates: bool = False, target_label: Union[str, int] = 'all', neu_label: int = 0):
+def preds_report(predictions: 'Predictions', window: int, threshold: float = 0.5,
+                 show_dates: bool = False, target_label: Union[str, int] = 'all', neu_label: int = 0):
 
     style = Style(fig_size=(16, 6))
     blue = colormap(0.56)
@@ -76,7 +76,7 @@ def cv_report(predictions: 'Predictions', window: int, threshold: float = 0.5,
                              figsize=style.fig_size, facecolor="w",
                              gridspec_kw={'height_ratios': [5, 2]}, dpi=style.dpi)
 
-    fig.suptitle("Cross validation report", x=0.528, y=1.05, fontsize=style.suptitle_size)
+    fig.suptitle("Prediction report", x=0.528, y=1.05, fontsize=style.suptitle_size)
 
     precision_style = deepcopy(style)
     precision_style.fill = True
