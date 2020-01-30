@@ -2,13 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+import matplotlib.ticker as ticker
 
 from copy import deepcopy
 from typing import Union
 
 from . import primitives
 from .style import Style, colormap
-from ..simulation.entities import Probabilities, Predictions, Trades
+from ..simulation import Probabilities, Predictions, Trades, PredictionSimulator
+from ..compute import threshold_for_metric
 
 from sklearn.calibration import calibration_curve
 
@@ -190,6 +192,81 @@ def trading_report(trades: 'Trades', show_dates: bool = False, initial: int = 10
     plt.tight_layout()
     plt.show()
 
+
+def threshold_report(probas: 'Probabilities', activity_range=(0.02, 0.6), n_steps=40, tolerance=0.001):
+
+    # Calculate threshold range, predictions and activities arrays
+    max_threshold = threshold_for_metric(probas, metric='activity', target=activity_range[0], tolerance=tolerance)
+    min_threshold = threshold_for_metric(probas, metric='activity', target=activity_range[1], tolerance=tolerance)
+    thresholds = np.linspace(min_threshold, max_threshold, n_steps)
+
+    preds_sim = PredictionSimulator()
+
+    predictions = [preds_sim.pos_preds(probas, t) for t in thresholds]
+    precisions = np.array([p.precision() for p in predictions])
+    activities = np.array([p.activity() for p in predictions])
+
+    x_labels = [f"{t:.3f}" for t in thresholds]
+    x_ticks = np.array((range(len(x_labels))))
+
+    style = Style(fig_size=(16, 6))
+    blue = colormap(0.56)
+    orange = colormap(0.045)
+
+    fig, ax = plt.subplots(1, 1, figsize=style.fig_size, facecolor="w", dpi=style.dpi)
+    fig.suptitle("Threshold report", x=0.5, y=1.05, fontsize=style.suptitle_size)
+
+    formatter = ticker.FormatStrFormatter('%.3f')
+    ax2 = ax.twinx()
+
+    primitives.curve(precisions, pos_color=orange, pos_legend_label='Precision',
+                     xlabel='Threshold', ylabel='Precision', style=Style(line_width=2, marker='.'), ax=ax)
+    primitives.curve(activities, pos_color=blue, pos_legend_label='Activity',
+                     xlabel='Threshold', ylabel='Activity', style=Style(line_width=2, marker='.'), ax=ax2)
+
+    p_min, p_max = precisions.min(), precisions.max()
+    p_range = p_max - p_min
+    a_min, a_max = activities.min(), activities.max()
+    a_range = a_max - a_min
+    # x_min, x_max = x_ticks.min(), x_ticks.max()
+    # x_range = x_max - x_min
+
+    for (x, p) in zip(x_ticks, precisions):
+        if x % 3 == 0:
+            ax.annotate(f'{p:.3f}', xy=(x-0.6, p+p_range*0.03), color=orange, fontweight='bold')
+
+    for (x, a) in zip(x_ticks, activities):
+        if x % 3 == 0:
+            ax2.annotate(f'{a:.3f}', xy=(x-0.6, a+a_range*0.03), color=blue, fontweight='bold')
+
+    ax.yaxis.set_major_formatter(formatter)
+    ax.yaxis.set_major_locator(ticker.LinearLocator(20))
+    ax2.yaxis.set_major_formatter(formatter)
+    ax2.yaxis.set_major_locator(ticker.LinearLocator(20))
+
+    # Setup axis spines
+    ax.set_frame_on(True)
+    ax.spines['left'].set_visible(True)
+    ax.spines['right'].set_visible(True)
+    ax.spines['top'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+
+    [i.set_linewidth(2.5) for i in ax.spines.values()]
+
+    ax.spines['left'].set_color(orange)
+    ax.spines['right'].set_color(blue)
+
+    [t.set_color(orange) for t in ax.yaxis.get_ticklines()]
+    [t.set_color(blue) for t in ax2.yaxis.get_ticklines()]
+
+    fig.legend(loc='lower center', bbox_to_anchor=(0.495, 0.2))
+
+    plt.xticks(ticks=x_ticks, labels=x_labels)
+
+    [lbl.set_rotation(45) for lbl in ax.get_xticklabels()]
+
+    plt.tight_layout()
+    plt.show()
 
 #######
 # Utility functions
