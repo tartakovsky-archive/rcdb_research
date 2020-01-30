@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import numba
 
-from typing import Union
+from typing import Union, Optional
 
 
 class Trades:
@@ -40,6 +40,34 @@ class Trades:
     ############
     # Public interface
     ############
+    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> 'Trades':
+        """
+        Returns copy of Probabilities with items with indexes between date_start and date_end
+        :param date_start: Date to drop observations before
+        :param date_end: Date to drop observations after
+        :return:
+        """
+
+        if not isinstance(self.index, pd.DatetimeIndex):
+            raise ValueError(f'index should be an instance of pd.DatetimeIndex to use in_date_range method')
+
+        sub_index = self.index
+        if date_start is not None:
+            sub_index = sub_index[sub_index >= date_start]
+        if date_end is not None:
+            sub_index = sub_index[sub_index < date_end]
+
+        sub_directions = self.directions[np.isin(self.index, sub_index)]
+        sub_changes = self.changes[np.isin(self.index, sub_index)]
+        sub_fees = self.fees[np.isin(self.index, sub_index)]
+
+        return Trades(
+            directions=sub_directions,
+            changes=sub_changes,
+            fees=sub_fees,
+            index=sub_index,
+        )
+
     def returns(self, after_fees: bool = True, dense: bool = False, raw: bool = False) -> Union[pd.Series, tuple]:
         index = self.index
         returns = self.changes

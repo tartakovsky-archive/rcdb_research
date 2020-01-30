@@ -1,6 +1,8 @@
 import logging
 
 import numpy as np
+import pandas as pd
+from typing import Optional
 
 
 class Probabilities:
@@ -33,3 +35,29 @@ class Probabilities:
         self.y_true = y_true
         self.y_pred_proba = y_pred_proba
         self.index = index
+
+    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> 'Probabilities':
+        """
+        Returns copy of Probabilities with items with indexes between date_start and date_end
+        :param date_start: Date to drop observations before
+        :param date_end: Date to drop observations after
+        :return:
+        """
+
+        if not isinstance(self.index, pd.DatetimeIndex):
+            raise ValueError(f'index should be an instance of pd.DatetimeIndex to use in_date_range method')
+
+        sub_index = self.index
+        if date_start is not None:
+            sub_index = sub_index[sub_index >= date_start]
+        if date_end is not None:
+            sub_index = sub_index[sub_index < date_end]
+
+        sub_y_true = self.y_true[np.isin(self.index, sub_index)]
+        sub_y_pred_proba = self.y_pred_proba[np.isin(self.index, sub_index)]
+
+        return Probabilities(
+            y_true=sub_y_true,
+            y_pred=sub_y_pred_proba,
+            index=sub_index,
+        )
