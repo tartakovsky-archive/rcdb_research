@@ -65,6 +65,37 @@ class QuantileClassifier(BaseEstimator, ClassifierMixin):
         return params
 
 
+class KerasToRcdbPipelineWrapper:
+    def __init__(self, params):
+        self.params = params
+
+        self.keras_model = params['keras_model']
+        self.keras_kwargs = params.copy()
+        self.keras_kwargs.pop("keras_model")
+        self.estimator = None
+
+    def fit(self, X, y):
+        self.estimator = self.keras_model(
+            **{
+                **self.keras_kwargs,
+                "steps_per_epoch": int(X.shape[0] / self.keras_kwargs['batch_size'])
+            }
+        )
+
+        self.estimator.fit(X, y)
+
+        return self
+
+    def predict(self, X):
+        return self.estimator.predict(X)
+
+    def predict_proba(self, X):
+        return self.estimator.predict_proba(X)
+
+    def get_params(self, *args, **kwargs):
+        return {"params": self.params}
+
+
 def get_classifier(p):
     params = p.copy()
 
