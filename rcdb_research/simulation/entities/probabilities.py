@@ -58,6 +58,6 @@ class Probabilities:
 
         return Probabilities(
             y_true=sub_y_true,
-            y_pred=sub_y_pred_proba,
+            y_pred_proba=sub_y_pred_proba,
             index=sub_index,
         )
