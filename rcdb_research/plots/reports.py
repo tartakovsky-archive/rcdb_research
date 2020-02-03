@@ -10,7 +10,7 @@ from typing import Union
 from . import primitives
 from .style import Style, colormap
 from ..simulation import Probabilities, Predictions, Trades, PredictionSimulator
-from ..compute import threshold_for_metric
+from ..compute import threshold_for_activity
 
 from sklearn.calibration import calibration_curve
 
@@ -196,8 +196,8 @@ def trading_report(trades: 'Trades', show_dates: bool = False, initial: int = 10
 def threshold_report(probas: 'Probabilities', activity_range=(0.02, 0.6), n_steps=40, tolerance=0.001):
 
     # Calculate threshold range, predictions and activities arrays
-    max_threshold = threshold_for_metric(probas, metric='activity', target=activity_range[0], tolerance=tolerance)
-    min_threshold = threshold_for_metric(probas, metric='activity', target=activity_range[1], tolerance=tolerance)
+    max_threshold = threshold_for_activity(probas, target=activity_range[0], tolerance=tolerance)
+    min_threshold = threshold_for_activity(probas, target=activity_range[1], tolerance=tolerance)
     thresholds = np.linspace(min_threshold, max_threshold, n_steps)
 
     preds_sim = PredictionSimulator()

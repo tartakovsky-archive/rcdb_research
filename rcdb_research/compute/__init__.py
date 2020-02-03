@@ -1,1 +1,1 @@
-from .compute import threshold_for_metric, symlog, symscale  # noqa
+from .compute import threshold_for_activity, threshold_for_precision, symlog, symscale  # noqa
