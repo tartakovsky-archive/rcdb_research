@@ -6,37 +6,53 @@ import numpy as np
 from ..simulation import Probabilities, PredictionSimulator
 
 
-def threshold_for_precision(probas: 'Probabilities', target: float, tolerance=0.001) -> float:
+def threshold_for_precision(probas: 'Probabilities', target: float, direction: str = 'pos', tolerance=0.001) -> float:
     """
     Uses secant root finding method to search for threshold value that produces target precision
     :param probas: instance of Probabilities class
     :param target: target value of the metric
+    :param direction: one of ['pos', 'neg']
     :param tolerance: maximum allowed error of metric value
     :returns: threshold value which produces target value of the metric
     """
+    supported_direction = ['pos', 'neg']
+    if direction not in supported_direction:
+        raise ValueError(f'direction should be one of {supported_direction}')
 
     preds_sim = PredictionSimulator()
 
     def f(threshold):
-        preds = preds_sim.pos_preds(probas, threshold)
+        if direction == 'pos':
+            preds = preds_sim.pos_preds(probas, threshold)
+        elif direction == 'neg':
+            preds = preds_sim.neg_preds(probas, threshold)
+
         return preds.precision() - target
 
     return opt.root_scalar(f, method='secant', x0=0.5, x1=0.55, xtol=tolerance, maxiter=1000).root
 
 
-def threshold_for_activity(probas: 'Probabilities', target: float, tolerance=0.001) -> float:
+def threshold_for_activity(probas: 'Probabilities', target: float, direction: str = 'pos', tolerance=1e-5) -> float:
     """
     Uses brentq root finding method to search for threshold value that produces target activity
     :param probas: instance of Probabilities class
     :param target: target value of the metric
+    :param direction: one of ['pos', 'neg']
     :param tolerance: maximum allowed error of metric value
     :returns: threshold value which produces target value of the metric
     """
+    supported_direction = ['pos', 'neg']
+    if direction not in supported_direction:
+        raise ValueError(f'direction should be one of {supported_direction}')
 
     preds_sim = PredictionSimulator()
 
     def f(threshold):
-        preds = preds_sim.pos_preds(probas, threshold)
+        if direction == 'pos':
+            preds = preds_sim.pos_preds(probas, threshold)
+        elif direction == 'neg':
+            preds = preds_sim.neg_preds(probas, threshold)
+
         return preds.activity() - target
 
     return opt.brentq(f, a=0, b=1, xtol=tolerance, maxiter=1000)

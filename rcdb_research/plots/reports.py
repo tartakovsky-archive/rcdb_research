@@ -193,16 +193,21 @@ def trading_report(trades: 'Trades', show_dates: bool = False, initial: int = 10
     plt.show()
 
 
-def threshold_report(probas: 'Probabilities', activity_range=(0.02, 0.6), n_steps=40, tolerance=0.001):
+def threshold_report(probas: 'Probabilities', activity_range: tuple = (0.05, 0.6),
+                     n_steps: int = 40, direction: str = 'pos', tolerance: float = 1e-5):
 
     # Calculate threshold range, predictions and activities arrays
-    max_threshold = threshold_for_activity(probas, target=activity_range[0], tolerance=tolerance)
-    min_threshold = threshold_for_activity(probas, target=activity_range[1], tolerance=tolerance)
+    max_threshold = threshold_for_activity(probas, target=activity_range[0], direction=direction, tolerance=tolerance)
+    min_threshold = threshold_for_activity(probas, target=activity_range[1], direction=direction, tolerance=tolerance)
     thresholds = np.linspace(min_threshold, max_threshold, n_steps)
 
     preds_sim = PredictionSimulator()
 
-    predictions = [preds_sim.pos_preds(probas, t) for t in thresholds]
+    if direction == 'pos':
+        predictions = [preds_sim.pos_preds(probas, t) for t in thresholds]
+    elif direction == 'neg':
+        predictions = [preds_sim.neg_preds(probas, t) for t in thresholds]
+
     precisions = np.array([p.precision() for p in predictions])
     activities = np.array([p.activity() for p in predictions])
 
