@@ -22,7 +22,51 @@ class VotingSimulator:
     ############
     # Public interface
     ############
+    def majority_voting(self, preds_arr: List['Predictions'], weights: Optional[List[float]] = None) -> 'Predictions':
+        """
+        Equivalent of sklearn.VotingClassifier(voting='hard')
+
+        1 if there are more 'for' votes than 'against' and 'neutral' together
+        -1 if there are more 'against' votes than 'for' and 'neutral' together
+        0 if there is no clear majority
+
+        :param preds_arr: list of Predictions objects
+        :param weights: weights to pass to np.argmax
+        :returns: Predictions object with winning predictions
+        """
+
+        y_preds = np.array([p.y_pred for p in preds_arr])
+        y_preds[y_preds == self.labels['pos']] = 1
+        y_preds[y_preds == self.labels['neu']] = 0
+        y_preds[y_preds == self.labels['neg']] = -1
+
+        # Vote
+        y_pred_result = np.apply_along_axis(
+            lambda x: np.argmax(np.bincount(x, weights=weights)),
+            axis=0, arr=y_preds
+        )
+
+        # Label results
+        y_pred_result[y_pred_result > 0] = self.labels['pos']
+        y_pred_result[y_pred_result == 0] = self.labels['neu']
+        y_pred_result[y_pred_result < 0] = self.labels['neg']
+
+        return Predictions(preds_arr[0].y_true, y_pred_result, preds_arr[0].index)
+
     def plurality_voting(self, preds_arr: List['Predictions'], weights: Optional[List[float]] = None) -> 'Predictions':
+        """
+        1 if there are more 'for' votes than 'against' and 'neutral' together
+        -1 if there are more 'against' votes than 'for' and 'neutral' together
+        0 if there is no clear majority
+
+        :param preds_arr: list of Predictions objects
+        :param weights: weights to multiply predictions by
+        :returns: Predictions object with winning predictions
+        """
+
+        # 1 if there are more 'for' votes that 'against'
+        # -1 if there are more 'against' votes than 'for'
+        # 0 if there are equal amount of 'for' and 'against' or all votes are 'neutral'
 
         y_preds = np.array([p.y_pred for p in preds_arr])
         y_preds[y_preds == self.labels['pos']] = 1
@@ -44,7 +88,32 @@ class VotingSimulator:
 
         return Predictions(preds_arr[0].y_true, y_pred_result, preds_arr[0].index)
 
+    def soft_voting(self, probas_arr: List['Probabilities'], weights: Optional[List[float]] = None) -> 'Probabilities':
+        """
+        Equivalent of sklearn.VotingClassifier(voting='soft').predict_proba
+
+        Returns mean of all predicted probabilities for observation. Optionally can be weighed.
+
+        :param probas_arr: list of Probabilities objects
+        :param weights: weights to pass to np.average
+        :returns: Probabilities object with mean probas
+        """
+
+        y_pred_probas = np.array([p.y_pred_proba for p in probas_arr])
+
+        avg_y_pred_proba = np.average(y_pred_probas, axis=0, weights=weights)
+
+        return Probabilities(probas_arr[0].y_true, avg_y_pred_proba, probas_arr[0].index)
+
     def no_opposition_voting(self, preds_arr: List['Predictions']) -> 'Predictions':
+        """
+        1 only if there are no 'against' votes
+        -1 only if there are no 'for' votes
+        0 otherwise
+
+        :param preds_arr: list of Predictions objects
+        :returns: Predictions object with winning predictions
+        """
 
         y_preds = np.array([p.y_pred for p in preds_arr])
 
@@ -60,31 +129,3 @@ class VotingSimulator:
         y_pred_result = np.apply_along_axis(bar_vote, axis=0, arr=y_preds)
 
         return Predictions(preds_arr[0].y_true, y_pred_result, preds_arr[0].index)
-
-    def majority_voting(self, preds_arr: List['Predictions'], weights: Optional[List[float]] = None) -> 'Predictions':
-
-        y_preds = np.array([p.y_pred for p in preds_arr])
-        y_preds[y_preds == self.labels['pos']] = 1
-        y_preds[y_preds == self.labels['neu']] = 0
-        y_preds[y_preds == self.labels['neg']] = -1
-
-        # Vote
-        y_pred_result = np.apply_along_axis(
-            lambda x: np.argmax(np.bincount(x, weights=weights)),
-            axis=0, arr=y_preds
-        )
-
-        # Label results
-        y_pred_result[y_pred_result > 0] = self.labels['pos']
-        y_pred_result[y_pred_result == 0] = self.labels['neu']
-        y_pred_result[y_pred_result < 0] = self.labels['neg']
-
-        return Predictions(preds_arr[0].y_true, y_pred_result, preds_arr[0].index)
-
-    def soft_voting(self, probas_arr: List['Probabilities'], weights: Optional[List[float]] = None) -> 'Probabilities':
-
-        y_pred_probas = np.array([p.y_pred_proba for p in probas_arr])
-
-        avg_y_pred_proba = np.average(y_pred_probas, axis=0, weights=weights)
-
-        return Probabilities(probas_arr[0].y_true, avg_y_pred_proba, probas_arr[0].index)
