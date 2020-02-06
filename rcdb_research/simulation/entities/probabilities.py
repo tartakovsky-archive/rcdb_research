@@ -13,7 +13,7 @@ class Probabilities:
     # Initialization
     ############
 
-    def __init__(self, y_true: np.array, y_pred_proba: np.array, index: np.array = None):
+    def __init__(self, y_true: np.ndarray, y_pred_proba: np.ndarray, index: np.ndarray = None):
 
         if index is not None:
             index = index.copy()
@@ -35,6 +35,34 @@ class Probabilities:
         self.y_true = y_true
         self.y_pred_proba = y_pred_proba
         self.index = index
+
+    ############
+    # Public methods
+    ############
+
+    def head(self, n: int) -> 'Probabilities':
+        """
+        Returns copy of Probabilities with first n items
+        :param n: number of first items
+        :return:
+        """
+        return Probabilities(
+            y_true=self.y_true[:n],
+            y_pred_proba=self.y_pred_proba[:n],
+            index=self.index[:n]
+        )
+
+    def tail(self, n: int) -> 'Probabilities':
+        """
+        Returns copy of Probabilities with last n items
+        :param n: number of last items
+        :return:
+        """
+        return Probabilities(
+            y_true=self.y_true[-n:],
+            y_pred_proba=self.y_pred_proba[-n:],
+            index=self.index[-n:]
+        )
 
     def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> 'Probabilities':
         """

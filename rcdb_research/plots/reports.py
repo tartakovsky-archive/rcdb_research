@@ -9,10 +9,11 @@ from typing import Union
 
 from . import primitives
 from .style import Style, colormap
-from ..simulation import Probabilities, Predictions, Trades, PredictionSimulator
-from ..compute import threshold_for_activity
+from ..simulation.entities import Probabilities, Predictions, Trades
+from ..simulation.metrics import ProbabilityMetrics, PredictionMetrics
+from ..simulation.simulators import PredictionSimulator
 
-from sklearn.calibration import calibration_curve
+from ..compute import threshold_for_activity
 
 
 def proba_report(probas: 'Probabilities', n_bins: int = 40, show_dates: bool = False):
@@ -40,8 +41,10 @@ def proba_report(probas: 'Probabilities', n_bins: int = 40, show_dates: bool = F
 
     ax2.plot([0, 1], [0, 1], "--", color='gray', label="Perfectly calibrated")
 
-    fraction_of_positives, mean_predicted_value = calibration_curve(
-        probas.y_true, probas.y_pred_proba, normalize=False, n_bins=n_bins, strategy='uniform'
+    proba_metrics = ProbabilityMetrics(probas)
+
+    fraction_of_positives, mean_predicted_value = proba_metrics.calibration(
+        normalize=False, n_bins=n_bins, strategy='uniform'
     )
 
     primitives.curve(y=fraction_of_positives, x=mean_predicted_value,
@@ -66,8 +69,8 @@ def preds_report(predictions: 'Predictions', window: int, threshold: float = 0.5
     blue = colormap(0.56)
     red = colormap(0.045)
 
-    labels = dict(target_label=target_label, neu_label=neu_label)
-    precision = predictions.precision(window=window, dense=True, **labels).fillna(threshold)
+    pred_metrics = PredictionMetrics(predictions, target_label=target_label, neu_label=neu_label)
+    precision = pred_metrics.precision(window=window, dense=True).fillna(threshold)
 
     h_pad = None
     if show_dates:
@@ -95,13 +98,13 @@ def preds_report(predictions: 'Predictions', window: int, threshold: float = 0.5
     if show_dates:
         primitives.second_index(axes[0], _datestring(precision.index))
 
-    primitives.curve(predictions.tp(**labels),
+    primitives.curve(pred_metrics.tp(),
                      style=style,
                      pos_color=blue,
                      neg_color=red,
                      ax=axes[1])
 
-    primitives.curve(predictions.fp(**labels)*-1,
+    primitives.curve(pred_metrics.fp()*-1,
                      title='Prediction density over bars',
                      xlabel=None if show_dates else 'Bar number',
                      ylabel='FP / TP',
@@ -112,7 +115,7 @@ def preds_report(predictions: 'Predictions', window: int, threshold: float = 0.5
     if show_dates:
         primitives.second_index(
             axes[1],
-            _datestring(predictions.tp(**labels).index), xlabel='Bar number / Date'
+            _datestring(pred_metrics.tp().index), xlabel='Bar number / Date'
         )
 
     plt.tight_layout(h_pad=h_pad)
@@ -204,12 +207,14 @@ def threshold_report(probas: 'Probabilities', activity_range: tuple = (0.05, 0.6
     preds_sim = PredictionSimulator()
 
     if direction == 'pos':
-        predictions = [preds_sim.pos_preds(probas, t) for t in thresholds]
+        preds_arr = [preds_sim.pos_preds(probas, t) for t in thresholds]
+        metrics_arr = [PredictionMetrics(p, target_label=1, neu_label=0) for p in preds_arr]
     elif direction == 'neg':
-        predictions = [preds_sim.neg_preds(probas, t) for t in thresholds]
+        preds_arr = [preds_sim.neg_preds(probas, t) for t in thresholds]
+        metrics_arr = [PredictionMetrics(p, target_label=-1, neu_label=0) for p in preds_arr]
 
-    precisions = np.array([p.precision() for p in predictions])
-    activities = np.array([p.activity() for p in predictions])
+    precisions = np.array([m.precision() for m in metrics_arr])
+    activities = np.array([m.activity() for m in metrics_arr])
 
     x_labels = [f"{t:.3f}" for t in thresholds]
     x_ticks = np.array((range(len(x_labels))))
