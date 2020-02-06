@@ -27,15 +27,15 @@ class TradingMetrics:
                  initial_capital: float = 100,
                  position_size: float = 0.5,  # TODO: replace with PositionSizing function
                  compounded: bool = False):  # TODO: remove, controlled by position sizing strat
-        self.trades = weakref.ref(trades)
+        self.trades = weakref.proxy(trades)
 
     ############
     # Trading metrics
     ############
 
     def returns(self, dense: bool = False, raw: bool = False) -> Union[pd.Series, tuple]:
-        index = self.index
-        returns = self.changes + self.fees
+        index = self.trades.index
+        returns = self.trades.changes + self.trades.fees
 
         if dense:
             ids = (returns != 0)
@@ -93,7 +93,7 @@ class TradingMetrics:
         return losses.size
 
     def n_trades(self) -> int:
-        return np.count_nonzero(self.directions)
+        return np.count_nonzero(self.returns(dense=True))
 
     def pct_wins(self) -> float:
         return self.n_wins() / self.n_trades()
@@ -102,7 +102,7 @@ class TradingMetrics:
         return self.n_losses() / self.n_trades()
 
     def n_bars(self) -> int:
-        return self.directions.size
+        return self.returns(dense=False).size
 
     def activity(self) -> float:
         return self.n_trades() / self.n_bars()
@@ -123,11 +123,11 @@ class TradingMetrics:
     ############
     def expected_equity(self, dense: bool = False, raw: bool = False) -> Union[pd.Series, tuple]:
 
-        index = self.index
+        index = self.trades.index
         expectancy = self.expectancy()
 
         if dense:
-            index = index[self.directions != 0]
+            index = index[self.trades.directions != 0]
         else:
             expectancy = expectancy*self.activity()
 

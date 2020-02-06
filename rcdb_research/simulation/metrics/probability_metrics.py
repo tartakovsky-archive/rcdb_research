@@ -22,7 +22,7 @@ class ProbabilityMetrics:
         """
         :param probas: instance of Probabilities class
         """
-        self.probas = weakref.ref(probas)
+        self.probas = weakref.proxy(probas)
         self.labels = labels
 
     def calibration(self, n_bins=40, strategy='uniform', normalize=False) -> Tuple[np.ndarray, np.ndarray]:
