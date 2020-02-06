@@ -1,7 +1,9 @@
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 
-from typing import Optional
+from ..metrics import TradingMetrics
 
 
 class Trades:
@@ -39,6 +41,12 @@ class Trades:
     ############
     # Public methods
     ############
+    def init_metrics(self, initial_capital: float = 100,
+                     position_size: float = 0.5, compounded: bool = False) -> 'Trades':
+
+        self.metric_params = dict(initial_capital=initial_capital, position_size=position_size, compounded=compounded)
+        self.metrics = TradingMetrics(self, **self.metric_params)
+        return self
 
     def head(self, n: int) -> 'Trades':
         """
@@ -46,12 +54,20 @@ class Trades:
         :param n: number of first items
         :return:
         """
-        return Trades(
+
+        # TODO: reinit metrics with the same params
+
+        new_trades = Trades(
             directions=self.directions[:n],
             changes=self.changes[:n],
             fees=self.fees[:n],
             index=self.index[:n]
         )
+
+        if hasattr(self, 'metric_params'):
+            new_trades.init_metrics(self, **self.metric_params)
+
+        return new_trades
 
     def tail(self, n: int) -> 'Trades':
         """
@@ -59,12 +75,17 @@ class Trades:
         :param n: number of last items
         :return:
         """
-        return Trades(
+        new_trades = Trades(
             directions=self.directions[-n:],
             changes=self.changes[-n:],
             fees=self.fees[-n:],
             index=self.index[-n:]
         )
+
+        if hasattr(self, 'metric_params'):
+            new_trades.init_metrics(self, **self.metric_params)
+
+        return new_trades
 
     def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> 'Trades':
         """
@@ -87,9 +108,14 @@ class Trades:
         sub_changes = self.changes[np.isin(self.index, sub_index)]
         sub_fees = self.fees[np.isin(self.index, sub_index)]
 
-        return Trades(
+        new_trades = Trades(
             directions=sub_directions,
             changes=sub_changes,
             fees=sub_fees,
             index=sub_index,
         )
+
+        if hasattr(self, 'metric_params'):
+            new_trades.init_metrics(self, **self.metric_params)
+
+        return new_trades

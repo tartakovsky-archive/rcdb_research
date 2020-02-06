@@ -1,4 +1,5 @@
 from typing import Union, Callable
+import weakref
 
 import numpy as np
 import pandas as pd
@@ -15,13 +16,13 @@ class PredictionMetrics:
     # Initialization
     ############
 
-    def __init__(self, preds: 'Predictions', target_label: Union[str, int] = 'all', neu_label: int = 0,):
+    def __init__(self, preds: 'Predictions', target_label: Union[str, int] = 'all', neu_label: int = 0):
         """
         :param preds: instance of Predictions class
         :param target_label: 'all' or value of the target_label to calculate the score for, e.g. 1 or -1
         :param neu_label: value of the target_label for the negative class, usually 0
         """
-        self.preds = preds
+        self.preds = weakref.ref(preds)
         self.target_label = target_label
         self.neu_label = neu_label
 

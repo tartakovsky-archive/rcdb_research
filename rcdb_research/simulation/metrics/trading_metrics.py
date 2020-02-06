@@ -1,8 +1,9 @@
+from typing import Union
+import weakref
+
 import numpy as np
 import pandas as pd
 import numba
-
-from typing import Union
 
 from ..entities import Trades
 
@@ -26,7 +27,7 @@ class TradingMetrics:
                  initial_capital: float = 100,
                  position_size: float = 0.5,  # TODO: replace with PositionSizing function
                  compounded: bool = False):  # TODO: remove, controlled by position sizing strat
-        self.trades = trades
+        self.trades = weakref.ref(trades)
 
     ############
     # Trading metrics

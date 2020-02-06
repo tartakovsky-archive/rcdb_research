@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 
+from ..metrics import ProbabilityMetrics
+
 
 class Probabilities:
     """
@@ -39,6 +41,10 @@ class Probabilities:
     ############
     # Public methods
     ############
+    def init_metrics(self, labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}) -> 'Probabilities':
+        self.metric_params = dict(labels=labels)
+        self.metrics = ProbabilityMetrics(self, **self.metric_params)
+        return self
 
     def head(self, n: int) -> 'Probabilities':
         """
@@ -46,11 +52,16 @@ class Probabilities:
         :param n: number of first items
         :return:
         """
-        return Probabilities(
+        new_probas = Probabilities(
             y_true=self.y_true[:n],
             y_pred_proba=self.y_pred_proba[:n],
             index=self.index[:n]
         )
+
+        if hasattr(self, 'metric_params'):
+            new_probas.init_metrics(self, **self.metric_params)
+
+        return new_probas
 
     def tail(self, n: int) -> 'Probabilities':
         """
@@ -58,11 +69,16 @@ class Probabilities:
         :param n: number of last items
         :return:
         """
-        return Probabilities(
+        new_probas = Probabilities(
             y_true=self.y_true[-n:],
             y_pred_proba=self.y_pred_proba[-n:],
             index=self.index[-n:]
         )
+
+        if hasattr(self, 'metric_params'):
+            new_probas.init_metrics(self, **self.metric_params)
+
+        return new_probas
 
     def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> 'Probabilities':
         """
@@ -84,8 +100,13 @@ class Probabilities:
         sub_y_true = self.y_true[np.isin(self.index, sub_index)]
         sub_y_pred_proba = self.y_pred_proba[np.isin(self.index, sub_index)]
 
-        return Probabilities(
+        new_probas = Probabilities(
             y_true=sub_y_true,
             y_pred_proba=sub_y_pred_proba,
             index=sub_index,
         )
+
+        if hasattr(self, 'metric_params'):
+            new_probas.init_metrics(self, **self.metric_params)
+
+        return new_probas
