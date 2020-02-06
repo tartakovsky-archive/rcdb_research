@@ -203,10 +203,15 @@ def threshold_report(probas: 'Probabilities', activity_range: tuple = (0.05, 0.6
                                                           direction=direction, tolerance=tolerance)
     thresholds = np.linspace(min_threshold, max_threshold, n_steps)
 
-    preds_arr = [PredictionSimulator(probas.metrics.labels)
-                 .pos_preds(probas, t)
-                 .init_metrics(target_label=probas.metrics.labels[direction])
-                 for t in thresholds]
+    predsim = PredictionSimulator(probas.metrics.labels)
+    if direction == 'pos':
+        preds_arr = [predsim.pos_preds(probas, t)
+                     .init_metrics(target_label=probas.metrics.labels[direction])
+                     for t in thresholds]
+    elif direction == 'neg':
+        preds_arr = [predsim.neg_preds(probas, t)
+                     .init_metrics(target_label=probas.metrics.labels[direction])
+                     for t in thresholds]
 
     precisions = np.array([p.metrics.precision() for p in preds_arr])
     activities = np.array([p.metrics.activity() for p in preds_arr])
