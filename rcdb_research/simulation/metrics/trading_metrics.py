@@ -133,7 +133,7 @@ class TradingMetrics:
 
         returns = np.full(index.size, expectancy)
 
-        equity = Trades._calculate_equity(returns, self.initial_capital, self.position_size, self.compounded)
+        equity = TradingMetrics._calculate_equity(returns, self.initial_capital, self.position_size, self.compounded)
 
         return (equity, index) if raw else pd.Series(equity, index=index)
 
@@ -149,7 +149,7 @@ class TradingMetrics:
 
         returns, index = self.returns(dense=dense, raw=True)
 
-        equity = Trades._calculate_equity(returns, self.initial_capital, self.position_size, self.compounded)
+        equity = TradingMetrics._calculate_equity(returns, self.initial_capital, self.position_size, self.compounded)
 
         return (equity, index) if raw else pd.Series(equity, index=index)
 
