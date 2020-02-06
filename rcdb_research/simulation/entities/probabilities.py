@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 
-from ..metrics import ProbabilityMetrics
-
 
 class Probabilities:
     """
@@ -42,6 +40,8 @@ class Probabilities:
     # Public methods
     ############
     def init_metrics(self, labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}) -> 'Probabilities':
+        from ..metrics import ProbabilityMetrics
+
         self.metric_params = dict(labels=labels)
         self.metrics = ProbabilityMetrics(self, **self.metric_params)
         return self

@@ -4,8 +4,6 @@ from typing import Optional, Union
 import numpy as np
 import pandas as pd
 
-from ..metrics import PredictionMetrics
-
 
 class Predictions:
     """
@@ -42,6 +40,8 @@ class Predictions:
     # Public methods
     ############
     def init_metrics(self, target_label: Union[str, int] = 'all', neu_label: int = 0) -> 'Predictions':
+        from ..metrics import PredictionMetrics
+
         self.metric_params = dict(target_label=target_label, neu_label=neu_label)
         self.metrics = PredictionMetrics(self, **self.metric_params)
         return self

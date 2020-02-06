@@ -3,8 +3,6 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from ..metrics import TradingMetrics
-
 
 class Trades:
     """
@@ -43,6 +41,7 @@ class Trades:
     ############
     def init_metrics(self, initial_capital: float = 100,
                      position_size: float = 0.5, compounded: bool = False) -> 'Trades':
+        from ..metrics import TradingMetrics
 
         self.metric_params = dict(initial_capital=initial_capital, position_size=position_size, compounded=compounded)
         self.metrics = TradingMetrics(self, **self.metric_params)
