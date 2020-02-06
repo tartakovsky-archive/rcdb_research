@@ -47,8 +47,7 @@ class ProbabilityMetrics:
             strategy=strategy
         )
 
-    def threshold_for_precision(self, probas: 'Probabilities', target: float,
-                                direction: str = 'pos', tolerance=1e-3) -> float:
+    def threshold_for_precision(self, target: float, direction: str = 'pos', tolerance=1e-3) -> float:
         """
         Uses secant root finding method to search for threshold value that produces target precision
         :param probas: instance of Probabilities class
@@ -64,13 +63,12 @@ class ProbabilityMetrics:
         preds_sim = PredictionSimulator(self.labels)
 
         def f(threshold):
-            preds = preds_sim.pos_preds(probas, threshold).init_metrics(target_label=self.labels[direction])
+            preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
             return preds.metrics.precision() - target
 
         return opt.root_scalar(f, method='secant', x0=0.5, x1=0.55, xtol=tolerance, maxiter=1000).root
 
-    def threshold_for_activity(self, probas: 'Probabilities', target: float,
-                               direction: str = 'pos', tolerance=1e-5) -> float:
+    def threshold_for_activity(self, target: float, direction: str = 'pos', tolerance=1e-5) -> float:
         """
         Uses brentq root finding method to search for threshold value that produces target activity
         :param probas: instance of Probabilities class
@@ -86,7 +84,7 @@ class ProbabilityMetrics:
         preds_sim = PredictionSimulator(self.labels)
 
         def f(threshold):
-            preds = preds_sim.pos_preds(probas, threshold).init_metrics(target_label=self.labels[direction])
+            preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
             return preds.metrics.activity() - target
 
         return opt.brentq(f, a=0, b=1, xtol=tolerance, maxiter=1000)
