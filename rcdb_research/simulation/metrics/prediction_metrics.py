@@ -216,7 +216,7 @@ class PredictionMetrics:
             fn=self.n_fn(),
             positives=self.n_positives(),
             negatives=self.n_negatives(),
-            observations=self.y_pred.size,
+            observations=self.returns(dense=False).size,
         )
         metrics_df = pd.DataFrame({**metrics_dict}, index=[0])
         return metrics_df
