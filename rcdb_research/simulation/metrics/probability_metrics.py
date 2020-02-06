@@ -65,7 +65,7 @@ class ProbabilityMetrics:
         def f(threshold):
             if direction == 'pos':
                 preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
-            if direction == 'neg':
+            elif direction == 'neg':
                 preds = preds_sim.neg_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
             return preds.metrics.precision() - target
 
@@ -89,7 +89,7 @@ class ProbabilityMetrics:
         def f(threshold):
             if direction == 'pos':
                 preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
-            if direction == 'neg':
+            elif direction == 'neg':
                 preds = preds_sim.neg_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
             return preds.metrics.activity() - target
 
