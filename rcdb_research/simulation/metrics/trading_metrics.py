@@ -28,6 +28,9 @@ class TradingMetrics:
                  position_size: float = 0.5,  # TODO: replace with PositionSizing function
                  compounded: bool = False):  # TODO: remove, controlled by position sizing strat
         self.trades = weakref.proxy(trades)
+        self.initial_capital = initial_capital
+        self.position_size = position_size
+        self.compounded = compounded
 
     ############
     # Trading metrics
