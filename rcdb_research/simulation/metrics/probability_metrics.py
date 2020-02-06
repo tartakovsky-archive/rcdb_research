@@ -63,7 +63,10 @@ class ProbabilityMetrics:
         preds_sim = PredictionSimulator(self.labels)
 
         def f(threshold):
-            preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
+            if direction == 'pos':
+                preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
+            if direction == 'neg':
+                preds = preds_sim.neg_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
             return preds.metrics.precision() - target
 
         return opt.root_scalar(f, method='secant', x0=0.5, x1=0.55, xtol=tolerance, maxiter=1000).root
@@ -84,7 +87,10 @@ class ProbabilityMetrics:
         preds_sim = PredictionSimulator(self.labels)
 
         def f(threshold):
-            preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
+            if direction == 'pos':
+                preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
+            if direction == 'neg':
+                preds = preds_sim.neg_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
             return preds.metrics.activity() - target
 
         return opt.brentq(f, a=0, b=1, xtol=tolerance, maxiter=1000)
