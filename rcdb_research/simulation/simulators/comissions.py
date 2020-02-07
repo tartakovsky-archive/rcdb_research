@@ -1,30 +1,49 @@
 from typing import Callable
 
 
-class PositionSizing:
+class Fee:
     @staticmethod
-    def flat(units: float) -> Callable:
+    def bitfinex() -> Callable:
+        def fee_fn() -> dict:
+            return dict(maker=-0.2 / 100, taker=-0.2 / 100)
 
-        def sizing_fn() -> float:
-            return units
+        return fee_fn
 
-        return sizing_fn
+    @staticmethod
+    def bitmex() -> Callable:
+        def fee_fn() -> dict:
+            return dict(maker=0.025 / 100, taker=-0.075 / 100)
 
+        return fee_fn
+
+    @staticmethod
+    def binance() -> Callable:
+        def fee_fn() -> dict:
+            return dict(maker=-0.075 / 100, taker=-0.075 / 100)
+
+        return fee_fn
+
+    @staticmethod
+    def custom(maker: float, taker: float) -> Callable:
+        def fee_fn() -> dict:
+            return dict(maker=maker, taker=taker)
+
+        return fee_fn
+
+
+class Slippage:
     @staticmethod
     def percent(percent: float) -> Callable:
+        def slippage_fn() -> float:
+            return percent
 
-        def sizing_fn(current_equity: float) -> float:
-            return current_equity * percent
+        return slippage_fn
 
-        return sizing_fn
 
+class MarketImpact:
     @staticmethod
-    def kelly(win_size: float, loss_size: float, divider: float = 1) -> Callable:
+    def percent(percent: float) -> Callable:
+        def impact_fn() -> float:
+            return percent
 
-        def sizing_fn(current_equity: float, win_proba: float) -> float:
-            kelly = win_proba / loss_size - (1 - win_proba) / win_size
-            kelly = kelly / divider
-
-            return current_equity * kelly
-
-        return sizing_fn
+        return impact_fn
