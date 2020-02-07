@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional
 
 import numpy as np
@@ -36,25 +38,26 @@ class Trades:
         self.fees = fees
         self.index = index
 
+        self.metrics = None
+        self.metric_params = None
+
     ############
     # Public methods
     ############
     def init_metrics(self, initial_capital: float = 100,
-                     position_size: float = 0.5, compounded: bool = False) -> 'Trades':
+                     position_size: float = 0.5, compounded: bool = False) -> Trades:
         from ..metrics import TradingMetrics
 
         self.metric_params = dict(initial_capital=initial_capital, position_size=position_size, compounded=compounded)
         self.metrics = TradingMetrics(self, **self.metric_params)
         return self
 
-    def head(self, n: int) -> 'Trades':
+    def head(self, n: int) -> Trades:
         """
         Returns copy of Trades with first n items
         :param n: number of first items
         :return:
         """
-
-        # TODO: reinit metrics with the same params
 
         new_trades = Trades(
             directions=self.directions[:n],
@@ -63,12 +66,12 @@ class Trades:
             index=self.index[:n]
         )
 
-        if hasattr(self, 'metric_params'):
-            new_trades.init_metrics(self, **self.metric_params)
+        if self.metric_params is not None:
+            new_trades.init_metrics(**self.metric_params)
 
         return new_trades
 
-    def tail(self, n: int) -> 'Trades':
+    def tail(self, n: int) -> Trades:
         """
         Returns copy of Trades with last n items
         :param n: number of last items
@@ -81,12 +84,12 @@ class Trades:
             index=self.index[-n:]
         )
 
-        if hasattr(self, 'metric_params'):
-            new_trades.init_metrics(self, **self.metric_params)
+        if self.metric_params is not None:
+            new_trades.init_metrics(**self.metric_params)
 
         return new_trades
 
-    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> 'Trades':
+    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> Trades:
         """
         Returns copy of Trades with items with indexes between date_start and date_end
         :param date_start: Date to drop observations before
@@ -114,7 +117,7 @@ class Trades:
             index=sub_index,
         )
 
-        if hasattr(self, 'metric_params'):
-            new_trades.init_metrics(self, **self.metric_params)
+        if self.metric_params is not None:
+            new_trades.init_metrics(**self.metric_params)
 
         return new_trades

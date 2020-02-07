@@ -25,6 +25,6 @@ class PositionSizing:
             kelly = win_proba / loss_size - (1 - win_proba) / win_size
             kelly = kelly / divider
 
-            return current_equity
+            return current_equity * kelly
 
         return sizing_fn

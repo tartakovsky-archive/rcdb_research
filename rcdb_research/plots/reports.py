@@ -11,10 +11,9 @@ from . import primitives
 from .style import Style, colormap
 from ..simulation.entities import Probabilities, Predictions, Trades
 from ..simulation.simulators import PredictionSimulator
+    
 
-
-def proba_report(probas: 'Probabilities', n_bins: int = 40, show_dates: bool = False):
-
+def proba_report(probas: Probabilities, n_bins: int = 40, show_dates: bool = False):
     style = Style(fig_size=(16, 8))
     blue = colormap(0.56)
 
@@ -58,9 +57,8 @@ def proba_report(probas: 'Probabilities', n_bins: int = 40, show_dates: bool = F
     fig.show()
 
 
-def preds_report(preds: 'Predictions', window: int, threshold: float = 0.5,
+def preds_report(preds: Predictions, window: int, threshold: float = 0.5,
                  show_dates: bool = False, target_label: Union[str, int] = 'all', neu_label: int = 0):
-
     style = Style(fig_size=(16, 6))
     blue = colormap(0.56)
     red = colormap(0.045)
@@ -100,7 +98,7 @@ def preds_report(preds: 'Predictions', window: int, threshold: float = 0.5,
                      neg_color=red,
                      ax=axes[1])
 
-    primitives.curve(preds.metrics.fp()*-1,
+    primitives.curve(preds.metrics.fp() * -1,
                      title='Prediction density over bars',
                      xlabel=None if show_dates else 'Bar number',
                      ylabel='FP / TP',
@@ -118,9 +116,8 @@ def preds_report(preds: 'Predictions', window: int, threshold: float = 0.5,
     plt.show()
 
 
-def trading_report(trades: 'Trades', show_dates: bool = False, initial: int = 100,
+def trading_report(trades: Trades, show_dates: bool = False, initial_capital: int = 100,
                    position_size: float = 0.8, dense: bool = False, compounded: bool = False):
-
     style = Style(fig_size=(16, 9))
     blue = colormap(0.56)
     red = colormap(0.045)
@@ -138,7 +135,7 @@ def trading_report(trades: 'Trades', show_dates: bool = False, initial: int = 10
     percent_fill_style.percent = True
     percent_fill_style.fill = True
 
-    trades.init_metrics(initial_capital=initial, position_size=position_size, compounded=compounded)
+    trades.init_metrics(initial_capital=initial_capital, position_size=position_size, compounded=compounded)
 
     primitives.curve(trades.metrics.expected_cum_return(dense=dense),
                      style=percent_style,
@@ -192,9 +189,8 @@ def trading_report(trades: 'Trades', show_dates: bool = False, initial: int = 10
     plt.show()
 
 
-def threshold_report(probas: 'Probabilities', activity_range: tuple = (0.05, 0.6),
+def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
                      n_steps: int = 40, direction: str = 'pos', tolerance: float = 1e-5):
-
     # Calculate threshold range, predictions and activities arrays
     probas.init_metrics()
     max_threshold = probas.metrics.threshold_for_activity(target=activity_range[0],
@@ -205,12 +201,10 @@ def threshold_report(probas: 'Probabilities', activity_range: tuple = (0.05, 0.6
 
     predsim = PredictionSimulator(probas.metrics.labels)
     if direction == 'pos':
-        preds_arr = [predsim.pos_preds(probas, t)
-                     .init_metrics(target_label=probas.metrics.labels[direction])
+        preds_arr = [predsim.pos_preds(probas, t).init_metrics(target_label=probas.metrics.labels[direction])
                      for t in thresholds]
-    elif direction == 'neg':
-        preds_arr = [predsim.neg_preds(probas, t)
-                     .init_metrics(target_label=probas.metrics.labels[direction])
+    else:
+        preds_arr = [predsim.neg_preds(probas, t).init_metrics(target_label=probas.metrics.labels[direction])
                      for t in thresholds]
 
     precisions = np.array([p.metrics.precision() for p in preds_arr])
@@ -243,11 +237,11 @@ def threshold_report(probas: 'Probabilities', activity_range: tuple = (0.05, 0.6
 
     for (x, p) in zip(x_ticks, precisions):
         if x % 3 == 0:
-            ax.annotate(f'{p:.3f}', xy=(x-0.6, p+p_range*0.03), color=orange, fontweight='bold')
+            ax.annotate(f'{p:.3f}', xy=(x - 0.6, p + p_range * 0.03), color=orange, fontweight='bold')
 
     for (x, a) in zip(x_ticks, activities):
         if x % 3 == 0:
-            ax2.annotate(f'{a:.3f}', xy=(x-0.6, a+a_range*0.03), color=blue, fontweight='bold')
+            ax2.annotate(f'{a:.3f}', xy=(x - 0.6, a + a_range * 0.03), color=blue, fontweight='bold')
 
     ax.yaxis.set_major_formatter(formatter)
     ax.yaxis.set_major_locator(ticker.LinearLocator(20))
@@ -277,6 +271,7 @@ def threshold_report(probas: 'Probabilities', activity_range: tuple = (0.05, 0.6
 
     plt.tight_layout()
     plt.show()
+
 
 #######
 # Utility functions

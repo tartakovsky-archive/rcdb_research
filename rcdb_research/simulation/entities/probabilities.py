@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 import numpy as np
@@ -9,6 +11,7 @@ class Probabilities:
     """
     Class for storing predicted probabilities of ML models
     """
+
     ############
     # Initialization
     ############
@@ -36,17 +39,20 @@ class Probabilities:
         self.y_pred_proba = y_pred_proba
         self.index = index
 
+        self.metrics = None
+        self.metric_params = None
+
     ############
     # Public methods
     ############
-    def init_metrics(self, labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}) -> 'Probabilities':
+    def init_metrics(self, labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}) -> Probabilities:
         from ..metrics import ProbabilityMetrics
 
         self.metric_params = dict(labels=labels)
         self.metrics = ProbabilityMetrics(self, **self.metric_params)
         return self
 
-    def head(self, n: int) -> 'Probabilities':
+    def head(self, n: int) -> Probabilities:
         """
         Returns copy of Probabilities with first n items
         :param n: number of first items
@@ -58,12 +64,12 @@ class Probabilities:
             index=self.index[:n]
         )
 
-        if hasattr(self, 'metric_params'):
-            new_probas.init_metrics(self, **self.metric_params)
+        if self.metric_params is not None:
+            new_probas.init_metrics(**self.metric_params)
 
         return new_probas
 
-    def tail(self, n: int) -> 'Probabilities':
+    def tail(self, n: int) -> Probabilities:
         """
         Returns copy of Probabilities with last n items
         :param n: number of last items
@@ -75,12 +81,12 @@ class Probabilities:
             index=self.index[-n:]
         )
 
-        if hasattr(self, 'metric_params'):
-            new_probas.init_metrics(self, **self.metric_params)
+        if self.metric_params is not None:
+            new_probas.init_metrics(**self.metric_params)
 
         return new_probas
 
-    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> 'Probabilities':
+    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> Probabilities:
         """
         Returns copy of Probabilities with items with indexes between date_start and date_end
         :param date_start: Date to drop observations before
@@ -106,7 +112,7 @@ class Probabilities:
             index=sub_index,
         )
 
-        if hasattr(self, 'metric_params'):
-            new_probas.init_metrics(self, **self.metric_params)
+        if self.metric_params is not None:
+            new_probas.init_metrics(**self.metric_params)
 
         return new_probas

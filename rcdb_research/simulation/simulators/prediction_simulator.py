@@ -19,20 +19,20 @@ class PredictionSimulator:
     def __init__(self, labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}):
         self.labels = labels
 
-    def pos_preds(self, probas: 'Probabilities', threshold: float = 0.5) -> 'Predictions':
+    def pos_preds(self, probas: Probabilities, threshold: float = 0.5) -> Predictions:
 
         y_pred = np.where(probas.y_pred_proba > threshold, self.labels['pos'], self.labels['neu'])
         return Predictions(probas.y_true, y_pred, probas.index)
 
-    def neg_preds(self, probas: 'Probabilities', threshold: float = 0.5) -> 'Predictions':
+    def neg_preds(self, probas: Probabilities, threshold: float = 0.5) -> Predictions:
 
         inv_y_true = np.where(probas.y_true == self.labels['pos'], self.labels['neu'], self.labels['neg'])
         inv_y_pred_proba = 1 - probas.y_pred_proba
         inv_y_pred = np.where(inv_y_pred_proba > threshold, self.labels['neg'], self.labels['neu'])
         return Predictions(inv_y_true, inv_y_pred, probas.index)
 
-    def combined_preds(self, probas: 'Probabilities', threshold: float = 0.5,
-                       inv_threshold: Optional[float] = None) -> 'Predictions':
+    def combined_preds(self, probas: Probabilities, threshold: float = 0.5,
+                       inv_threshold: Optional[float] = None) -> Predictions:
 
         if inv_threshold is None:
             inv_threshold = threshold

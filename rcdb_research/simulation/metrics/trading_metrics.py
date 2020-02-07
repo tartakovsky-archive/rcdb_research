@@ -23,7 +23,7 @@ class TradingMetrics:
     """
 
     def __init__(self,
-                 trades: 'Trades',
+                 trades: Trades,
                  initial_capital: float = 100,
                  position_size: float = 0.5,  # TODO: replace with PositionSizing function
                  compounded: bool = False):  # TODO: remove, controlled by position sizing strat
@@ -164,7 +164,7 @@ class TradingMetrics:
 
         return (cum_return, index) if raw else pd.Series(cum_return, index=index)
 
-    def abs_return(self, compounded: bool = False) -> float:
+    def abs_return(self) -> float:
 
         cum_return, _ = self.cum_return(dense=True, raw=True)
         return cum_return[-1]
@@ -195,12 +195,12 @@ class TradingMetrics:
         else:
             return abs_return / years_passed
 
-    def mar(self, compounded: bool = False) -> float:
+    def mar(self) -> float:
         annual_return = self.annual_return()
         max_drawdown = self.max_drawdown()
         return annual_return / np.abs(max_drawdown)
 
-    def dataframe(self, tail: int = 10, dense: bool = False) -> pd.DataFrame:
+    def dataframe(self, tail: int = 10) -> pd.DataFrame:
 
         abs_return = self.abs_return()
         annual_return = self.annual_return()
@@ -220,7 +220,7 @@ class TradingMetrics:
             max_profit=self.max_profit(),
             mean_loss=self.mean_loss(),
             max_loss=self.max_loss(),
-            tail_ratio=self.tail_ratio(tail=10),
+            tail_ratio=self.tail_ratio(tail=tail),
         )
         metrics_df = pd.DataFrame({**metrics_dict}, index=[0])
         return metrics_df

@@ -13,7 +13,7 @@ def curve(y: np.array, x: np.array = None, threshold: float = 0, title: Optional
           xlabel: Optional[str] = None, ylabel: Optional[str] = None,
           pos_legend_label: Optional[str] = None, neg_legend_label: Optional[str] = None,
           pos_color: tuple = colormap(0.56), neg_color: tuple = colormap(0.045),
-          style: 'Style' = Style(), return_fig: bool = False, ax=None):
+          style: Style = Style(), return_fig: bool = False, ax=None):
 
     x = x if x is not None else list(range(y.size))
     y = deepcopy(y)
@@ -45,7 +45,7 @@ def curve(y: np.array, x: np.array = None, threshold: float = 0, title: Optional
 
     if ax is None:
         if return_fig:
-            return (fig, ax1)
+            return fig, ax1
         else:
             fig.tight_layout()
             fig.show()
@@ -53,7 +53,7 @@ def curve(y: np.array, x: np.array = None, threshold: float = 0, title: Optional
 
 def histogram(array: np.array, n_bins: int = 100, n_ticks: int = 50, title: Optional[str] = 'Histogram',
               xlabel: Optional[str] = 'Value bins', ylabel: Optional[str] = 'Count',
-              style: 'Style' = Style(), color: tuple = colormap(0.56), rotation: int = 45, ax=None):
+              style: Style = Style(), color: tuple = colormap(0.56), rotation: int = 45, ax=None):
 
     fig, ax1 = plt.subplots(figsize=style.fig_size, dpi=style.dpi, facecolor="w") if ax is None else (None, ax)
     configure_axis(ax1, style)
@@ -79,7 +79,7 @@ def histogram(array: np.array, n_bins: int = 100, n_ticks: int = 50, title: Opti
 
 
 def bars(y: np.array, x: np.array = None, threshold: float = 0, title: Optional[str] = None,
-         xlabel: Optional[str] = None, ylabel: Optional[str] = None, style: 'Style' = Style(),
+         xlabel: Optional[str] = None, ylabel: Optional[str] = None, style: Style = Style(),
          pos_color: tuple = colormap(0.56), neg_color: tuple = colormap(0.045),
          pos_legend_label: Optional[str] = None, neg_legend_label: Optional[str] = None,
          return_fig: bool = False, ax=None):
@@ -108,14 +108,14 @@ def bars(y: np.array, x: np.array = None, threshold: float = 0, title: Optional[
 
     if ax is None:
         if return_fig:
-            return (fig, ax1)
+            return fig, ax1
         else:
             fig.tight_layout()
             fig.show()
 
 
 def area(y1: np.array, y2: np.array, x: np.array = None, title: Optional[str] = None,
-         xlabel: Optional[str] = None, ylabel: Optional[str] = None, style: 'Style' = Style(),
+         xlabel: Optional[str] = None, ylabel: Optional[str] = None, style: Style = Style(),
          color: tuple = colormap(0.56), legend_label: Optional[str] = None, return_fig: bool = False, ax=None):
 
     x = x if x is not None else list(range(y1.size))
@@ -139,7 +139,7 @@ def area(y1: np.array, y2: np.array, x: np.array = None, title: Optional[str] = 
 
     if ax is None:
         if return_fig:
-            return (fig, ax1)
+            return fig, ax1
         else:
             fig.tight_layout()
             fig.show()
@@ -164,11 +164,11 @@ def cmap_gradient(cmap, n_segments: int = 101, n_ticks: int = 51):
     fig.show()
 
 
-def second_index(ax, x2: np.array, xlabel: Optional[str] = None, style: 'Style' = Style(), rotation: int = 0):
+def second_index(ax, x2: np.array, xlabel: Optional[str] = None, style: Style = Style(), rotation: int = 0):
     x1 = list(ax.lines[0].get_xdata())
 
     x1_tick_locs = ax.get_xticks()
-    x1_tick_loc_ids = [(x1.index(l) if l in x1 else None) for l in x1_tick_locs]
+    x1_tick_loc_ids = [(x1.index(loc) if loc in x1 else None) for loc in x1_tick_locs]
     x2_tick_labels = [(x2[i] if i is not None else None) for i in x1_tick_loc_ids]
 
     ax2 = ax.twiny()
@@ -185,7 +185,7 @@ def second_index(ax, x2: np.array, xlabel: Optional[str] = None, style: 'Style' 
     [lbl.set_rotation(rotation) for lbl in ax2.get_xticklabels()]
 
 
-def configure_axis(ax, style: 'Style'):
+def configure_axis(ax, style: Style):
     ax.set_frame_on(False)
     ax.grid(color='lightgray', linestyle='-.', linewidth=0.5)
 

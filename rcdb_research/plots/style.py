@@ -10,7 +10,7 @@ def get_default_colormap():
     return cmap
 
 
-class Style():
+class Style:
     def __init__(self, tick_size: int = 12, label_size: int = 14, title_size: int = 15, suptitle_size: int = 16,
                  fill: bool = False, fill_alpha: float = 0.7, show_x: bool = True, show_y: bool = True,
                  percent: bool = False, fig_size: tuple = (16, 5), dpi: int = 150,

@@ -14,18 +14,20 @@ class ProbabilityMetrics:
     """
     Class for analyzing Probabilities objects outputted by ML models
     """
+
     ############
     # Initialization
     ############
 
-    def __init__(self, probas: 'Probabilities', labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}):
+    def __init__(self, probas: Probabilities, labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}):
         """
         :param probas: instance of Probabilities class
         """
         self.probas = weakref.proxy(probas)
         self.labels = labels
 
-    def calibration(self, n_bins=40, strategy='uniform', normalize=False) -> Tuple[np.ndarray, np.ndarray]:
+    def calibration(self, n_bins: int = 40, strategy: str = 'uniform',
+                    normalize: bool = False) -> Tuple[np.ndarray, np.ndarray]:
         """
         Wrapper over sklearn.calibration.calibration_curve
 
@@ -50,7 +52,6 @@ class ProbabilityMetrics:
     def threshold_for_precision(self, target: float, direction: str = 'pos', tolerance=1e-3) -> float:
         """
         Uses secant root finding method to search for threshold value that produces target precision
-        :param probas: instance of Probabilities class
         :param target: target value of the metric
         :param direction: one of ['pos', 'neg']
         :param tolerance: maximum allowed error of metric value
@@ -65,7 +66,7 @@ class ProbabilityMetrics:
         def f(threshold):
             if direction == 'pos':
                 preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
-            elif direction == 'neg':
+            else:
                 preds = preds_sim.neg_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
             return preds.metrics.precision() - target
 
@@ -74,7 +75,6 @@ class ProbabilityMetrics:
     def threshold_for_activity(self, target: float, direction: str = 'pos', tolerance=1e-5) -> float:
         """
         Uses brentq root finding method to search for threshold value that produces target activity
-        :param probas: instance of Probabilities class
         :param target: target value of the metric
         :param direction: one of ['pos', 'neg']
         :param tolerance: maximum allowed error of metric value
@@ -89,7 +89,7 @@ class ProbabilityMetrics:
         def f(threshold):
             if direction == 'pos':
                 preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
-            elif direction == 'neg':
+            else:
                 preds = preds_sim.neg_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
             return preds.metrics.activity() - target
 

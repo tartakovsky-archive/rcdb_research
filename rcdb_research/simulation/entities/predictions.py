@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Optional, Union
 
@@ -9,6 +11,7 @@ class Predictions:
     """
     Class for storing predicted labels of ML models
     """
+
     ############
     # Initialization
     ############
@@ -36,17 +39,20 @@ class Predictions:
         self.y_pred = y_pred
         self.index = index
 
+        self.metrics = None
+        self.metric_params = None
+
     ############
     # Public methods
     ############
-    def init_metrics(self, target_label: Union[str, int] = 'all', neu_label: int = 0) -> 'Predictions':
+    def init_metrics(self, target_label: Union[str, int] = 'all', neu_label: int = 0) -> Predictions:
         from ..metrics import PredictionMetrics
 
         self.metric_params = dict(target_label=target_label, neu_label=neu_label)
         self.metrics = PredictionMetrics(self, **self.metric_params)
         return self
 
-    def head(self, n: int) -> 'Predictions':
+    def head(self, n: int) -> Predictions:
         """
         Returns copy of Predictions with first n items
         :param n: number of first items
@@ -58,12 +64,12 @@ class Predictions:
             index=self.index[:n]
         )
 
-        if hasattr(self, 'metric_params'):
-            new_preds.init_metrics(self, **self.metric_params)
+        if self.metric_params is not None:
+            new_preds.init_metrics(**self.metric_params)
 
         return new_preds
 
-    def tail(self, n: int) -> 'Predictions':
+    def tail(self, n: int) -> Predictions:
         """
         Returns copy of Predictions with last n items
         :param n: number of last items
@@ -75,12 +81,12 @@ class Predictions:
             index=self.index[-n:]
         )
 
-        if hasattr(self, 'metric_params'):
-            new_preds.init_metrics(self, **self.metric_params)
+        if self.metric_params is not None:
+            new_preds.init_metrics(**self.metric_params)
 
         return new_preds
 
-    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> 'Predictions':
+    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> Predictions:
         """
         Returns copy of Predictions with items with indexes between date_start and date_end
         :param date_start: Date to drop observations before
@@ -106,7 +112,7 @@ class Predictions:
             index=sub_index,
         )
 
-        if hasattr(self, 'metric_params'):
-            new_preds.init_metrics(self, **self.metric_params)
+        if self.metric_params is not None:
+            new_preds.init_metrics(**self.metric_params)
 
         return new_preds

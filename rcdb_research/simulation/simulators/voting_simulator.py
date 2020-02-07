@@ -22,7 +22,7 @@ class VotingSimulator:
     ############
     # Public interface
     ############
-    def majority_voting(self, preds_arr: List['Predictions'], weights: Optional[List[float]] = None) -> 'Predictions':
+    def majority_voting(self, preds_arr: List[Predictions], weights: Optional[List[float]] = None) -> Predictions:
         """
         Equivalent of sklearn.VotingClassifier(voting='hard')
 
@@ -53,7 +53,7 @@ class VotingSimulator:
 
         return Predictions(preds_arr[0].y_true, y_pred_result, preds_arr[0].index)
 
-    def plurality_voting(self, preds_arr: List['Predictions'], weights: Optional[List[float]] = None) -> 'Predictions':
+    def plurality_voting(self, preds_arr: List[Predictions], weights: Optional[List[float]] = None) -> Predictions:
         """
         1 if there are more 'for' votes than 'against' and 'neutral' together
         -1 if there are more 'against' votes than 'for' and 'neutral' together
@@ -88,7 +88,7 @@ class VotingSimulator:
 
         return Predictions(preds_arr[0].y_true, y_pred_result, preds_arr[0].index)
 
-    def soft_voting(self, probas_arr: List['Probabilities'], weights: Optional[List[float]] = None) -> 'Probabilities':
+    def soft_voting(self, probas_arr: List[Probabilities], weights: Optional[List[float]] = None) -> Probabilities:
         """
         Equivalent of sklearn.VotingClassifier(voting='soft').predict_proba
 
@@ -105,7 +105,7 @@ class VotingSimulator:
 
         return Probabilities(probas_arr[0].y_true, avg_y_pred_proba, probas_arr[0].index)
 
-    def no_opposition_voting(self, preds_arr: List['Predictions']) -> 'Predictions':
+    def no_opposition_voting(self, preds_arr: List[Predictions]) -> Predictions:
         """
         1 only if there are no 'against' votes
         -1 only if there are no 'for' votes

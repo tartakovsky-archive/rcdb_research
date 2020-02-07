@@ -12,11 +12,12 @@ class PredictionMetrics:
     """
     Class for analyzing Predictions objects outputted by ML models
     """
+
     ############
     # Initialization
     ############
 
-    def __init__(self, preds: 'Predictions', target_label: Union[str, int] = 'all', neu_label: int = 0):
+    def __init__(self, preds: Predictions, target_label: Union[str, int] = 'all', neu_label: int = 0):
         """
         :param preds: instance of Predictions class
         :param target_label: 'all' or value of the target_label to calculate the score for, e.g. 1 or -1
@@ -27,11 +28,11 @@ class PredictionMetrics:
         self.neu_label = neu_label
 
     def score(
-        self,
-        score_fn: Callable,
-        window: int = None,
-        dense: bool = False,
-        raw: bool = False
+            self,
+            score_fn: Callable,
+            window: int = None,
+            dense: bool = False,
+            raw: bool = False
     ) -> Union[pd.Series, tuple, float]:
         """
         Calculates score function
@@ -39,7 +40,7 @@ class PredictionMetrics:
         :param window: rolling window size, if is not None, score calculates on rolling window
         :param dense: drop zeroes from the array when True
         :param raw: if True returns a tuple of np.ndarray and index, otherwise pd.Series
-        :return:
+        :return:    
         """
 
         index = self.preds.index
@@ -312,8 +313,7 @@ class Scores:
         return np.count_nonzero(cls.negatives_score(y_true, y_pred, target_label, neu_label))
 
     @classmethod
-    def accuracy_score(cls, y_true: np.ndarray, y_pred: np.ndarray,
-                       target_label: Union[str, int], neu_label: int) -> np.ndarray:
+    def accuracy_score(cls, y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
 
         return (y_true == y_pred).sum() / y_true.size
 

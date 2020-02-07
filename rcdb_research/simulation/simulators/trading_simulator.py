@@ -26,9 +26,9 @@ class TradingSimulator:
                  exchange: str = 'bitfinex',
                  entry_order: str = 'market',
                  no_reentry: bool = False,
-                 maker_fee: float = 0.2/100,
-                 taker_fee: float = -0.2/100,
-                 slippage: float = -0.025/100,
+                 maker_fee: float = 0.2 / 100,
+                 taker_fee: float = -0.2 / 100,
+                 slippage: float = -0.025 / 100,
                  labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}):
 
         # Check that entry_order is valid
@@ -64,7 +64,7 @@ class TradingSimulator:
     ############
     # Public interface
     ############
-    def trades(self, predicts: 'Predictions', ohlc: pd.DataFrame) -> 'Trades':
+    def trades(self, predicts: Predictions, ohlc: pd.DataFrame) -> Trades:
         # Warn if the test data appears to be from a different exchange
         if type(predicts.index) == pd.DatetimeIndex:
             expected_start_date = pd.Timestamp(self._exchange_history_starts[self.exchange])
@@ -114,14 +114,16 @@ class TradingSimulator:
                     continue
 
                 # Check if the observation is a beginning or an end of a sequence
-                is_entry = True if i == 0 else y_pred[i] != y_pred[i-1]
-                is_exit = True if i == y_pred.size-1 else y_pred[i] != y_pred[i+1]
+                is_entry = True if i == 0 else y_pred[i] != y_pred[i - 1]
+                is_exit = True if i == y_pred.size - 1 else y_pred[i] != y_pred[i + 1]
 
                 # Check whether we could've entered the trade
                 if y_pred[i] == pos:
                     can_enter = can_enter_limit_long[i] if self.entry_order == 'limit' else True
                 elif y_pred[i] == neg:
                     can_enter = can_enter_limit_short[i] if self.entry_order == 'limit' else True
+                else:
+                    can_enter = False
 
                 if is_entry and not can_enter:
                     y_pred[i] = neu
@@ -162,16 +164,16 @@ class TradingSimulator:
     def _exchange_fees(self):
         return {
             'bitmex': {
-                'taker': -0.075/100,
-                'maker': 0.025/100,
+                'taker': -0.075 / 100,
+                'maker': 0.025 / 100,
             },
             'bitfinex': {
-                'taker': -0.2/100,
-                'maker': -0.2/100,
+                'taker': -0.2 / 100,
+                'maker': -0.2 / 100,
             },
             'binance': {
-                'taker': -0.075/100,
-                'maker': -0.075/100,
+                'taker': -0.075 / 100,
+                'maker': -0.075 / 100,
             },
         }
 
