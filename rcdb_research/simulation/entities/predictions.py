@@ -6,6 +6,8 @@ from typing import Optional, Union
 import numpy as np
 import pandas as pd
 
+from ..metrics import PredictionMetrics
+
 
 class Predictions:
     """
@@ -45,10 +47,16 @@ class Predictions:
     ############
     # Public methods
     ############
-    def init_metrics(self, target_label: Union[str, int] = 'all', neu_label: int = 0) -> Predictions:
-        from ..metrics import PredictionMetrics
+    def init_metrics(self, direction: str = 'pos', labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}) -> Predictions:
+        # TODO: Document direction and labels params in docstrings for every occurence
 
-        self.metric_params = dict(target_label=target_label, neu_label=neu_label)
+        supported_directions = ['pos', 'neg']
+        if direction not in supported_directions:
+            raise ValueError(
+                f'{direction} direction is not supported. Should be one of the following: {supported_directions}'
+            )
+
+        self.metric_params = dict(direction=direction, labels=labels)
         self.metrics = PredictionMetrics(self, **self.metric_params)
         return self
 
