@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 
+from ..metrics import ProbabilityMetrics
+
 
 class Probabilities:
     """
@@ -39,19 +41,11 @@ class Probabilities:
         self.y_pred_proba = y_pred_proba
         self.index = index
 
-        self.metrics = None
-        self.metric_params = None
+        self.metrics = ProbabilityMetrics(self)
 
     ############
     # Public methods
     ############
-    def init_metrics(self, labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}) -> Probabilities:
-        from ..metrics import ProbabilityMetrics
-
-        self.metric_params = dict(labels=labels)
-        self.metrics = ProbabilityMetrics(self, **self.metric_params)
-        return self
-
     def head(self, n: int) -> Probabilities:
         """
         Returns copy of Probabilities with first n items
@@ -63,9 +57,6 @@ class Probabilities:
             y_pred_proba=self.y_pred_proba[:n],
             index=self.index[:n]
         )
-
-        if self.metric_params is not None:
-            new_probas.init_metrics(**self.metric_params)
 
         return new_probas
 
@@ -80,9 +71,6 @@ class Probabilities:
             y_pred_proba=self.y_pred_proba[-n:],
             index=self.index[-n:]
         )
-
-        if self.metric_params is not None:
-            new_probas.init_metrics(**self.metric_params)
 
         return new_probas
 
@@ -111,8 +99,5 @@ class Probabilities:
             y_pred_proba=sub_y_pred_proba,
             index=sub_index,
         )
-
-        if self.metric_params is not None:
-            new_probas.init_metrics(**self.metric_params)
 
         return new_probas

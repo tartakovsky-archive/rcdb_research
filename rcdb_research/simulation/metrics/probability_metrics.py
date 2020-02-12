@@ -19,12 +19,11 @@ class ProbabilityMetrics:
     # Initialization
     ############
 
-    def __init__(self, probas: Probabilities, labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}):
+    def __init__(self, probas: Probabilities):
         """
         :param probas: instance of Probabilities class
         """
         self.probas = weakref.proxy(probas)
-        self.labels = labels
 
     def calibration(self, n_bins: int = 40, strategy: str = 'uniform',
                     normalize: bool = False) -> Tuple[np.ndarray, np.ndarray]:
@@ -57,17 +56,14 @@ class ProbabilityMetrics:
         :param tolerance: maximum allowed error of metric value
         :returns: threshold value which produces target value of the metric
         """
-        supported_direction = ['pos', 'neg']
-        if direction not in supported_direction:
-            raise ValueError(f'direction should be one of {supported_direction}')
-
-        preds_sim = PredictionSimulator(self.labels)
+        supported_directions = ['pos', 'neg']
+        if direction not in supported_directions:
+            raise ValueError(
+                f'{direction} direction is not supported. Should be one of the following: {supported_directions}'
+            )
 
         def f(threshold):
-            if direction == 'pos':
-                preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
-            else:
-                preds = preds_sim.neg_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
+            preds = PredictionSimulator.preds(self.probas, threshold, direction)
             return preds.metrics.precision() - target
 
         return opt.root_scalar(f, method='secant', x0=0.5, x1=0.55, xtol=tolerance, maxiter=1000).root
@@ -80,17 +76,29 @@ class ProbabilityMetrics:
         :param tolerance: maximum allowed error of metric value
         :returns: threshold value which produces target value of the metric
         """
-        supported_direction = ['pos', 'neg']
-        if direction not in supported_direction:
-            raise ValueError(f'direction should be one of {supported_direction}')
-
-        preds_sim = PredictionSimulator(self.labels)
+        supported_directions = ['pos', 'neg']
+        if direction not in supported_directions:
+            raise ValueError(
+                f'{direction} direction is not supported. Should be one of the following: {supported_directions}'
+            )
 
         def f(threshold):
-            if direction == 'pos':
-                preds = preds_sim.pos_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
-            else:
-                preds = preds_sim.neg_preds(self.probas, threshold).init_metrics(target_label=self.labels[direction])
+            preds = PredictionSimulator.preds(self.probas, threshold, direction)
             return preds.metrics.activity() - target
 
-        return opt.brentq(f, a=0, b=1, xtol=tolerance, maxiter=1000)
+        return opt.brentq(f, a=0, b=1, xtol=tolerance, maxiter=1000, full_output=False)  # -> float
+
+    def precision_for_acitivity(self, target: float, direction: str = 'pos', tolerance=1e-5) -> float:
+        """
+        Uses brentq root finding method to search for threshold value that produces target activity.
+        Then uses found threshold value to convert probabilities into class labels and calculate precision.
+
+        :param target: target value of the metric
+        :param direction: one of ['pos', 'neg']
+        :param tolerance: maximum allowed error of metric value
+        :returns: threshold value which produces target value of the metric
+        """
+
+        threshold = self.threshold_for_activity(target, direction, tolerance)
+        preds = PredictionSimulator.preds(self.probas, threshold, direction)
+        return preds.metrics.precision()
