@@ -189,10 +189,8 @@ def trading_report(trades: Trades, show_dates: bool = False, initial_capital: in
 def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
                      n_steps: int = 40, direction: str = 'pos', tolerance: float = 1e-5):
     # Calculate threshold range, predictions and activities arrays
-    max_threshold = probas.metrics.threshold_for_activity(target=activity_range[0],
-                                                          direction=direction, tolerance=tolerance)
-    min_threshold = probas.metrics.threshold_for_activity(target=activity_range[1],
-                                                          direction=direction, tolerance=tolerance)
+    max_threshold = probas.metrics.threshold_for_activity(activity_range[0], direction, tolerance)
+    min_threshold = probas.metrics.threshold_for_activity(activity_range[1], direction, tolerance)
     thresholds = np.linspace(min_threshold, max_threshold, n_steps)
 
     preds_arr = [PredictionSimulator.preds(probas, t, direction).init_metrics(direction) for t in thresholds]
