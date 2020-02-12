@@ -37,7 +37,6 @@ def proba_report(probas: Probabilities, n_bins: int = 40, show_dates: bool = Fal
 
     ax2.plot([0, 1], [0, 1], "--", color='gray', label="Perfectly calibrated")
 
-    probas.init_metrics()
     fraction_of_positives, mean_predicted_value = probas.metrics.calibration(
         normalize=False, n_bins=n_bins, strategy='uniform'
     )
@@ -57,13 +56,11 @@ def proba_report(probas: Probabilities, n_bins: int = 40, show_dates: bool = Fal
     fig.show()
 
 
-def preds_report(preds: Predictions, window: int, threshold: float = 0.5,
-                 show_dates: bool = False, target_label: Union[str, int] = 'all', neu_label: int = 0):
+def preds_report(preds: Predictions, window: int, threshold: float = 0.5, show_dates: bool = False):
     style = Style(fig_size=(16, 6))
     blue = colormap(0.56)
     red = colormap(0.045)
 
-    preds.init_metrics(target_label=target_label, neu_label=neu_label)
     precision = preds.metrics.precision(window=window, dense=True).fillna(threshold)
 
     h_pad = None
@@ -192,20 +189,13 @@ def trading_report(trades: Trades, show_dates: bool = False, initial_capital: in
 def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
                      n_steps: int = 40, direction: str = 'pos', tolerance: float = 1e-5):
     # Calculate threshold range, predictions and activities arrays
-    probas.init_metrics()
     max_threshold = probas.metrics.threshold_for_activity(target=activity_range[0],
                                                           direction=direction, tolerance=tolerance)
     min_threshold = probas.metrics.threshold_for_activity(target=activity_range[1],
                                                           direction=direction, tolerance=tolerance)
     thresholds = np.linspace(min_threshold, max_threshold, n_steps)
 
-    predsim = PredictionSimulator(probas.metrics.labels)
-    if direction == 'pos':
-        preds_arr = [predsim.pos_preds(probas, t).init_metrics(target_label=probas.metrics.labels[direction])
-                     for t in thresholds]
-    else:
-        preds_arr = [predsim.neg_preds(probas, t).init_metrics(target_label=probas.metrics.labels[direction])
-                     for t in thresholds]
+    preds_arr = [PredictionSimulator.preds(probas, t, direction).init_metrics(direction) for t in thresholds]
 
     precisions = np.array([p.metrics.precision() for p in preds_arr])
     activities = np.array([p.metrics.activity() for p in preds_arr])

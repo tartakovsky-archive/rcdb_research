@@ -98,4 +98,4 @@ class Voting:
 
         probas = Probabilities(probas_arr[0].y_true, avg_y_pred_proba, probas_arr[0].index)
 
-        return probas.init_metrics(labels)
+        return probas
