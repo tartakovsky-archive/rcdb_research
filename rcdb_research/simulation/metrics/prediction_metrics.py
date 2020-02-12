@@ -20,7 +20,7 @@ class PredictionMetrics:
     def __init__(self, preds: Predictions, direction: str = 'pos', labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}):
         """
         :param preds: instance of Predictions class
-        :param direction:
+        :param direction: one of ['pos', 'neg']
         :param labels:
 
         """
@@ -49,10 +49,7 @@ class PredictionMetrics:
         y_pred = self.preds.y_pred
 
         if dense:
-            if self.direction == 'both':
-                mask = y_pred != self.labels['neu']
-            else:
-                mask = y_pred == self.labels[self.direction]
+            mask = y_pred == self.labels[self.direction]
 
             index = index[mask]
             y_true = y_true[mask]
@@ -234,43 +231,26 @@ class PredictionMetrics:
 class Scores:
     @staticmethod
     def tp_score(y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> np.ndarray:
-
-        if direction == 'both':
-            return ((y_pred == y_true) & (y_pred != labels['neu'])).astype(np.int8)
-        else:
-            return ((y_pred == labels[direction]) & (y_true == labels[direction])).astype(np.int8)
+        return ((y_pred == labels[direction]) & (y_true == labels[direction])).astype(np.int8)
 
     @staticmethod
     def fp_score(y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> np.ndarray:
-
-        if direction == 'both':
-            return ((y_pred != y_true) & (y_pred != labels['neu'])).astype(np.int8)
-        else:
-            return ((y_pred == labels[direction]) & (y_true != labels[direction])).astype(np.int8)
+        return ((y_pred == labels[direction]) & (y_true != labels[direction])).astype(np.int8)
 
     @staticmethod
     def tn_score(y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> np.ndarray:
-        if direction == 'both':
-            return ((y_pred == labels['neu']) & (y_true == labels['neu'])).astype(np.int8)
-        else:
-            return ((y_pred != labels[direction]) & (y_true != labels[direction])).astype(np.int8)
+        return ((y_pred != labels[direction]) & (y_true != labels[direction])).astype(np.int8)
 
     @staticmethod
     def fn_score(y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> np.ndarray:
-
-        if direction == 'both':
-            return ((y_pred == labels['neu']) & (y_true != labels['neu'])).astype(np.int8)
-        else:
-            return ((y_pred != labels[direction]) & (y_true == labels[direction])).astype(np.int8)
+        return ((y_pred != labels[direction]) & (y_true == labels[direction])).astype(np.int8)
 
     @classmethod
     def n_tp_score(cls, y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> int:
-
         return cls.tp_score(y_true, y_pred, direction, labels).sum()
 
     @classmethod
     def n_fp_score(cls, y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> int:
-
         return cls.fp_score(y_true, y_pred, direction, labels).sum()
 
     @classmethod
@@ -289,41 +269,34 @@ class Scores:
 
     @classmethod
     def negatives_score(cls, y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> np.ndarray:
-
         tn = cls.tn_score(y_true, y_pred, direction, labels)
         fn = cls.fn_score(y_true, y_pred, direction, labels)
         return tn - fn
 
     @classmethod
     def n_positives_score(cls, y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> int:
-
         return np.count_nonzero(cls.positives_score(y_true, y_pred, direction, labels))
 
     @classmethod
     def n_negatives_score(cls, y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> int:
-
         return np.count_nonzero(cls.negatives_score(y_true, y_pred, direction, labels))
 
     @classmethod
     def accuracy_score(cls, y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
-
         return (y_true == y_pred).sum() / y_true.size
 
     @classmethod
     def precision_score(cls, y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> float:
-
         tp = cls.n_tp_score(y_true, y_pred, direction, labels)
         fp = cls.n_fp_score(y_true, y_pred, direction, labels)
         return tp / (tp + fp) if (tp + fp) > 0 else 0
 
     @classmethod
     def recall_score(cls, y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> float:
-
         tp = cls.n_tp_score(y_true, y_pred, direction, labels)
         fn = cls.n_fn_score(y_true, y_pred, direction, labels)
         return tp / (tp + fn) if (tp + fn) > 0 else 0
 
     @classmethod
     def activity_score(cls, y_true: np.ndarray, y_pred: np.ndarray, direction: str, labels: dict) -> float:
-
         return cls.n_positives_score(y_true, y_pred, direction, labels) / y_true.size
