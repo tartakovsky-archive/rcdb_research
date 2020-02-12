@@ -6,8 +6,6 @@ from typing import Optional, Union
 import numpy as np
 import pandas as pd
 
-from ..metrics import PredictionMetrics
-
 
 class Predictions:
     """
@@ -48,6 +46,9 @@ class Predictions:
     # Public methods
     ############
     def init_metrics(self, direction: str = 'pos', labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}) -> Predictions:
+        # Located here to avoid circular import: PredictionMetrics -> Predictions -> PredictionMetrics -> ...
+        from ..metrics import PredictionMetrics
+
         # TODO: Document direction and labels params in docstrings for every occurence
 
         supported_directions = ['pos', 'neg']
