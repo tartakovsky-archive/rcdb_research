@@ -33,4 +33,4 @@ class PredictionSimulator:
 
         y_pred = np.where(p > threshold, labels[direction], labels['neu'])
         preds = Predictions(probas.y_true, y_pred, probas.index)
-        return preds.init_metrics(labels[direction], labels['neu'])
+        return preds.init_metrics(direction, labels)

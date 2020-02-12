@@ -88,7 +88,7 @@ class ProbabilityMetrics:
 
         return opt.brentq(f, a=0, b=1, xtol=tolerance, maxiter=1000, full_output=False)  # -> float
 
-    def precision_for_acitivity(self, target: float, direction: str = 'pos', tolerance=1e-5) -> float:
+    def precision_for_activity(self, target: float, direction: str = 'pos', tolerance=1e-5) -> float:
         """
         Uses brentq root finding method to search for threshold value that produces target activity.
         Then uses found threshold value to convert probabilities into class labels and calculate precision.

@@ -79,8 +79,7 @@ class Voting:
         return Predictions(preds_arr[0].y_true, y_pred_result, preds_arr[0].index)
 
     @staticmethod
-    def soft(probas_arr: List[Probabilities], weights: Optional[List[float]] = None,
-             labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}) -> Probabilities:
+    def soft(probas_arr: List[Probabilities], weights: Optional[List[float]] = None) -> Probabilities:
         """
         Equivalent of sklearn.VotingClassifier(voting='soft').predict_proba
 
@@ -88,7 +87,6 @@ class Voting:
 
         :param probas_arr: list of Probabilities objects
         :param weights: weights to pass to np.average
-        :param labels:
         :returns: Probabilities object with mean probas
         """
 
