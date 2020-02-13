@@ -1,6 +1,5 @@
 from typing import Callable
 
-
 class Fee:
     @staticmethod
     def bitfinex() -> Callable:

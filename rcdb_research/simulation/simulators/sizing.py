@@ -3,25 +3,47 @@ from typing import Callable
 
 class PositionSizing:
     @staticmethod
-    def flat(units: float) -> Callable:
-        def sizing_fn() -> float:
-            return units
+    def percent(percent: float, threshold: float = 0.5, direction: str = 'both') -> Callable[[float], float]:
+
+        supported_directions = ['pos', 'neg', 'both']
+        if direction not in supported_directions:
+            raise ValueError(
+                f'{direction} direction is not supported. Should be one of the following: {supported_directions}'
+            )
+
+        def sizing_fn(proba: float) -> float:
+            if direction == 'pos':
+                return percent if proba > threshold else 0
+            elif direction == 'neg':
+                return -percent if (1 - proba) > threshold else 0
+            else:
+                return percent if proba > threshold else -percent if (1 - proba) > threshold else 0
 
         return sizing_fn
 
     @staticmethod
-    def percent(percent: float) -> Callable:
-        def sizing_fn(current_equity: float) -> float:
-            return current_equity * percent
+    def kelly(win_size: float, loss_size: float, divider: float = 1, direction: str = 'both') -> Callable[[float], float]:
 
-        return sizing_fn
+        supported_directions = ['pos', 'neg', 'both']
+        if direction not in supported_directions:
+            raise ValueError(
+                f'{direction} direction is not supported. Should be one of the following: {supported_directions}'
+            )
 
-    @staticmethod
-    def kelly(win_size: float, loss_size: float, divider: float = 1) -> Callable:
-        def sizing_fn(current_equity: float, win_proba: float) -> float:
-            kelly = win_proba / loss_size - (1 - win_proba) / win_size
-            kelly = kelly / divider
+        def kelly_fn(win_size: float, loss_size: float, win_proba: float) -> float:
+            return win_proba / loss_size - (1 - win_proba) / win_size
 
-            return current_equity * kelly
+        def sizing_fn(proba: float) -> float:
+            pos_kelly = kelly_fn(win_size, loss_size, proba)
+            neg_kelly = -kelly_fn(win_size, loss_size, 1 - proba)
+
+            if direction == 'pos':
+                kelly = pos_kelly if pos_kelly > 0 else 0
+            elif direction == 'neg':
+                kelly = neg_kelly if neg_kelly < 0 else 0
+            else:
+                kelly = pos_kelly if pos_kelly > 0 else neg_kelly if neg_kelly < 0 else 0
+
+            return kelly / divider
 
         return sizing_fn
