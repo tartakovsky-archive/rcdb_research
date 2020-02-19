@@ -48,7 +48,8 @@ class TradingSimulatorNew:
 
         # Capital
         # equity = value of equity in quote currency, quote currency holdings + current paper value of base currency holdings
-        # separated into before and after trade because trade affects the price and spends equity to pay fees, therefore altering both size of quote holdings and paper value of base holdings
+        # separated into before and after trade because trade affects the price and spends equity to pay fees,
+        # therefore altering both size of quote holdings and paper value of base holdings
         equity_before_trade = np.zeros(size + 1)
         equity_before_trade[0] = self.initial_equity
         equity_after_trade = np.zeros(size + 1)
