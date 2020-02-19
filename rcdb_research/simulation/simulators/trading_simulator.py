@@ -2,11 +2,10 @@ from typing import Callable
 
 import numpy as np
 import pandas as pd
-import logging
 
 from ...numpy_ext import nans_array
 
-from ..entities import Probabilities, TradesOld
+from ..entities import Probabilities, Trades
 from .sizing import PositionSizing
 from .trading_costs import Fee, Slippage, MarketImpact
 
@@ -30,7 +29,7 @@ class TradingSimulator:
         self.impact_fn = impact_fn
         self.compounded = compounded
 
-    def trades(self, probas: Probabilities, y_ohlc: pd.DataFrame) -> TradesOld:
+    def trades(self, probas: Probabilities, y_ohlc: pd.DataFrame) -> Trades:
         """
         Models trades on spot exchange (not futures exposure in contracts)
 
@@ -48,140 +47,133 @@ class TradingSimulator:
 
         # Capital
         # equity = value of equity in quote currency, quote currency holdings + current paper value of base currency holdings
-        # separated into before and after trade because trade affects the price and spends equity to pay fees,
-        # therefore altering both size of quote holdings and paper value of base holdings
+        # separated into before and after trade because trade affects the price and spends equity to pay fees, therefore altering both size of
+        # quote holdings and paper value of base holdings
         equity_before_trade = np.zeros(size + 1)
         equity_before_trade[0] = self.initial_equity
         equity_after_trade = np.zeros(size + 1)
         equity_after_trade[0] = self.initial_equity
 
-        base_holdings = np.zeros(size + 1) # number of units of base currency currently owned
-        quote_holdings = np.zeros(size + 1) # number of units of quote currency currently owned
+        base_holdings = np.zeros(size + 1)  # number of units of base currency currently owned
+        quote_holdings = np.zeros(size + 1)  # number of units of quote currency currently owned
         quote_holdings[0] = self.initial_equity
 
-        base_holdings_quote_value_before_trade = np.zeros(size + 1) # paper value of base holdings at new_bar event before trade
-        base_holdings_quote_value_after_trade = np.zeros(size + 1) # paper value of base holdings after new_bar event after trade
+        base_holdings_quote_value_before_trade = np.zeros(size + 1)  # paper value of base holdings at new_bar event before trade
+        base_holdings_quote_value_after_trade = np.zeros(size + 1)  # paper value of base holdings after new_bar event after trade
 
-        exposure_before_trade = np.zeros(size + 1) # fraction of quote value of capital held in base currency
+        exposure_before_trade = np.zeros(size + 1)  # fraction of quote value of capital held in base currency
         exposure_after_trade = np.zeros(size + 1)
 
         # Trade setup
         desired_exposure = np.zeros(size + 1)
         exposure_diff = np.zeros(size + 1)
-        exposure_diff_direction = np.zeros(size + 1)
         trade_size = np.zeros(size + 1)
         trade_direction = np.zeros(size + 1)
 
         # Execution prices
-        desired_entry_price = nans_array(size + 1)
-        actual_entry_price = nans_array(size + 1)
-        desired_exit_price = nans_array(size + 1)
-        virtual_exit_price = nans_array(size + 1)  # we do not actually exit at close but virtually track equity change
+        desired_price = nans_array(size + 1)
+        actual_price = nans_array(size + 1)
 
-        exposure_base = np.zeros(size + 1)
-        exposure_direction = np.zeros(size + 1)
+        pnl_quote = np.zeros(size + 1)
+        pnl_pct = np.zeros(size + 1)
 
         for i in range(1, probas.y_pred_proba.size + 1):
-            fee = self.fee_fn()['taker']
+            # new bar arrived
+            fee_pct = self.fee_fn()['taker']
             slippage = self.slippage_fn()
             impact = self.impact_fn()
 
-            # new_bar_event, before trade
-            # - get current quote value of base holdings
-            # - get current exposure pct
-            # - get desired exposure pct
-            # - get desired - current exposure diff
-            # - get exposure diff direction
-            base_holdings_quote_value_before_trade[i] = base_holdings[i-1] * ohlc.open[i]
-            equity_before_trade[i] = quote_holdings[i-1] + base_holdings_quote_value_before_trade[i]
+            # calculate how much do we have
+            base_holdings_quote_value_before_trade[i] = base_holdings[i - 1] * ohlc.open[i]
+            equity_before_trade[i] = quote_holdings[i - 1] + base_holdings_quote_value_before_trade[i]
             exposure_before_trade[i] = base_holdings_quote_value_before_trade[i] / equity_before_trade[i]
 
+            # track metrics of previous trade
+            pnl_quote[i - i] = equity_before_trade[i] - equity_before_trade[i - 1]
+            pnl_pct[i - 1] = equity_before_trade[i] / equity_before_trade[i - 1] - 1
+
+            # decide how much to trade
             desired_exposure[i] = self.sizing_fn(y_pred_proba[i])
             exposure_diff[i] = desired_exposure[i] - exposure_before_trade[i]
-            exposure_diff_direction[i] = 1 if exposure_diff[i] > 0 else -1 if exposure_diff[i] < 0 else 0
+            # exposure_diff_direction[i] = 1 if exposure_diff[i] > 0 else -1 if exposure_diff[i] < 0 else 0
 
+            if self.compounded:
+                trade_size[i] = exposure_diff[i] * equity_before_trade[i]
+            else:
+                trade_size[i] = exposure_diff[i] * self.initial_equity
+
+            trade_direction[i] = 1 if trade_size[i] > 0 else -1 if trade_size[i] < 0 else 0
 
             # do the trade
-            # - calculate absolute value of paid fees, slippage and impact in quote currency, store in separate arrays
-            if exposure_diff_direction[i] == 1:
-                # buy base currency
-                # - calculate how much of quote currency we should spend before fees and slippage
-                #   to buy amount of base currency to bring it's quote value at slipped price to desired exposure level
-                # - or just spend exposure_diff * equity of quote currency into the right direction?
-                desired_entry_price[i] = ohlc.open[i]
-                actual_entry_price[i] = desired_entry_price[i] * (1 + np.abs(slippage + impact))
-                base_holdings[i] = base_holdings[i - 1] + bought_base_units
-                quote_holdings[i] = quote_holdings[i - 1] - spent_quote_units
+            # TODO: calculate absolute value of paid fees, slippage and impact in quote currency, store in separate arrays
+            if trade_direction[i] == 1:
+                # We want to do the trade at open price
+                desired_price[i] = ohlc.open[i]
+                # The actual price we've got is adversely affected by slippage and market impact
+                actual_price[i] = desired_price[i] * (1 + np.abs(slippage + impact))
 
-            elif exposure_diff_direction[i] == -1:
-                # sell (potentially short) base currency
-                # - calculate how much of base currency we should sell before fees and slippage
-                #   to buy amount of quote currency to bring it's value at slipped price to desired exposure level
-                # - or just spend exposure_diff * equity of quote currency into the right direction?
-                desired_entry_price[i] = ohlc.open[i]
-                actual_entry_price[i] = desired_entry_price[i] * (1 - np.abs(slippage + impact))
-                base_holdings[i] = base_holdings[i - 1] - spent_base_units
-                quote_holdings[i] = quote_holdings[i - 1] - bought_quote_units
+                # We spend e.g. 1000 USD to get 998 USD worth of BTC after fees
+                base_holdings[i] = base_holdings[i - 1] + trade_size[i] * (1 - np.abs(fee_pct)) / actual_price[i]
+                quote_holdings[i] = quote_holdings[i - 1] - trade_size[i]
+
+            elif trade_direction[i] == -1:
+                desired_price[i] = ohlc.open[i]
+                actual_price[i] = desired_price[i] * (1 - np.abs(slippage + impact))
+
+                # We sell e.g. 1000 USD worth of BTC to get 998 USD after fees
+                base_holdings[i] = base_holdings[i - 1] - trade_size[i] / actual_price[i]
+                quote_holdings[i] = quote_holdings[i - 1] + trade_size[i] * (1 - np.abs(fee_pct))
 
             else:
                 # propagate previous values forward and do nothing
-                desired_entry_price[i] = np.nan
+                desired_price[i] = np.nan
+                actual_price[i] = np.nan
                 base_holdings[i] = base_holdings[i - 1]
                 quote_holdings[i] = quote_holdings[i - 1]
                 pass
 
-            base_holdings_quote_value_after_trade[i] = base_holdings[i] * actual_entry_price[i]
+            # store trade results
+            base_holdings_quote_value_after_trade[i] = base_holdings[i] * actual_price[i]
             equity_after_trade[i] = quote_holdings[i] + base_holdings_quote_value_after_trade[i]
             exposure_after_trade[i] = base_holdings_quote_value_after_trade[i] / equity_after_trade[i]
-            #
-            # quote_value_of_current_base_exposure = exposure_base[i - 1] * ohlc.open[i]  # store somewhere
-            #
-            # trade_size[i] = desired_exposure[i] - quote_value_of_current_base_exposure #!!! desired_exposure * equity
-            # trade_direction[i] = 1 if trade_size[i] > 0 else -1 if trade_size[i] < 0 else 0
-            # desired_entry_price[i] = ohlc.open[i]
 
-            # if trade_direction[i] == 1:
-            #     actual_entry_price[i] = desired_entry_price[i] * (1 + np.abs(slippage + impact))
-            #     base_holdings[i] = base_holdings[i - 1] + trade_size[i] * (1 - np.abs(fee)) / actual_entry_price[i]
-            #     holdings_base_value_in_quote[i] = base_holdings[i] * actual_entry_price[i]
-            #     quote_holdings[i] = quote_holdings[i - 1] - trade_size[i]
-            #     equity[i] = quote_holdings[i] + holdings_base_value_in_quote[i]
-            #
-            # elif trade_direction[i] == -1:
-            #     actual_entry_price[i] = desired_entry_price[i] * (1 - np.abs(slippage + impact))
-            #     base_holdings[i] = base_holdings[i - 1] -
-            #     pass
-            #
-            # 
-            #
-            # exposure_base[i] = trade_size[i] * (1 - np.abs(fee)) / actual_entry_price[i] + exposure_base[i - 1]
-            # exposure_direction[i] = 1 if exposure_base[i] > 0 else -1 if exposure_base[i] < 0 else 0
+        trades = Trades(
+            equity=equity_before_trade,
+            pnls=pnl_pct,
+            metadata=dict(
+                equity_before_trade=equity_before_trade,
+                equity_after_trade=equity_after_trade,
+                base_holdings=base_holdings,
+                quote_holdings=quote_holdings,
+                base_holdings_quote_value_before_trade=base_holdings_quote_value_before_trade,
+                base_holdings_quote_value_after_trade=base_holdings_quote_value_after_trade,
+                exposure_before_trade=exposure_before_trade,
+                exposure_after_trade=exposure_after_trade,
+                desired_exposure=desired_exposure,
+                exposure_diff=exposure_diff,
+                trade_size=trade_size,
+                trade_direction=trade_direction,
+                desired_price=desired_price,
+                actual_price=actual_price,
+                pnl_quote=pnl_quote,
+                pnl_pct=pnl_pct,
+            )
+        )
 
-            desired_exit_price[i] = ohlc.close[i]
-            virtual_exit_price[i] = desired_exit_price[i] * (1 - np.abs(slippage + impact)) if exposure_direction[i] == 1 \
-                else desired_exit_price[i] * (1 + np.abs(slippage + impact)) if exposure_direction[i] == -1 \
-                else np.nan
+        return trades
 
 
-            # entry_price[i] =
-            # TODO: model through open / close prices
-            # TODO: separate equity into equity_quote and equity_base_paper_value, plot value of quote and base holdings separately on stacked chart
-            # traded_size[i] = size_diff[i] * (1 + self.trading_cost_fn())
-            # exposure[i] = traded_size[i] + traded_size[i-1]
 
-        # Calculate position sizes
-        # pos_sizes = np.array([self.sizing_fn(self.initial_equity, p) for p in probas.y_pred_proba])
-        # pos_sizes = np.where(pos_sizes > 0, pos_sizes, 0)
-        # neg_sizes = np.array([self.sizing_fn(self.initial_equity, 1 - p) for p in probas.y_pred_proba])
-        # neg_sizes = np.where(neg_sizes > 0, neg_sizes, 0)
-        # pos_sizes_usd = pos_sizes - neg_sizes
-        #
-        # sizediffs = np.diff(np.insert(pos_sizes_usd, 0, 0))
-        #
-        # trading_costs = sizediffs * np.array([self.trading_costs.get_cost() for _ in probas.y_pred_proba])
-        #
-        # directions = np.where(sizes > 0, 1, np.where(sizes < 0, -1, 0))
-        # changes = y_change * sizes
-        #
-        # return Trades(directions, changes, trading_costs, probas.index)
-        return 0
+
+
+
+
+
+
+
+
+
+
+
+
+
