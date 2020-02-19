@@ -1,186 +1,187 @@
+from typing import Callable
+
 import numpy as np
 import pandas as pd
 import logging
 
-from ..entities import Predictions, Trades
+from ...numpy_ext import nans_array
+
+from ..entities import Probabilities, TradesOld
+from .sizing import PositionSizing
+from .trading_costs import Fee, Slippage, MarketImpact
 
 
 class TradingSimulator:
-    """
-    Class for converting Predictions into Trades based on exchange and execution parameters.
-
-    Params
-    :param exchange: str, name of the exchange used to model trades, one of ['bitmex', 'bitfinex', 'binance']
-    :param entry_order: str, one of ['market', 'limit']
-    :param no_reentry: bool, if True - strategy is going to stay in position until the direction of prediction changes
-    :param maker_fee: float
-    :param taker_fee: float
-    :param slippage: float, average slippage the execution engine incurs with typical position size and exchange
-    :param labels: dict, class labels for positive, neutral and negative classes
-    """
 
     ############
     # Initialization
     ############
     def __init__(self,
-                 exchange: str = 'bitfinex',
-                 entry_order: str = 'market',
-                 no_reentry: bool = False,
-                 maker_fee: float = 0.2 / 100,
-                 taker_fee: float = -0.2 / 100,
-                 slippage: float = -0.025 / 100,
-                 labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}):
+                 initial_equity: float,
+                 sizing_fn: Callable = PositionSizing.percent(percent=0.5, threshold=0.6),
+                 fee_fn: Callable = Fee.bitfinex(),
+                 slippage_fn: Callable = Slippage.percent(-0.1),
+                 impact_fn: Callable = MarketImpact.percent(-0.1),
+                 compounded: bool = False):
+        self.initial_equity = initial_equity
+        self.sizing_fn = sizing_fn
+        self.fee_fn = fee_fn
+        self.slippage_fn = slippage_fn
+        self.impact_fn = impact_fn
+        self.compounded = compounded
 
-        # Check that entry_order is valid
-        supported_exchanges = ['bitmex', 'bitfinex', 'binance']
-        if exchange not in supported_exchanges:
-            raise ValueError(
-                f'exchange={exchange}: unknown exchange. Should be one of the following: {supported_exchanges}'
-            )
+    def trades(self, probas: Probabilities, y_ohlc: pd.DataFrame) -> TradesOld:
+        """
+        Models trades on spot exchange (not futures exposure in contracts)
 
-        expected_fees = (self._exchange_fees[exchange]['taker'], self._exchange_fees[exchange]['maker'])
-        selected_fees = (taker_fee, maker_fee)
-        if expected_fees != selected_fees:
-            logging.warning(
-                f'\nExpected fees for {exchange} {expected_fees} do not match selected fees {selected_fees}'
-                f'\nMake sure that you are modeling the right thing.'
-            )
+        pos_size_usd = sizing_fn(current_equity)
+        entry_size_usd = pos_size_usd * (1 + trading_costs)
+        paper_pnl_size_usd = entry_size_usd * (1 + y_change)
+        exit_size_usd = paper_pnl_size_usd  * (1 + trading_costs)
+        trade_pnl_pct = exit_size_usd / pos_size_usd - 1
+        equity_change_pct = (exit_size_usd - pos_size_usd) / current_equity
+        """
 
-        # Check that entry_order is valid
-        allowed_orders = ['market', 'limit']
-        if entry_order not in allowed_orders:
-            raise ValueError(
-                f'entry_order={entry_order}: unknown order. Should be one of the following: {allowed_orders}'
-            )
+        y_pred_proba = np.insert(probas.y_pred_proba, 0, 0)
+        size = y_pred_proba.size
+        ohlc = y_ohlc.tail(size + 1)
 
-        self.exchange = exchange
-        self.entry_order = entry_order
-        self.no_reentry = no_reentry
-        self.maker_fee = maker_fee
-        self.taker_fee = taker_fee
-        self.slippage = slippage
-        self.labels = labels
+        # Capital
+        # equity = value of equity in quote currency, quote currency holdings + current paper value of base currency holdings
+        # separated into before and after trade because trade affects the price and spends equity to pay fees,
+        # therefore altering both size of quote holdings and paper value of base holdings
+        equity_before_trade = np.zeros(size + 1)
+        equity_before_trade[0] = self.initial_equity
+        equity_after_trade = np.zeros(size + 1)
+        equity_after_trade[0] = self.initial_equity
 
-    ############
-    # Public interface
-    ############
-    def trades(self, predicts: Predictions, ohlc: pd.DataFrame) -> Trades:
-        # Warn if the test data appears to be from a different exchange
-        if type(predicts.index) == pd.DatetimeIndex:
-            expected_start_date = pd.Timestamp(self._exchange_history_starts[self.exchange])
-            actual_start_date = predicts.index[0]
+        base_holdings = np.zeros(size + 1) # number of units of base currency currently owned
+        quote_holdings = np.zeros(size + 1) # number of units of quote currency currently owned
+        quote_holdings[0] = self.initial_equity
 
-            if actual_start_date < expected_start_date:
-                logging.warning(
-                    f'\nPredicts start on {actual_start_date}.'
-                    f'\nThat is earlier than historical data starts for {self.exchange}: {expected_start_date}'
-                    f'\nMake sure that you are modeling the right thing.'
-                )
+        base_holdings_quote_value_before_trade = np.zeros(size + 1) # paper value of base holdings at new_bar event before trade
+        base_holdings_quote_value_after_trade = np.zeros(size + 1) # paper value of base holdings after new_bar event after trade
 
-        # Check that ohlc has required columns, add 'change' column
-        required_columns = {'open', 'high', 'low', 'close'}
-        missing_columns = list((required_columns & set(ohlc.columns)) ^ required_columns)
-        if len(missing_columns) > 0:
-            raise ValueError(
-                f'ohlc is missing required columns: {missing_columns}'
-            )
+        exposure_before_trade = np.zeros(size + 1) # fraction of quote value of capital held in base currency
+        exposure_after_trade = np.zeros(size + 1)
 
-        index = predicts.index.copy()
-        y_true = predicts.y_true.copy()
-        y_pred = predicts.y_pred.copy()
-        fees = np.zeros(index.size)
+        # Trade setup
+        desired_exposure = np.zeros(size + 1)
+        exposure_diff = np.zeros(size + 1)
+        exposure_diff_direction = np.zeros(size + 1)
+        trade_size = np.zeros(size + 1)
+        trade_direction = np.zeros(size + 1)
 
-        pos, neu, neg = self.labels['pos'], self.labels['neu'], self.labels['neg']
+        # Execution prices
+        desired_entry_price = nans_array(size + 1)
+        actual_entry_price = nans_array(size + 1)
+        desired_exit_price = nans_array(size + 1)
+        virtual_exit_price = nans_array(size + 1)  # we do not actually exit at close but virtually track equity change
 
-        ohlc = ohlc[ohlc.index.isin(index)]  # TODO: rewrite selection to numpy
-        o, h, l, c = ohlc['open'].values, ohlc['high'].values, ohlc['low'].values, ohlc['close'].values
-        change = c / o - 1
+        exposure_base = np.zeros(size + 1)
+        exposure_direction = np.zeros(size + 1)
 
-        # Simulate whether we can enter into a trade with a limit order
-        can_enter_limit_long = l < (o - 0.5)
-        can_enter_limit_short = h > (o + 0.5)
+        for i in range(1, probas.y_pred_proba.size + 1):
+            fee = self.fee_fn()['taker']
+            slippage = self.slippage_fn()
+            impact = self.impact_fn()
 
-        # Calculate entry and exit fees
-        if self.entry_order == 'limit':
-            entry_fee = self.maker_fee + self.slippage
-        else:
-            entry_fee = self.taker_fee + self.slippage
-        exit_fee = self.taker_fee + self.slippage
+            # new_bar_event, before trade
+            # - get current quote value of base holdings
+            # - get current exposure pct
+            # - get desired exposure pct
+            # - get desired - current exposure diff
+            # - get exposure diff direction
+            base_holdings_quote_value_before_trade[i] = base_holdings[i-1] * ohlc.open[i]
+            equity_before_trade[i] = quote_holdings[i-1] + base_holdings_quote_value_before_trade[i]
+            exposure_before_trade[i] = base_holdings_quote_value_before_trade[i] / equity_before_trade[i]
 
-        if self.no_reentry:
-            # Simulate not exiting the trade when the next is in the same direction
-            for i in range(y_pred.size):
-                if y_pred[i] == neu:
-                    continue
+            desired_exposure[i] = self.sizing_fn(y_pred_proba[i])
+            exposure_diff[i] = desired_exposure[i] - exposure_before_trade[i]
+            exposure_diff_direction[i] = 1 if exposure_diff[i] > 0 else -1 if exposure_diff[i] < 0 else 0
 
-                # Check if the observation is a beginning or an end of a sequence
-                is_entry = True if i == 0 else y_pred[i] != y_pred[i - 1]
-                is_exit = True if i == y_pred.size - 1 else y_pred[i] != y_pred[i + 1]
 
-                # Check whether we could've entered the trade
-                if y_pred[i] == pos:
-                    can_enter = can_enter_limit_long[i] if self.entry_order == 'limit' else True
-                elif y_pred[i] == neg:
-                    can_enter = can_enter_limit_short[i] if self.entry_order == 'limit' else True
-                else:
-                    can_enter = False
+            # do the trade
+            # - calculate absolute value of paid fees, slippage and impact in quote currency, store in separate arrays
+            if exposure_diff_direction[i] == 1:
+                # buy base currency
+                # - calculate how much of quote currency we should spend before fees and slippage
+                #   to buy amount of base currency to bring it's quote value at slipped price to desired exposure level
+                # - or just spend exposure_diff * equity of quote currency into the right direction?
+                desired_entry_price[i] = ohlc.open[i]
+                actual_entry_price[i] = desired_entry_price[i] * (1 + np.abs(slippage + impact))
+                base_holdings[i] = base_holdings[i - 1] + bought_base_units
+                quote_holdings[i] = quote_holdings[i - 1] - spent_quote_units
 
-                if is_entry and not can_enter:
-                    y_pred[i] = neu
-                    fees[i] = 0.0
-                    continue
+            elif exposure_diff_direction[i] == -1:
+                # sell (potentially short) base currency
+                # - calculate how much of base currency we should sell before fees and slippage
+                #   to buy amount of quote currency to bring it's value at slipped price to desired exposure level
+                # - or just spend exposure_diff * equity of quote currency into the right direction?
+                desired_entry_price[i] = ohlc.open[i]
+                actual_entry_price[i] = desired_entry_price[i] * (1 - np.abs(slippage + impact))
+                base_holdings[i] = base_holdings[i - 1] - spent_base_units
+                quote_holdings[i] = quote_holdings[i - 1] - bought_quote_units
 
-                if is_entry and can_enter:
-                    fees[i] += entry_fee
+            else:
+                # propagate previous values forward and do nothing
+                desired_entry_price[i] = np.nan
+                base_holdings[i] = base_holdings[i - 1]
+                quote_holdings[i] = quote_holdings[i - 1]
+                pass
 
-                if is_exit:
-                    fees[i] += exit_fee
-        else:
-            # Check if we can enter each separate trade with limit order
-            if self.entry_order == 'limit':
-                y_pred[(y_pred == pos) & ~can_enter_limit_long] = neu
-                y_pred[(y_pred == neg) & ~can_enter_limit_short] = neu
-            fees[y_pred != neu] = entry_fee + exit_fee
+            base_holdings_quote_value_after_trade[i] = base_holdings[i] * actual_entry_price[i]
+            equity_after_trade[i] = quote_holdings[i] + base_holdings_quote_value_after_trade[i]
+            exposure_after_trade[i] = base_holdings_quote_value_after_trade[i] / equity_after_trade[i]
+            #
+            # quote_value_of_current_base_exposure = exposure_base[i - 1] * ohlc.open[i]  # store somewhere
+            #
+            # trade_size[i] = desired_exposure[i] - quote_value_of_current_base_exposure #!!! desired_exposure * equity
+            # trade_direction[i] = 1 if trade_size[i] > 0 else -1 if trade_size[i] < 0 else 0
+            # desired_entry_price[i] = ohlc.open[i]
 
-        long_wins = (y_pred == pos) & (y_true == pos)
-        long_losses = (y_pred == pos) & (y_true != pos)
-        short_wins = (y_pred == neg) & (y_true == neg)
-        short_losses = (y_pred == neg) & (y_true != neg)
+            # if trade_direction[i] == 1:
+            #     actual_entry_price[i] = desired_entry_price[i] * (1 + np.abs(slippage + impact))
+            #     base_holdings[i] = base_holdings[i - 1] + trade_size[i] * (1 - np.abs(fee)) / actual_entry_price[i]
+            #     holdings_base_value_in_quote[i] = base_holdings[i] * actual_entry_price[i]
+            #     quote_holdings[i] = quote_holdings[i - 1] - trade_size[i]
+            #     equity[i] = quote_holdings[i] + holdings_base_value_in_quote[i]
+            #
+            # elif trade_direction[i] == -1:
+            #     actual_entry_price[i] = desired_entry_price[i] * (1 - np.abs(slippage + impact))
+            #     base_holdings[i] = base_holdings[i - 1] -
+            #     pass
+            #
+            # 
+            #
+            # exposure_base[i] = trade_size[i] * (1 - np.abs(fee)) / actual_entry_price[i] + exposure_base[i - 1]
+            # exposure_direction[i] = 1 if exposure_base[i] > 0 else -1 if exposure_base[i] < 0 else 0
 
-        pnls = np.zeros(index.size)
-        pnls[long_wins] = np.abs(change[long_wins])
-        pnls[long_losses] = -np.abs(change[long_losses])
-        pnls[short_wins] = np.abs(change[short_wins])
-        pnls[short_losses] = -np.abs(change[short_losses])
+            desired_exit_price[i] = ohlc.close[i]
+            virtual_exit_price[i] = desired_exit_price[i] * (1 - np.abs(slippage + impact)) if exposure_direction[i] == 1 \
+                else desired_exit_price[i] * (1 + np.abs(slippage + impact)) if exposure_direction[i] == -1 \
+                else np.nan
 
-        trades = Trades(y_pred, pnls, fees, index)
 
-        return trades
+            # entry_price[i] =
+            # TODO: model through open / close prices
+            # TODO: separate equity into equity_quote and equity_base_paper_value, plot value of quote and base holdings separately on stacked chart
+            # traded_size[i] = size_diff[i] * (1 + self.trading_cost_fn())
+            # exposure[i] = traded_size[i] + traded_size[i-1]
 
-    ############
-    # Private
-    ############
-    @property
-    def _exchange_fees(self):
-        return {
-            'bitmex': {
-                'taker': -0.075 / 100,
-                'maker': 0.025 / 100,
-            },
-            'bitfinex': {
-                'taker': -0.2 / 100,
-                'maker': -0.2 / 100,
-            },
-            'binance': {
-                'taker': -0.075 / 100,
-                'maker': -0.075 / 100,
-            },
-        }
-
-    @property
-    def _exchange_history_starts(self):
-        return {
-            'bitmex': '2017-10-12',
-            'bitfinex': '2013-04-01',
-            'binance': '2017-10-27',
-        }
+        # Calculate position sizes
+        # pos_sizes = np.array([self.sizing_fn(self.initial_equity, p) for p in probas.y_pred_proba])
+        # pos_sizes = np.where(pos_sizes > 0, pos_sizes, 0)
+        # neg_sizes = np.array([self.sizing_fn(self.initial_equity, 1 - p) for p in probas.y_pred_proba])
+        # neg_sizes = np.where(neg_sizes > 0, neg_sizes, 0)
+        # pos_sizes_usd = pos_sizes - neg_sizes
+        #
+        # sizediffs = np.diff(np.insert(pos_sizes_usd, 0, 0))
+        #
+        # trading_costs = sizediffs * np.array([self.trading_costs.get_cost() for _ in probas.y_pred_proba])
+        #
+        # directions = np.where(sizes > 0, 1, np.where(sizes < 0, -1, 0))
+        # changes = y_change * sizes
+        #
+        # return Trades(directions, changes, trading_costs, probas.index)
+        return 0

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import numba
 
-from ..entities import Trades
+from ..entities import TradesOld
 
 
 class TradingMetrics:
@@ -23,7 +23,7 @@ class TradingMetrics:
     """
 
     def __init__(self,
-                 trades: Trades,
+                 trades: TradesOld,
                  initial_capital: float = 100,
                  position_size: float = 0.5,  # TODO: replace with PositionSizing function
                  compounded: bool = False):  # TODO: remove, controlled by position sizing strat

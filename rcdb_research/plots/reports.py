@@ -9,7 +9,7 @@ from typing import Union
 
 from . import primitives
 from .style import Style, colormap
-from ..simulation.entities import Probabilities, Predictions, Trades
+from ..simulation.entities import Probabilities, Predictions, TradesOld
 from ..simulation.simulators import PredictionSimulator
     
 
@@ -113,7 +113,7 @@ def preds_report(preds: Predictions, window: int, threshold: float = 0.5, show_d
     plt.show()
 
 
-def trading_report(trades: Trades, show_dates: bool = False, initial_capital: int = 100,
+def trading_report(trades: TradesOld, show_dates: bool = False, initial_capital: int = 100,
                    position_size: float = 0.8, dense: bool = False, compounded: bool = False):
     style = Style(fig_size=(16, 9))
     blue = colormap(0.56)

@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 
-from rcdb_research.simulation import TradingSimulator
+from rcdb_research.simulation import TradingSimulatorOld
 from .test_predictions import predictions  # noqa
 
 
@@ -32,7 +32,7 @@ missing_columns_params += [
 )
 def test_TradingSimulator_init_wrong_ohlc_columns(predictions, columns, missing_columns):  # noqa
     exc = raises(
-        lambda: TradingSimulator().trades(
+        lambda: TradingSimulatorOld().trades(
             predicts=predictions,
             ohlc=pd.DataFrame([], index=predictions.index, columns=columns),
         )
@@ -44,7 +44,7 @@ def test_TradingSimulator_init_wrong_ohlc_columns(predictions, columns, missing_
 
 def test_TradingSimulator_init_wrong_order_type():  # noqa
     raises(
-        lambda: TradingSimulator(entry_order='x'),
+        lambda: TradingSimulatorOld(entry_order='x'),
         "entry_order=x: unknown order. Should be one of the following: ['market', 'limit']"
     )
 
@@ -59,7 +59,7 @@ def test_TradingSimulator_init_wrong_order_type():  # noqa
     )
 )
 def test_TradingSimulator_init_wrong_exchange(exchange, is_raises):  # noqa
-    f = lambda: TradingSimulator(exchange=exchange)
+    f = lambda: TradingSimulatorOld(exchange=exchange)
     if is_raises:
         raises(
             f,
