@@ -9,8 +9,8 @@ from typing import Union
 
 from . import primitives
 from .style import Style, colormap
-from ..simulation.entities import Probabilities, Predictions, TradesOld
-from ..simulation.simulators import PredictionSimulator
+from ..simulation import Probabilities, Predictions, TradesOld
+from ..simulation import PredictionSimulator
     
 
 def proba_report(probas: Probabilities, n_bins: int = 40, show_dates: bool = False):

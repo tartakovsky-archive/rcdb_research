@@ -30,8 +30,8 @@ class PositionSizing:
                 f'{direction} direction is not supported. Should be one of the following: {supported_directions}'
             )
 
-        def kelly_fn(win_size: float, loss_size: float, win_proba: float) -> float:
-            return win_proba / loss_size - (1 - win_proba) / win_size
+        def kelly_fn(win: float, loss: float, proba: float) -> float:
+            return proba / loss - (1 - proba) / win
 
         def sizing_fn(proba: float) -> float:
             pos_kelly = kelly_fn(win_size, loss_size, proba)

@@ -1,8 +1,7 @@
 import numpy as np
 
 from typing import Union, Optional
-
-from ..entities import Probabilities, Predictions
+from ...simulation import Probabilities, Predictions
 
 
 class PredictionSimulator:

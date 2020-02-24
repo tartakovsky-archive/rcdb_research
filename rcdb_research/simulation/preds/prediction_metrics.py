@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from ...numpy_ext import rolling_apply
-from ..entities import Predictions
+from ...simulation import Predictions
 
 
 class PredictionMetrics:

@@ -4,8 +4,8 @@ import weakref
 import numpy as np
 import scipy.optimize as opt
 
-from ..entities import Probabilities
-from ..simulators import PredictionSimulator
+from ...simulation import Probabilities
+from ...simulation import PredictionSimulator
 
 from sklearn.calibration import calibration_curve
 
