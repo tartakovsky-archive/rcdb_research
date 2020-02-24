@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import NamedTuple, Optional
 from enum import Enum
+from collections import OrderedDict
 
 import pandas as pd
 
@@ -148,7 +149,7 @@ class BarContext(NamedTuple):
     def to_df(self):
         d = dict(self._asdict())
 
-        nd = {}
+        nd = OrderedDict()
         nd.update(d['pre_trade_state'].to_dict(prefix="pre_"))
 
         trade_signal = d.get('trade_signal', None)
