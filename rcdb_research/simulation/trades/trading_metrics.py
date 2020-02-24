@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import numba
 
-from rcdb_research.simulation.entities import TradesOld
+from .trades_old import TradesOld
 
 
 class TradingMetrics:

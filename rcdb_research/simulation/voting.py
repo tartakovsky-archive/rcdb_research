@@ -2,7 +2,8 @@ import numpy as np
 
 from typing import List, Optional
 
-from ..simulation import Probabilities, Predictions
+from .probas import Probabilities
+from .preds import Predictions
 
 
 class Voting:

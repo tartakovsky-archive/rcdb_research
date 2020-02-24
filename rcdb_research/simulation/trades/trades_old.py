@@ -47,7 +47,7 @@ class TradesOld:
     def init_metrics(self, initial_capital: float = 100,
                      position_size: float = 0.5, compounded: bool = False) -> TradesOld:
         # Located here to avoid circular import: TradingMetrics -> Trades -> TradingMetrics -> ...
-        from ..metrics import TradingMetrics
+        from .trading_metrics import TradingMetrics
 
         self.metric_params = dict(initial_capital=initial_capital, position_size=position_size, compounded=compounded)
         self.metrics = TradingMetrics(self, **self.metric_params)

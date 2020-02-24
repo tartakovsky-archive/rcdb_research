@@ -47,7 +47,7 @@ class Predictions:
     ############
     def init_metrics(self, direction: str = 'pos', labels: dict = {'pos': 1, 'neu': 0, 'neg': -1}) -> Predictions:
         # Located here to avoid circular import: PredictionMetrics -> Predictions -> PredictionMetrics -> ...
-        from ..metrics import PredictionMetrics
+        from .prediction_metrics import PredictionMetrics
 
         # TODO: Document direction and labels params in docstrings for every occurence
 

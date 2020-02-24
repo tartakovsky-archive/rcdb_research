@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import logging
 
-from ...simulation import Predictions, TradesOld
-
+from .trades_old import TradesOld
+from ..preds import Predictions
 
 class TradingSimulatorOld:
     """

@@ -18,7 +18,7 @@ class Probabilities:
 
     def __init__(self, y_true: np.ndarray, y_pred_proba: np.ndarray, index: np.ndarray = None):
         # Located here to avoid circular import: ProbabilityMetrics -> Probabilities -> ProbabilityMetrics -> ...
-        from ..metrics import ProbabilityMetrics
+        from .probability_metrics import ProbabilityMetrics
 
         if index is not None:
             index = index.copy()
