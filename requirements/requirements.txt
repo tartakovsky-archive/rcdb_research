@@ -14,6 +14,8 @@ json-tricks~=3.13.2
 cufflinks~=0.16
 xgboost~=0.90
 lightgbm~=2.2.3
+cytoolz~=0.10.1
+toolz~=0.10.0
 
 tulipindicators
 python-mne_features @ git+https://github.com/mne-tools/mne-features.git@629dad6345a61769c97a526c3878bd81c4d50ab6#egg=python-mne_features
