@@ -7,6 +7,7 @@ import pandas as pd
 from typing import Optional
 
 
+# TODO: Refactor Probabilities / Predictions models to NamedTuples / DataClasses
 class Probabilities:
     """
     Class for storing predicted probabilities of ML models

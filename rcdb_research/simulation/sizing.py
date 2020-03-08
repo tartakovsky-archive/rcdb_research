@@ -1,5 +1,19 @@
 from typing import Callable
 
+from dataclasses import dataclass
+
+
+# class SizingAlgo:
+#     pass
+#
+#
+# class PercentSizing(SizingAlgo):
+#     pass
+#
+#
+# class KellySizing(SizingAlgo):
+#     pass
+
 
 class PositionSizing:
     @staticmethod
