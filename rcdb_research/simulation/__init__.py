@@ -1,4 +1,3 @@
-from .sizing import PositionSizing  # noqa
 from .voting import Voting  # noqa
 from .probas import Probabilities, ProbabilityMetrics  # noqa
 from .preds import Predictions, PredictionMetrics, PredictionSimulator  # noqa

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import NamedTuple, List
 
 from enum import Enum
@@ -17,7 +18,6 @@ class Pair(NamedTuple):
 
 
 class BidAsk(NamedTuple):
-    pair: Pair
     bid: float
     ask: float
 
@@ -42,13 +42,15 @@ class Costs(NamedTuple):
     maker_fee: float
     drift: float
     impact: float
+    spread: float
 
     @property
     def slippage(self) -> float:
         return self.drift + self.impact
 
 
-class Exchange(NamedTuple):
+@dataclass
+class Exchange:
     name: str
     initial_margin: float
     maintenance_margin: float
@@ -64,28 +66,29 @@ class Exchange(NamedTuple):
         return 1 / self.maintenance_margin
 
 
-class SupportedExchange(Enum):
-    bitfinex = Exchange(
-        name='bitfinex',
-        costs=Costs(
-            taker_fee=-0.2 / 100,
-            maker_fee=-0.2 / 100,
-            drift=-0.01 / 100,
-            impact=-0.01 / 100,
-        ),
-        initial_margin=0.16666,
-        maintenance_margin=0.15,
-        pairs=[Pairs.btcusd.value, Pairs.ethusd.value, Pairs.ethbtc.value]
+class Bitfinex(Exchange):
+    name: str = 'bitfinex'
+    initial_margin: float = 0.16666,
+    maintenance_margin: float = 0.15,
+    costs: Costs = Costs(
+        taker_fee=-0.2 / 100,
+        maker_fee=-0.2 / 100,
+        drift=-0.025 / 100,
+        impact=-0.2 / 100,
+        spread=0.02 / 100,
     )
-    bitmex = Exchange(
-        name='bitmex',
-        costs=Costs(
-            taker_fee=-0.075 / 100,
-            maker_fee=0.025 / 100,
-            drift=-0.1 / 100,
-            impact=-0.1 / 100,
-        ),
-        initial_margin=0.01,
-        maintenance_margin=0.005,
-        pairs=[Pairs.xbtusd.value]
-    )
+    pairs: List[Pair] = [Pairs.btcusd.value, Pairs.ethusd.value, Pairs.ethbtc.value]
+
+
+class Bitmex(Exchange):
+    name: str = 'bitmex',
+    initial_margin: float = 0.01,
+    maintenance_margin: float = 0.005,
+    costs: Costs = Costs(
+        taker_fee=-0.075 / 100,
+        maker_fee=0.025 / 100,
+        drift=-0.01 / 100,
+        impact=-0.01 / 100,
+        spread=0.005 / 100,
+    ),
+    pairs: List[Pair] = [Pairs.xbtusd.value]

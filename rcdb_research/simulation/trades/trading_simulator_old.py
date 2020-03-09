@@ -5,6 +5,7 @@ import logging
 from .trades_old import TradesOld
 from ..preds import Predictions
 
+
 class TradingSimulatorOld:
     """
     Class for converting Predictions into Trades based on exchange and execution parameters.
