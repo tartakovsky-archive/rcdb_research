@@ -3,21 +3,68 @@ from __future__ import annotations
 from typing import List, NamedTuple, Optional
 
 import numpy as np
-# import pandas as pd
+import pandas as pd
 from .account import Account, AccountManager
 from .exchange import Exchange, BidAsk
-from .execution import ExecutionResult, MMMEA, ExecutionManager, ExecutionAlgo
+from .execution import MMMEA, ExecutionManager, ExecutionAlgo
 from .portfolio import Portfolio
-from .position import Position, PositionManager, PositionAction
+from .position import Position, PositionManager, PositionAction, PositionChange
 from .sizing import SizingAlgo
 
 
 class Context(NamedTuple):
+    proba: float
+    bidask: BidAsk
     account_pre_trade: Account
     position_desired: Optional[Position]
     actions: List[PositionAction]
-    changes: List[ExecutionResult]
+    changes: List[PositionChange]
+    realized_pnl: float
     account_post_trade: Account
+
+    def tell_me_a_story(self) -> str:
+        position_pre_trade = self.account_pre_trade.portfolio.position
+        position_post_trade = self.account_post_trade.portfolio.position
+        change_strs = '\n            '.join(
+            [f'size={c.size:.4f}, price=${c.avg_price:.3f}, fee=${c.fee:.4f}, slippage=${c.slippage:.3f}' for c in self.changes])
+        story = f"""----- New bar -----
+
+        Bid = ${self.bidask.bid:.2f}, Ask = ${self.bidask.ask:.2f}
+        
+        Current position:
+            size = {position_pre_trade.size if position_pre_trade is not None else 0:.2f}
+            avg_price = ${position_pre_trade.avg_price if position_pre_trade is not None else 0:.3f}
+        
+        Current account:
+            balance = ${self.account_pre_trade.balance:.2f}
+            exposure = {self.account_pre_trade.metrics.exposure:.4f}
+            unrealized PnL = ${self.account_pre_trade.metrics.pnl_after_fees:.2f} (after fees)
+        
+        Predicted proba = {self.proba}
+        Desired position:
+            size = {self.position_desired.size if self.position_desired is not None else 0:.2f}
+            price = ${self.position_desired.avg_price if self.position_desired is not None else 0:.2f}
+
+        Actions to be taken:
+            {self.actions}
+
+        {self.account_pre_trade.exchange.costs}
+
+        Executed changes:
+            {change_strs}
+
+        Realized PnL = ${self.realized_pnl:.2f}
+
+        New position:
+            size = {position_post_trade.size if position_post_trade is not None else 0:.2f}
+            avg_price = ${position_post_trade.avg_price if position_post_trade is not None else 0:.3f}
+
+        New account:
+            balance = ${self.account_post_trade.balance:.2f}
+            exposure = {self.account_post_trade.metrics.exposure:.4f}
+            unrealized_pnl_after_fees = ${self.account_post_trade.metrics.pnl_after_fees:.2f}
+        """
+        return story
 
 
 class TradingSimulator:
@@ -42,11 +89,10 @@ class TradingSimulator:
 
         # Mark account to market
         account_pre_trade = AccountManager.mark_to_market(
-            account=prior_contexts[0].account,
+            account=prior_contexts[0].account_post_trade,
             price=price
         )
-        entry_pre_trade = account_pre_trade.portfolio.entry
-        position_pre_trade = entry_pre_trade.position if entry_pre_trade is not None else None
+        position_pre_trade = account_pre_trade.portfolio.position
 
         # Calculate desired position
         # desired_portfolio = Rebalancer.rebalance_portfolio(proba, price, account) ?
@@ -72,16 +118,19 @@ class TradingSimulator:
         )
 
         # Incorporate changes into the account
-        account_post_trade = AccountManager.merge_changes(
+        account_post_trade, pnl_realized = AccountManager.merge_changes(
             account=account_pre_trade,
             changes=executed_changes
         )
 
         return Context(
+            proba=proba,
+            bidask=price,
             account_pre_trade=account_pre_trade,
             position_desired=desired_position,
             actions=desired_actions,
             changes=executed_changes,
+            realized_pnl=pnl_realized,
             account_post_trade=account_post_trade
         )
 
@@ -89,14 +138,17 @@ class TradingSimulator:
         account_pre_trade = Account(
             exchange=self.exchange,
             balance=self.initial_equity,
-            portfolio=Portfolio(entry=None)
+            portfolio=Portfolio(position=None, price=bidasks[0])
         )
 
         initial_context = Context(
+            proba=0.5,
+            bidask=bidasks[0],
             account_pre_trade=account_pre_trade,
             position_desired=None,
             actions=[],
             changes=[],
+            realized_pnl=0,
             account_post_trade=account_pre_trade
         )
 
@@ -106,9 +158,17 @@ class TradingSimulator:
             context = self.on_bar(proba=pred_probas[i], price=bidasks[i], prior_contexts=list(reversed(contexts)))
             contexts.append(context)
 
-        return contexts
+        return contexts[1:]
 
-    def trades(self):
+    def trades(self, probas: np.ndarray, data: pd.DataFrame):
+        # Check that data has required columns
+        required_columns = ['open', 'high', 'low', 'close', 'bid', 'ask']
+        missing_columns = [c for c in required_columns if c not in data.columns]
+        if len(missing_columns) > 0:
+            raise ValueError(
+                f'\ndata.columns should contain {required_columns}\n'
+                f'Columns {missing_columns} are missing'
+            )
         pass
 
 #

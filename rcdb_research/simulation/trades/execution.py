@@ -3,31 +3,26 @@ from __future__ import annotations
 from typing import NamedTuple, List
 
 from .exchange import BidAsk, Costs
-from .position import PositionAction
-
-
-class ExecutionResult(NamedTuple):
-    action: PositionAction
-    filled_size: float
-    avg_price: float
-    fee: float
-    slippage: float
+from .position import PositionAction, PositionChange
 
 
 class ExecutionManager(NamedTuple):
     @staticmethod
     def execute(actions: List[PositionAction], price: BidAsk,
-                costs: Costs, algo: ExecutionAlgo) -> List[ExecutionResult]:
-        changes = [algo.execute(action, price, costs) for action in actions]
+                costs: Costs, algo: ExecutionAlgo) -> List[PositionChange]:
 
-        # TODO:
-        # introduce PositionChange object? return position_changes: [PositionChange] to track realized_pnl and so on?
+        changes = []
+        bidask = price
+        for action in actions:
+            change = algo.execute(action, bidask, costs)
+            bidask = BidAsk(change.avg_price, change.avg_price)
+            changes.append(change)
 
         return changes
 
 
 class ExecutionAlgo:
-    def execute(self, action: PositionAction, price: BidAsk, costs: Costs) -> ExecutionResult:
+    def execute(self, action: PositionAction, price: BidAsk, costs: Costs) -> PositionChange:
         pass
 
 
@@ -40,13 +35,13 @@ class MMMEA(ExecutionAlgo):
     Stop loss order: market
     """
 
-    def execute(self, action: PositionAction, bidask: BidAsk, costs: Costs) -> ExecutionResult:
+    def execute(self, action: PositionAction, bidask: BidAsk, costs: Costs) -> PositionChange:
         price = bidask.ask if action.direction == 1 else bidask.bid
         slipped_price = price * (1 + action.direction * abs(costs.slippage))
 
-        execution_res = ExecutionResult(
+        execution_res = PositionChange(
             action=action,
-            filled_size=action.size,
+            size=action.size,
             avg_price=slipped_price,
             fee=abs(action.size) * costs.taker_fee,
             slippage=slipped_price - price,

@@ -39,7 +39,7 @@ class KellySizing(SizingAlgo):
 
     def size(self, proba: float) -> float:
         def kelly_fn(win: float, loss: float, p: float) -> float:
-            return p / loss - (1 - p) / win
+            return p / abs(loss) - (1 - p) / win
 
         pos_kelly = kelly_fn(self.win_size, self.loss_size, proba)
         neg_kelly = -kelly_fn(self.win_size, self.loss_size, 1 - proba)
@@ -50,5 +50,7 @@ class KellySizing(SizingAlgo):
             kelly = neg_kelly if neg_kelly < 0 else 0
         else:
             kelly = pos_kelly if pos_kelly > 0 else neg_kelly if neg_kelly < 0 else 0
+
+        print(f'Proba = {proba}, Pos kelly = {pos_kelly}, Neg kelly = {neg_kelly}, Kelly = {kelly}')
 
         return kelly / self.divider

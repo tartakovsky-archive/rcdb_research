@@ -1,10 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 import weakref
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, NamedTuple
 import numpy as np
-
-from .execution import ExecutionResult
 
 
 @dataclass
@@ -27,7 +26,7 @@ class PositionMetrics:
 
 class PositionManager:
     @staticmethod
-    def merge_change(position: Optional[Position], change: ExecutionResult) -> Tuple[Optional[Position], float]:
+    def merge_change(position: Optional[Position], change: PositionChange) -> Tuple[Optional[Position], float]:
         """
         Get new position and realized_pnl after incorporating a change
         Method 2 from here: https://www.deltastock.com/english/education/average-price.asp
@@ -35,7 +34,7 @@ class PositionManager:
         Parameters
         ----------
         position : Position
-        change : ExecutionResult
+        change : PositionChange
 
         Returns
         -------
@@ -49,25 +48,25 @@ class PositionManager:
             raise ValueError('Current position can only be None if required action is OpenPosition')
 
         if isinstance(action, OpenPosition):
-            new_position = Position(size=change.filled_size, avg_price=change.avg_price)
+            new_position = Position(size=change.size, avg_price=change.avg_price)
             realized_pnl = change.fee
             return new_position, realized_pnl
 
         elif isinstance(action, AddToPosition):
-            size = position.size + change.filled_size
-            avg_price = np.average([position.avg_price, change.avg_price], weights=[position.size, change.filled_size])
+            size = position.size + change.size
+            avg_price = np.average([position.avg_price, change.avg_price], weights=[position.size, change.size])
 
             new_position = Position(size=size, avg_price=avg_price)
             realized_pnl = change.fee
             return new_position, realized_pnl
 
         elif isinstance(action, ReducePosition) or isinstance(action, ClosePosition):
-            size = position.size + change.filled_size
+            size = position.size + change.size
             avg_price = position.avg_price
 
             price_change_pct = change.avg_price / position.avg_price - 1
             pnl_pct = position.direction * price_change_pct
-            pnl_abs = change.filled_size * pnl_pct
+            pnl_abs = abs(change.size) * pnl_pct
 
             new_position = Position(size=size, avg_price=avg_price)
             realized_pnl = pnl_abs + change.fee
@@ -112,6 +111,14 @@ class PositionManager:
 
         # TODO: that return should never happen. Raise exception if it does
         return []
+
+
+class PositionChange(NamedTuple):
+    action: PositionAction
+    size: float
+    avg_price: float
+    fee: float
+    slippage: float
 
 
 @dataclass

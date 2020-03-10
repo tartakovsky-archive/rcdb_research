@@ -42,7 +42,6 @@ class Costs(NamedTuple):
     maker_fee: float
     drift: float
     impact: float
-    spread: float
 
     @property
     def slippage(self) -> float:
@@ -55,7 +54,6 @@ class Exchange:
     initial_margin: float
     maintenance_margin: float
     costs: Costs
-    pairs: List[Pair]
 
     @property
     def max_leverage(self) -> float:
@@ -66,29 +64,27 @@ class Exchange:
         return 1 / self.maintenance_margin
 
 
+@dataclass
 class Bitfinex(Exchange):
     name: str = 'bitfinex'
-    initial_margin: float = 0.16666,
-    maintenance_margin: float = 0.15,
+    initial_margin: float = 0.16666
+    maintenance_margin: float = 0.15
     costs: Costs = Costs(
         taker_fee=-0.2 / 100,
         maker_fee=-0.2 / 100,
         drift=-0.025 / 100,
         impact=-0.2 / 100,
-        spread=0.02 / 100,
     )
-    pairs: List[Pair] = [Pairs.btcusd.value, Pairs.ethusd.value, Pairs.ethbtc.value]
 
 
+@dataclass
 class Bitmex(Exchange):
-    name: str = 'bitmex',
-    initial_margin: float = 0.01,
-    maintenance_margin: float = 0.005,
+    name: str = 'bitmex'
+    initial_margin: float = 0.01
+    maintenance_margin: float = 0.005
     costs: Costs = Costs(
         taker_fee=-0.075 / 100,
         maker_fee=0.025 / 100,
         drift=-0.01 / 100,
         impact=-0.01 / 100,
-        spread=0.005 / 100,
-    ),
-    pairs: List[Pair] = [Pairs.xbtusd.value]
+    )
