@@ -9,7 +9,7 @@ from typing import Union
 
 from . import primitives
 from .style import Style, colormap
-from ..simulation import Probabilities, Predictions, TradesOld
+from ..simulation import Probabilities, Predictions, Trades
 from ..simulation import PredictionSimulator
     
 
@@ -113,8 +113,7 @@ def preds_report(preds: Predictions, window: int, threshold: float = 0.5, show_d
     plt.show()
 
 
-def trading_report(trades: TradesOld, show_dates: bool = False, initial_capital: int = 100,
-                   position_size: float = 0.8, dense: bool = False, compounded: bool = False):
+def trading_report(trades: Trades, show_dates: bool = False):
     style = Style(fig_size=(16, 9))
     blue = colormap(0.56)
     red = colormap(0.045)
@@ -132,18 +131,7 @@ def trading_report(trades: TradesOld, show_dates: bool = False, initial_capital:
     percent_fill_style.percent = True
     percent_fill_style.fill = True
 
-    trades.init_metrics(initial_capital=initial_capital, position_size=position_size, compounded=compounded)
-
-    primitives.curve(trades.metrics.expected_cum_return(dense=dense),
-                     style=percent_style,
-                     pos_color=blue,
-                     neg_color=red,
-                     ax=ax0)
-
-    cr_style = deepcopy(style)
-    cr_style.percent = True
-    cr_style.fill = True
-    primitives.curve(trades.metrics.cum_return(dense=dense),
+    primitives.curve(trades.metrics.cum_equity_change_pct(),
                      title='Cumulative return over bars',
                      ylabel='Gain',
                      style=percent_fill_style,
@@ -151,14 +139,7 @@ def trading_report(trades: TradesOld, show_dates: bool = False, initial_capital:
                      neg_color=red,
                      ax=ax0)
 
-    legend_elements = [
-        Line2D([0], [0], lw=1, color=blue, label='Expectancy'),
-        Patch(edgecolor=blue, facecolor=blue, alpha=0.7, label='Simulation')
-    ]
-
-    ax0.legend(handles=legend_elements, ncol=2, loc='lower center', bbox_to_anchor=(0.5, 0.065))
-
-    primitives.curve(trades.metrics.drawdown(dense=dense),
+    primitives.curve(trades.metrics.drawdown(),
                      ylabel='Drawdown',
                      style=percent_fill_style,
                      pos_color=blue,
@@ -166,9 +147,9 @@ def trading_report(trades: TradesOld, show_dates: bool = False, initial_capital:
                      ax=ax1)
 
     if show_dates:
-        primitives.second_index(ax1, _datestring(trades.metrics.cum_return(dense=dense).index))
+        primitives.second_index(ax1, _datestring(trades.index))
 
-    primitives.curve(trades.metrics.returns(dense=dense),
+    primitives.curve(trades.metrics.equity_change_pct(),
                      ylabel='Returns',
                      style=percent_style,
                      pos_color=blue,
@@ -178,7 +159,7 @@ def trading_report(trades: TradesOld, show_dates: bool = False, initial_capital:
     if show_dates:
         primitives.second_index(
             ax2,
-            _datestring(trades.metrics.cum_return(dense=dense).index),
+            _datestring(trades.index),
             xlabel='Bar number / Date'
         )
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import weakref
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -79,9 +79,36 @@ class Trades:
 
 class TradingMetrics:
     def __init__(self, trades: Trades):
-        self.portfolio = weakref.proxy(trades)
+        self.trades = weakref.proxy(trades)
 
-############
-# Public methods
-############
+    def equity(self, include_unrealized: bool = True, raw: bool = False) -> Union[pd.Series, tuple]:
+        equity = self.trades.balance + self.trades.unrealized_pnl if include_unrealized else self.trades.balance
+        index = self.trades.index
 
+        return (equity, index) if raw else pd.Series(equity, index=index)
+
+    def equity_change_abs(self, include_unrealized: bool = True, raw: bool = False) -> Union[pd.Series, tuple]:
+        equity, index = self.equity(include_unrealized=include_unrealized, raw=True)
+        change = np.diff(equity)
+        change = np.insert(change, 0, 0)
+
+        return (change, index) if raw else pd.Series(change, index=index)
+
+    def equity_change_pct(self, include_unrealized: bool = True, raw: bool = False) -> Union[pd.Series, tuple]:
+        equity, index = self.equity(include_unrealized=include_unrealized, raw=True)
+        change = np.diff(equity) / equity[:-1]
+        change = np.insert(change, 0, 0)
+
+        return (change, index) if raw else pd.Series(change, index=index)
+
+    def cum_equity_change_pct(self, include_unrealized: bool = True, raw: bool = False) -> Union[pd.Series, tuple]:
+        equity, index = self.equity(include_unrealized=include_unrealized, raw=True)
+        cum_return = (equity / equity[0]) - 1
+
+        return (cum_return, index) if raw else pd.Series(cum_return, index=index)
+
+    def drawdown(self, include_unrealized: bool = True, raw: bool = False) -> Union[pd.Series, tuple]:
+        equity, index = self.equity(include_unrealized=include_unrealized, raw=True)
+        drawdown = equity / np.maximum.accumulate(equity) - 1
+
+        return (drawdown, index) if raw else pd.Series(drawdown, index=index)
