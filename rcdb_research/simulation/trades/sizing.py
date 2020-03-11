@@ -51,6 +51,4 @@ class KellySizing(SizingAlgo):
         else:
             kelly = pos_kelly if pos_kelly > 0 else neg_kelly if neg_kelly < 0 else 0
 
-        print(f'Proba = {proba}, Pos kelly = {pos_kelly}, Neg kelly = {neg_kelly}, Kelly = {kelly}')
-
         return kelly / self.divider

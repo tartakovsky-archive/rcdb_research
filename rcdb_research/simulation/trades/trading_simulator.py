@@ -191,4 +191,4 @@ class TradingSimulator:
         exposure = np.array([c.account_pre_trade.metrics.exposure for c in contexts])
         unrealized_pnl = np.array([c.account_pre_trade.metrics.pnl_after_fees for c in contexts])
 
-        return Trades(balance=balance, exposure=exposure, unrealized_pnl=unrealized_pnl, context=contexts, index=data.index)
+        return Trades(balance=balance, exposure=exposure, unrealized_pnl=unrealized_pnl, context=contexts, index=df.index)
