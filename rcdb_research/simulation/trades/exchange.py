@@ -65,6 +65,14 @@ class Exchange:
 
 
 @dataclass
+class NoFeex(Exchange):
+    name: str = 'nofeex'
+    initial_margin: float = 0.01
+    maintenance_margin: float = 0.005
+    costs: Costs = Costs(taker_fee=0, maker_fee=0, drift=0, impact=0)
+
+
+@dataclass
 class Bitfinex(Exchange):
     name: str = 'bitfinex'
     initial_margin: float = 0.16666
