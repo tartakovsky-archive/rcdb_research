@@ -27,7 +27,7 @@ class AccountMetrics:
 
     @property
     def pnl_unrealized(self) -> float:
-        return self.account.portfolio.pnl_unrealized
+        return self.account.portfolio.metrics.pnl_unrealized
 
     @property
     def pnl_after_fees(self) -> float:
