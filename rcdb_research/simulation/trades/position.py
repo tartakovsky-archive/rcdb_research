@@ -68,8 +68,13 @@ class PositionManager:
             pnl_pct = position.direction * price_change_pct
             pnl_abs = abs(change.size) * pnl_pct
 
-            new_position = Position(size=size, avg_price=avg_price)
             realized_pnl = pnl_abs + change.fee
+
+            if isinstance(action, ClosePosition) and size == 0:
+                new_position = None
+            else:
+                new_position = Position(size=size, avg_price=avg_price)
+
             return new_position, realized_pnl
 
         else:
@@ -93,6 +98,10 @@ class PositionManager:
         if desired_position.direction == current_position.direction:
             # Stay in the same direction
             size_diff = desired_position.size - current_position.size
+
+            if abs(size_diff) / current_position.size < 0.005:
+                # Do not trade if desired position size differs from the current one for less than 0.5%
+                return []
 
             if abs(desired_position.size) > abs(current_position.size):
                 # Add to position
