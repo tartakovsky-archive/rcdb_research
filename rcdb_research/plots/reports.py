@@ -52,7 +52,7 @@ def proba_report(probas: Probabilities, n_bins: int = 40, show_dates: bool = Fal
     primitives.histogram(probas.y_pred_proba, n_bins=n_bins, n_ticks=20,
                          xlabel='Mean predicted probability', ylabel='Count', ax=ax3)
 
-    fig.tight_layout(h_pad=4, w_pad=3)
+    # fig.tight_layout(h_pad=4, w_pad=3)
     fig.show()
 
 
@@ -109,7 +109,7 @@ def preds_report(preds: Predictions, window: int, threshold: float = 0.5, show_d
             _datestring(preds.metrics.tp().index), xlabel='Bar number / Date'
         )
 
-    plt.tight_layout(h_pad=h_pad)
+    # plt.tight_layout(h_pad=h_pad)
     plt.show()
 
 
@@ -163,7 +163,7 @@ def trading_report(trades: Trades, show_dates: bool = False):
             xlabel='Bar number / Date'
         )
 
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.show()
 
 
@@ -238,7 +238,7 @@ def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
 
     [lbl.set_rotation(45) for lbl in ax.get_xticklabels()]
 
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.show()
 
 

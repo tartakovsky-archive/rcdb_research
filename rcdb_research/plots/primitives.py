@@ -47,7 +47,7 @@ def curve(y: np.array, x: np.array = None, threshold: float = 0, title: Optional
         if return_fig:
             return fig, ax1
         else:
-            fig.tight_layout()
+            # fig.tight_layout()
             fig.show()
 
 
@@ -74,7 +74,7 @@ def histogram(array: np.array, n_bins: int = 100, n_ticks: int = 50, title: Opti
     ax1.bar(x=x, height=hist, width=width, color=color)
 
     if ax is None:
-        fig.tight_layout()
+        # fig.tight_layout()
         fig.show()
 
 
@@ -110,7 +110,7 @@ def bars(y: np.array, x: np.array = None, threshold: float = 0, title: Optional[
         if return_fig:
             return fig, ax1
         else:
-            fig.tight_layout()
+            # fig.tight_layout()
             fig.show()
 
 
@@ -141,7 +141,7 @@ def area(y1: np.array, y2: np.array, x: np.array = None, title: Optional[str] = 
         if return_fig:
             return fig, ax1
         else:
-            fig.tight_layout()
+            # fig.tight_layout()
             fig.show()
 
 
@@ -160,7 +160,7 @@ def cmap_gradient(cmap, n_segments: int = 101, n_ticks: int = 51):
     plt.xticks(ticks=ticks, labels=labels)
     [lbl.set_rotation(45) for lbl in ax.get_xticklabels()]
 
-    fig.tight_layout()
+    # fig.tight_layout()
     fig.show()
 
 
