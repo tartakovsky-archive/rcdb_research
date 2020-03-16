@@ -131,7 +131,7 @@ def trading_report(trades: Trades, show_dates: bool = False):
     percent_fill_style.percent = True
     percent_fill_style.fill = True
 
-    primitives.curve(trades.metrics.cum_equity_change_pct(),
+    primitives.curve(trades.metrics.cum_return(),
                      title='Cumulative return over bars',
                      ylabel='Gain',
                      style=percent_fill_style,
@@ -149,7 +149,7 @@ def trading_report(trades: Trades, show_dates: bool = False):
     if show_dates:
         primitives.second_index(ax1, _datestring(trades.index))
 
-    primitives.curve(trades.metrics.equity_change_pct(),
+    primitives.curve(trades.metrics.returns(),
                      ylabel='Returns',
                      style=percent_style,
                      pos_color=blue,
@@ -240,6 +240,7 @@ def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
 
     plt.tight_layout()
     plt.show()
+
 
 
 #######
