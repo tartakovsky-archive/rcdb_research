@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import NamedTuple, List
+from typing import NamedTuple
 
 from enum import Enum
 

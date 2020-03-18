@@ -27,8 +27,13 @@ class Context(NamedTuple):
     def tell_me_a_story(self) -> str:
         position_pre_trade = self.account_pre_trade.portfolio.position
         position_post_trade = self.account_post_trade.portfolio.position
-        change_strs = '\n            '.join(
-            [f'size={c.size:.4f}, price=${c.avg_price:.3f}, fee=${c.fee:.4f}, slippage=${c.slippage:.3f}' for c in self.changes])
+        change_strs = '\n            '.join([
+            f'size={c.size:.4f}, '
+            f'price=${c.avg_price:.3f}, '
+            f'fee=${c.fee:.4f}, '
+            f'slippage=${c.slippage:.3f}' for c in self.changes
+        ])
+
         story = f"""----- New bar -----
 
         Bid = ${self.bidask.bid:.2f}, Ask = ${self.bidask.ask:.2f}
@@ -191,4 +196,10 @@ class TradingSimulator:
         exposure = np.array([c.account_pre_trade.metrics.exposure for c in contexts])
         unrealized_pnl = np.array([c.account_pre_trade.metrics.pnl_after_fees for c in contexts])
 
-        return Trades(balance=balance, exposure=exposure, unrealized_pnl=unrealized_pnl, context=contexts, index=df.index)
+        return Trades(
+            balance=balance,
+            exposure=exposure,
+            unrealized_pnl=unrealized_pnl,
+            context=contexts,
+            index=df.index
+        )

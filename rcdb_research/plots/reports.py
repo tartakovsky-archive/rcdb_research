@@ -1,17 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-from matplotlib.lines import Line2D
 import matplotlib.ticker as ticker
 
 from copy import deepcopy
-from typing import Union
 
 from . import primitives
 from .style import Style, colormap
 from ..simulation import Probabilities, Predictions, Trades
 from ..simulation import PredictionSimulator
-    
+
 
 def proba_report(probas: Probabilities, n_bins: int = 40, show_dates: bool = False):
     style = Style(fig_size=(16, 8))
@@ -62,10 +59,8 @@ def preds_report(preds: Predictions, window: int, threshold: float = 0.5, show_d
 
     precision = preds.metrics.precision(window=window, dense=True).fillna(threshold)
 
-    h_pad = None
     if show_dates:
         style = Style(fig_size=(16, 7))
-        h_pad = 4
 
     fig, axes = plt.subplots(2, 1,
                              figsize=style.fig_size, facecolor="w",
@@ -236,7 +231,6 @@ def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
     [lbl.set_rotation(45) for lbl in ax.get_xticklabels()]
 
     fig.show()
-
 
 
 #######
