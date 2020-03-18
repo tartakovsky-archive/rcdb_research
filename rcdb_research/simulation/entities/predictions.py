@@ -3,8 +3,7 @@ from typing import Union, Callable, Optional
 
 import numpy as np
 import pandas as pd
-
-from ...numpy_ext import rolling_apply
+from numpy_ext import rolling_apply
 
 
 class Predictions:
