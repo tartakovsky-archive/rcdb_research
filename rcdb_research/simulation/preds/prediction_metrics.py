@@ -4,7 +4,7 @@ import weakref
 import numpy as np
 import pandas as pd
 
-from ...numpy_ext import rolling_apply
+import numpy_ext as npext
 from .predictions import Predictions
 
 
@@ -58,7 +58,7 @@ class PredictionMetrics:
         if window is None:
             sc = score_fn(y_true, y_pred, self.direction, self.labels)
         else:
-            sc = rolling_apply(score_fn, window, y_true, y_pred, direction=self.direction, labels=self.labels)
+            sc = npext.rolling_apply(score_fn, window, y_true, y_pred, direction=self.direction, labels=self.labels)
 
         if type(sc) is np.ndarray:
             return (sc, index) if raw else pd.Series(sc, index=index)

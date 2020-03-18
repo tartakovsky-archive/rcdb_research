@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 import numpy as np
-from ...numpy_ext import fill_na
+import numpy_ext as npext
 import pandas as pd
 
 
@@ -115,14 +115,14 @@ class TradingMetrics:
     def returns_abs(self, raw: bool = False) -> Union[pd.Series, tuple]:
         equity, index = self.equity(raw=True)
         change = np.diff(equity)
-        change = fill_na(np.insert(change, 0, 0), 0)
+        change = npext.fill_na(np.insert(change, 0, 0), 0)
 
         return (change, index) if raw else pd.Series(change, index=index)
 
     def returns(self, raw: bool = False) -> Union[pd.Series, tuple]:
         equity, index = self.equity(raw=True)
         change = np.diff(equity) / equity[:-1]
-        change = fill_na(np.insert(change, 0, 0), 0)
+        change = npext.fill_na(np.insert(change, 0, 0), 0)
 
         return (change, index) if raw else pd.Series(change, index=index)
 
