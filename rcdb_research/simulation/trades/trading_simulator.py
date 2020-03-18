@@ -37,16 +37,16 @@ class Context(NamedTuple):
         story = f"""----- New bar -----
 
         Bid = ${self.bidask.bid:.2f}, Ask = ${self.bidask.ask:.2f}
-        
+
         Current position:
             size = {position_pre_trade.size if position_pre_trade is not None else 0:.2f}
             avg_price = ${position_pre_trade.avg_price if position_pre_trade is not None else 0:.3f}
-        
+
         Current account:
             balance = ${self.account_pre_trade.balance:.2f}
             exposure = {self.account_pre_trade.metrics.exposure:.4f}
             unrealized PnL = ${self.account_pre_trade.metrics.pnl_after_fees:.2f} (after fees)
-        
+
         Predicted proba = {self.proba}
         Desired position:
             size = {self.position_desired.size if self.position_desired is not None else 0:.2f}

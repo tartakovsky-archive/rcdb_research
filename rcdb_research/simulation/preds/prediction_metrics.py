@@ -41,7 +41,7 @@ class PredictionMetrics:
         :param window: rolling window size, if is not None, score calculates on rolling window
         :param dense: drop zeroes from the array when True
         :param raw: if True returns a tuple of np.ndarray and index, otherwise pd.Series
-        :return:    
+        :return:
         """
 
         index = self.preds.index

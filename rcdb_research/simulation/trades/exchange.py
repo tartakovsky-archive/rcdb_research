@@ -31,10 +31,22 @@ class BidAsk(NamedTuple):
 
 
 class Pairs(Enum):
-    btcusd = Pair(base=Currency(name='Bitcoin', symbol='BTC'), quote=Currency(name='United States Dollar', symbol='USD'))
-    xbtusd = Pair(base=Currency(name='Bitcoin', symbol='XBT'), quote=Currency(name='United States Dollar', symbol='USD'))
-    ethusd = Pair(base=Currency(name='Ethereum', symbol='ETH'), quote=Currency(name='United States Dollar', symbol='USD'))
-    ethbtc = Pair(base=Currency(name='Ethereum', symbol='ETH'), quote=Currency(name='Bitcoin', symbol='BTC'))
+    btcusd = Pair(
+        base=Currency(name='Bitcoin', symbol='BTC'),
+        quote=Currency(name='United States Dollar', symbol='USD')
+    )
+    xbtusd = Pair(
+        base=Currency(name='Bitcoin', symbol='XBT'),
+        quote=Currency(name='United States Dollar', symbol='USD')
+    )
+    ethusd = Pair(
+        base=Currency(name='Ethereum', symbol='ETH'),
+        quote=Currency(name='United States Dollar', symbol='USD')
+    )
+    ethbtc = Pair(
+        base=Currency(name='Ethereum', symbol='ETH'),
+        quote=Currency(name='Bitcoin', symbol='BTC')
+    )
 
 
 class Costs(NamedTuple):
