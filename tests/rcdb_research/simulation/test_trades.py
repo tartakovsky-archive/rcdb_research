@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from rcdb_research.simulation import Trades
+from rcdb_research.simulation import TradesOld
 
 from .test_converter import raises
 
@@ -18,7 +18,7 @@ TRADES_INDEX = pd.DatetimeIndex([
 
 @pytest.fixture()
 def trades():
-    return Trades(
+    return TradesOld(
         directions=np.array([0, 0, 0, 0, 0, 1, 0, -1, -1, 0]),
         changes=np.array([0.0, 0.0, 0.0, 0.0, 0.0, 100, 0.0, -10, 10, 0.0]),
         fees=np.array([0.0, 0.0, 0.0, 0.0, 0.0, -1, 0.0, -0.1, -0.1, 0.0]),
@@ -125,6 +125,6 @@ def test_Trades_init_validation(trades, input_name):
     params[input_name] = params[input_name][:-1]
 
     raises(
-        lambda: Trades(**params),
+        lambda: TradesOld(**params),
         f'{input_name}.size is not equal to index.size'
     )

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 import numpy as np
@@ -5,15 +7,19 @@ import pandas as pd
 from typing import Optional
 
 
+# TODO: Refactor Probabilities / Predictions models to NamedTuples / DataClasses
 class Probabilities:
     """
     Class for storing predicted probabilities of ML models
     """
+
     ############
     # Initialization
     ############
 
-    def __init__(self, y_true: np.array, y_pred_proba: np.array, index: np.array = None):
+    def __init__(self, y_true: np.ndarray, y_pred_proba: np.ndarray, index: np.ndarray = None):
+        # Located here to avoid circular import: ProbabilityMetrics -> Probabilities -> ProbabilityMetrics -> ...
+        from .probability_metrics import ProbabilityMetrics
 
         if index is not None:
             index = index.copy()
@@ -36,7 +42,40 @@ class Probabilities:
         self.y_pred_proba = y_pred_proba
         self.index = index
 
-    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> 'Probabilities':
+        self.metrics = ProbabilityMetrics(self)
+
+    ############
+    # Public methods
+    ############
+    def head(self, n: int) -> Probabilities:
+        """
+        Returns copy of Probabilities with first n items
+        :param n: number of first items
+        :return:
+        """
+        new_probas = Probabilities(
+            y_true=self.y_true[:n],
+            y_pred_proba=self.y_pred_proba[:n],
+            index=self.index[:n]
+        )
+
+        return new_probas
+
+    def tail(self, n: int) -> Probabilities:
+        """
+        Returns copy of Probabilities with last n items
+        :param n: number of last items
+        :return:
+        """
+        new_probas = Probabilities(
+            y_true=self.y_true[-n:],
+            y_pred_proba=self.y_pred_proba[-n:],
+            index=self.index[-n:]
+        )
+
+        return new_probas
+
+    def in_date_range(self, date_start: Optional[str] = None, date_end: Optional[str] = None) -> Probabilities:
         """
         Returns copy of Probabilities with items with indexes between date_start and date_end
         :param date_start: Date to drop observations before
@@ -56,8 +95,10 @@ class Probabilities:
         sub_y_true = self.y_true[np.isin(self.index, sub_index)]
         sub_y_pred_proba = self.y_pred_proba[np.isin(self.index, sub_index)]
 
-        return Probabilities(
+        new_probas = Probabilities(
             y_true=sub_y_true,
             y_pred_proba=sub_y_pred_proba,
             index=sub_index,
         )
+
+        return new_probas
