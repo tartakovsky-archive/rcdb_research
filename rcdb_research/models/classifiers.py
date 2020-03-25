@@ -5,7 +5,6 @@ from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import VotingClassifier
-import sklearn
 
 
 class ThresholdClassifier(BaseEstimator, ClassifierMixin):
@@ -105,7 +104,7 @@ def LGBMClassifierEnsemble(params, n_seeds=1, initial_seed=1): # noqa
         'random_seeds': np.random.randint(2**15, size=n_seeds),
         'type': 'lgbm'
     })
-    ensemble = sklearn.ensemble.VotingClassifier(voting='soft', estimators=[
+    ensemble = VotingClassifier(voting='soft', estimators=[
         ('gbdt', get_classifier({
             **common_config,
             'boosting': 'gbdt',
