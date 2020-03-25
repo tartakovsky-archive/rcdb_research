@@ -1,1 +1,1 @@
-from .classifiers import get_classifier, ThresholdClassifier, QuantileClassifier, KerasToRcdbPipelineWrapper  # noqa
+from .classifiers import get_classifier, LGBMClassifierEnsemble, ThresholdClassifier, QuantileClassifier, KerasToRcdbPipelineWrapper  # noqa
