@@ -98,6 +98,31 @@ class KerasToRcdbPipelineWrapper:
         return {"params": self.params}
 
 
+def LGBMClassifierEnsemble(params, n_seeds=1, initial_seed=1): # noqa
+    np.random.seed(initial_seed)
+    common_config = params.copy()
+    common_config.update({
+        'random_seeds': np.random.randint(2**15, size=n_seeds),
+        'type': 'lgbm'
+    })
+    ensemble = sklearn.ensemble.VotingClassifier(voting='soft', estimators=[
+        ('gbdt', get_classifier({
+            **common_config,
+            'boosting': 'gbdt',
+        })),
+        ('rf', get_classifier({
+            **common_config,
+            'boosting': 'rf',
+        })),
+        ('goss', get_classifier({
+            **common_config,
+            'boosting': 'goss',
+            'bagging_fraction': 1,
+        })),
+    ])
+    return ensemble
+
+
 def get_classifier(p):
     params = p.copy()
 
