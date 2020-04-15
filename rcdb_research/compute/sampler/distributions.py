@@ -165,7 +165,7 @@ class TruncatedNormal(Distribution):
     high: float
     loc: float
     scale: float
-    
+
     seed: int = None
 
     def __post_init__(self):
