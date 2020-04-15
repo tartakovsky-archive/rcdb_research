@@ -80,8 +80,8 @@ class QuantizedLogUniform(Distribution):
 
 @dataclass
 class DiscreteUniform(Distribution):
-    start: int
-    end: int
+    low: int
+    high: int
     step: int = 1
     seed: int = None
 
@@ -89,7 +89,7 @@ class DiscreteUniform(Distribution):
         self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int = 1) -> Union[np.ndarray, int]:
-        values = np.arange(self.start, self.end, self.step)
+        values = np.arange(self.low, self.high, self.step)
         draw = self.rs.choice(values, n)
         return draw[0] if n == 1 else draw
 
@@ -99,37 +99,37 @@ class DiscreteUniform(Distribution):
 ##########
 @dataclass
 class Normal(Distribution):
-    mean: float
-    std: float
+    loc: float
+    scale: float
     seed: int = None
 
     def __post_init__(self):
         self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.normal(self.mean, self.std, n)
+        draw = self.rs.normal(self.loc, self.scale, n)
         return draw[0] if n == 1 else draw
 
 
 @dataclass
 class LogNormal(Distribution):
-    mean: float
-    std: float
+    loc: float
+    scale: float
     seed: int = None
 
     def __post_init__(self):
         self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.normal(self.mean, self.std, n)
+        draw = self.rs.normal(self.loc, self.scale, n)
         draw = np.exp(draw)
         return draw[0] if n == 1 else draw
 
 
 @dataclass
 class QuantizedNormal(Distribution):
-    mean: float
-    std: float
+    loc: float
+    scale: float
     q: float
     seed: int = None
 
@@ -137,15 +137,15 @@ class QuantizedNormal(Distribution):
         self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.normal(self.mean, self.std, n)
+        draw = self.rs.normal(self.loc, self.scale, n)
         draw = np.round(draw / self.q) * self.q
         return draw[0] if n == 1 else draw
 
 
 @dataclass
 class QuantizedLogNormal(Distribution):
-    mean: float
-    std: float
+    loc: float
+    scale: float
     q: float
     seed: int = None
 
@@ -153,7 +153,7 @@ class QuantizedLogNormal(Distribution):
         self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.normal(self.mean, self.std, n)
+        draw = self.rs.normal(self.loc, self.scale, n)
         draw = np.exp(draw)
         draw = np.round(draw / self.q) * self.q
         return draw[0] if n == 1 else draw
@@ -161,19 +161,20 @@ class QuantizedLogNormal(Distribution):
 
 @dataclass
 class TruncatedNormal(Distribution):
-    mean: float
-    std: float
-    start: float
-    end: float
+    low: float
+    high: float
+    loc: float
+    scale: float
+    
     seed: int = None
 
     def __post_init__(self):
         self.rs = np.random.RandomState(self.seed)
         self.distribution = stats.truncnorm(
-            (self.start - self.mean) / self.std,
-            (self.end - self.mean) / self.std,
-            loc=self.mean,
-            scale=self.std
+            (self.low - self.loc) / self.scale,
+            (self.high - self.loc) / self.scale,
+            loc=self.loc,
+            scale=self.scale
         )
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
@@ -183,20 +184,29 @@ class TruncatedNormal(Distribution):
 
 @dataclass
 class DiscreteNormal(Distribution):
-    start: int
-    end: int
+    low: int = -100
+    high: int = 100
+    loc: float = None
+    scale: float = None
     step: int = 1
     seed: int = None
 
     def __post_init__(self):
         self.rs = np.random.RandomState(self.seed)
+        if self.loc is None:
+            self.loc = (self.high + self.low) / 2
+        if self.scale is None:
+            self.scale = (self.high - self.low) / 7  # why 7 works? replace with something locingful
 
     def sample(self, n: int = 1) -> Union[np.ndarray, int]:
-        x = np.arange(self.start, self.end, self.step)
+        # based on https://stackoverflow.com/a/37412692
+        x = np.arange(self.low, self.high, self.step)
 
         x_upper = x + 0.5
         x_lower = x - 0.5
-        prob = stats.norm.cdf(x_upper, scale=3) - stats.norm.cdf(x_lower, scale=3)
+        p_upper = stats.norm.cdf(x_upper, loc=self.loc, scale=self.scale)
+        p_lower = stats.norm.cdf(x_lower, loc=self.loc, scale=self.scale)
+        prob = p_upper - p_lower
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
 
         draw = self.rs.choice(x, n, p=prob)
