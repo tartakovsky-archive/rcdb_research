@@ -48,8 +48,10 @@ class Uniform(Distribution):
     high: float
     seed: int = None
 
+    def __post_init__(self):
+        self.rs = np.random.RandomState(self.seed)
+
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
         draw = self.rs.uniform(self.low, self.high, n)
         return draw[0] if n == 1 else draw
 
@@ -60,8 +62,10 @@ class LogUniform(Distribution):
     high: float
     seed: int = None
 
+    def __post_init__(self):
+        self.rs = np.random.RandomState(self.seed)
+
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
         draw = self.rs.uniform(self.low, self.high, n)
         draw = np.exp(draw)
         return draw[0] if n == 1 else draw
@@ -74,8 +78,10 @@ class QuantizedUniform(Distribution):
     q: float
     seed: int = None
 
+    def __post_init__(self):
+        self.rs = np.random.RandomState(self.seed)
+
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
         draw = self.rs.uniform(self.low, self.high, n)
         draw = np.round(draw / self.q) * self.q
         return draw[0] if n == 1 else draw
@@ -88,8 +94,10 @@ class QuantizedLogUniform(Distribution):
     q: float
     seed: int = None
 
+    def __post_init__(self):
+        self.rs = np.random.RandomState(self.seed)
+
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
         draw = self.rs.uniform(self.low, self.high, n)
         draw = np.exp(draw)
         draw = np.round(draw / self.q) * self.q
@@ -105,8 +113,10 @@ class Normal(Distribution):
     std: float
     seed: int = None
 
+    def __post_init__(self):
+        self.rs = np.random.RandomState(self.seed)
+
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
         draw = self.rs.normal(self.mean, self.std, n)
         return draw[0] if n == 1 else draw
 
@@ -117,8 +127,10 @@ class LogNormal(Distribution):
     std: float
     seed: int = None
 
+    def __post_init__(self):
+        self.rs = np.random.RandomState(self.seed)
+
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
         draw = self.rs.normal(self.mean, self.std, n)
         draw = np.exp(draw)
         return draw[0] if n == 1 else draw
@@ -131,8 +143,10 @@ class QuantizedNormal(Distribution):
     q: float
     seed: int = None
 
+    def __post_init__(self):
+        self.rs = np.random.RandomState(self.seed)
+
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
         draw = self.rs.normal(self.mean, self.std, n)
         draw = np.round(draw / self.q) * self.q
         return draw[0] if n == 1 else draw
@@ -145,8 +159,10 @@ class QuantizedLogNormal(Distribution):
     q: float
     seed: int = None
 
+    def __post_init__(self):
+        self.rs = np.random.RandomState(self.seed)
+
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
         draw = self.rs.normal(self.mean, self.std, n)
         draw = np.exp(draw)
         draw = np.round(draw / self.q) * self.q
@@ -192,4 +208,3 @@ class Sampler:
     def qlognormal(mean: float, std: float, q: float = 0.0001, seed: int = None) -> QuantizedLogNormal:
         return QuantizedLogNormal(mean=mean, std=std, q=q, seed=seed)
 
-# Sampler.duniform(0, 10).sample(2)
