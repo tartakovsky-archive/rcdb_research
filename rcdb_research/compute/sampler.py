@@ -158,38 +158,38 @@ class Sampler:
     # Uniform
     ##########
     @staticmethod
-    def uniform(low: float, high: float) -> Uniform:
-        return Uniform(low=low, high=high)
+    def uniform(low: float, high: float, seed: int = None) -> Uniform:
+        return Uniform(low=low, high=high, seed=seed)
 
     @staticmethod
-    def loguniform(low: float, high: float) -> LogUniform:
-        return LogUniform(low=low, high=high)
+    def loguniform(low: float, high: float, seed: int = None) -> LogUniform:
+        return LogUniform(low=low, high=high, seed=seed)
 
     @staticmethod
-    def quniform(low: float, high: float, q: float = 0.0001) -> QuantizedUniform:
-        return QuantizedUniform(low=low, high=high, q=q)
+    def quniform(low: float, high: float, q: float = 0.0001, seed: int = None) -> QuantizedUniform:
+        return QuantizedUniform(low=low, high=high, q=q, seed=seed)
 
     @staticmethod
-    def qloguniform(low: float, high: float, q: float = 0.0001) -> QuantizedLogUniform:
-        return QuantizedLogUniform(low=low, high=high, q=q)
+    def qloguniform(low: float, high: float, q: float = 0.0001, seed: int = None) -> QuantizedLogUniform:
+        return QuantizedLogUniform(low=low, high=high, q=q, seed=seed)
 
     ##########
     # Normal
     ##########
     @staticmethod
-    def normal(mean: float, std: float) -> Normal:
-        return Normal(mean=mean, std=std)
+    def normal(mean: float, std: float, seed: int = None) -> Normal:
+        return Normal(mean=mean, std=std, seed=seed)
 
     @staticmethod
-    def lognormal(mean: float, std: float) -> LogNormal:
-        return LogNormal(mean=mean, std=std)
+    def lognormal(mean: float, std: float, seed: int = None) -> LogNormal:
+        return LogNormal(mean=mean, std=std, seed=seed)
 
     @staticmethod
-    def qnormal(mean: float, std: float, q: float = 0.0001) -> QuantizedNormal:
-        return QuantizedNormal(mean=mean, std=std, q=q)
+    def qnormal(mean: float, std: float, q: float = 0.0001, seed: int = None) -> QuantizedNormal:
+        return QuantizedNormal(mean=mean, std=std, q=q, seed=seed)
 
     @staticmethod
-    def qlognormal(mean: float, std: float, q: float = 0.0001) -> QuantizedLogNormal:
-        return QuantizedLogNormal(mean=mean, std=std, q=q)
+    def qlognormal(mean: float, std: float, q: float = 0.0001, seed: int = None) -> QuantizedLogNormal:
+        return QuantizedLogNormal(mean=mean, std=std, q=q, seed=seed)
 
 # Sampler.duniform(0, 10).sample(2)
