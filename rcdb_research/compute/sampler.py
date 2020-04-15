@@ -23,7 +23,8 @@ import numpy as np
 # Base class
 class Distribution:
     def sample(self, n: int) -> Union[np.ndarray, float, int]:
-        pass
+        raise NotImplementedError
+
 
 #
 # @dataclass
@@ -45,9 +46,11 @@ class Distribution:
 class Uniform(Distribution):
     low: float
     high: float
+    seed: int = None
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = np.random.uniform(self.low, self.high, n)
+        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
+        draw = self.rs.uniform(self.low, self.high, n)
         return draw[0] if n == 1 else draw
 
 
@@ -55,9 +58,11 @@ class Uniform(Distribution):
 class LogUniform(Distribution):
     low: float
     high: float
+    seed: int = None
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = np.random.uniform(self.low, self.high, n)
+        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
+        draw = self.rs.uniform(self.low, self.high, n)
         draw = np.exp(draw)
         return draw[0] if n == 1 else draw
 
@@ -67,9 +72,11 @@ class QuantizedUniform(Distribution):
     low: float
     high: float
     q: float
+    seed: int = None
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = np.random.uniform(self.low, self.high, n)
+        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
+        draw = self.rs.uniform(self.low, self.high, n)
         draw = np.round(draw / self.q) * self.q
         return draw[0] if n == 1 else draw
 
@@ -79,9 +86,11 @@ class QuantizedLogUniform(Distribution):
     low: float
     high: float
     q: float
+    seed: int = None
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = np.random.uniform(self.low, self.high, n)
+        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
+        draw = self.rs.uniform(self.low, self.high, n)
         draw = np.exp(draw)
         draw = np.round(draw / self.q) * self.q
         return draw[0] if n == 1 else draw
@@ -94,9 +103,11 @@ class QuantizedLogUniform(Distribution):
 class Normal(Distribution):
     mean: float
     std: float
+    seed: int = None
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = np.random.normal(self.mean, self.std, n)
+        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
+        draw = self.rs.normal(self.mean, self.std, n)
         return draw[0] if n == 1 else draw
 
 
@@ -104,9 +115,11 @@ class Normal(Distribution):
 class LogNormal(Distribution):
     mean: float
     std: float
+    seed: int = None
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = np.random.normal(self.mean, self.std, n)
+        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
+        draw = self.rs.normal(self.mean, self.std, n)
         draw = np.exp(draw)
         return draw[0] if n == 1 else draw
 
@@ -116,9 +129,11 @@ class QuantizedNormal(Distribution):
     mean: float
     std: float
     q: float
+    seed: int = None
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = np.random.normal(self.mean, self.std, n)
+        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
+        draw = self.rs.normal(self.mean, self.std, n)
         draw = np.round(draw / self.q) * self.q
         return draw[0] if n == 1 else draw
 
@@ -128,9 +143,11 @@ class QuantizedLogNormal(Distribution):
     mean: float
     std: float
     q: float
+    seed: int = None
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = np.random.normal(self.mean, self.std, n)
+        self.rs = getattr(self, 'rs', np.random.RandomState(self.seed))
+        draw = self.rs.normal(self.mean, self.std, n)
         draw = np.exp(draw)
         draw = np.round(draw / self.q) * self.q
         return draw[0] if n == 1 else draw
