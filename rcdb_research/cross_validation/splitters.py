@@ -50,10 +50,17 @@ class EmbargoedKFoldSplitterWithTainting(BaseCrossValidator):
 
     @staticmethod
     def embargo_splits(splits: Splits, embargo: int) -> Splits:
-        _splits = [
-            (train[embargo:], test)
-            for train, test in splits[:-1]
-        ]
+        for train, test in splits[:-1]:
+            after_test = train > test[-1]
+            before_test = ~after_test
+        
+            if np.sum(before_test):
+                train = np.hstack((train[before_test], train[after_test][embargo:]))
+            else:
+                train = train[embargo:]
+                
+            _splits.append((train, test))
+        
         _splits.append(splits[-1])
         return _splits
 
