@@ -8,7 +8,11 @@ import scipy.stats as stats
 
 
 # Base class
+@dataclass
 class Distribution:
+    def __post_init__(self):
+        self.rs = np.random.RandomState(self.seed)
+
     def sample(self, n: int) -> Union[np.ndarray, float, int]:
         raise NotImplementedError
 
@@ -22,9 +26,6 @@ class Uniform(Distribution):
     high: float
     seed: int = None
 
-    def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
-
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.uniform(self.low, self.high, n)
         return draw[0] if n == 1 else draw
@@ -35,9 +36,6 @@ class LogUniform(Distribution):
     low: float
     high: float
     seed: int = None
-
-    def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.uniform(self.low, self.high, n)
@@ -52,9 +50,6 @@ class QuantizedUniform(Distribution):
     q: float
     seed: int = None
 
-    def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
-
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.uniform(self.low, self.high, n)
         draw = np.round(draw / self.q) * self.q
@@ -67,9 +62,6 @@ class QuantizedLogUniform(Distribution):
     high: float
     q: float
     seed: int = None
-
-    def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.uniform(self.low, self.high, n)
@@ -84,9 +76,6 @@ class DiscreteUniform(Distribution):
     high: int
     step: int = 1
     seed: int = None
-
-    def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int = 1) -> Union[np.ndarray, int]:
         values = np.arange(self.low, self.high, self.step)
@@ -103,9 +92,6 @@ class Normal(Distribution):
     scale: float
     seed: int = None
 
-    def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
-
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.normal(self.loc, self.scale, n)
         return draw[0] if n == 1 else draw
@@ -116,9 +102,6 @@ class LogNormal(Distribution):
     loc: float
     scale: float
     seed: int = None
-
-    def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.normal(self.loc, self.scale, n)
@@ -133,9 +116,6 @@ class QuantizedNormal(Distribution):
     q: float
     seed: int = None
 
-    def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
-
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.normal(self.loc, self.scale, n)
         draw = np.round(draw / self.q) * self.q
@@ -148,9 +128,6 @@ class QuantizedLogNormal(Distribution):
     scale: float
     q: float
     seed: int = None
-
-    def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.normal(self.loc, self.scale, n)
@@ -169,7 +146,7 @@ class TruncatedNormal(Distribution):
     seed: int = None
 
     def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
+        super().__post_init__()
         self.distribution = stats.truncnorm(
             (self.low - self.loc) / self.scale,
             (self.high - self.loc) / self.scale,
@@ -192,7 +169,7 @@ class DiscreteNormal(Distribution):
     seed: int = None
 
     def __post_init__(self):
-        self.rs = np.random.RandomState(self.seed)
+        super().__post_init__()
         if self.loc is None:
             self.loc = (self.high + self.low) / 2
         if self.scale is None:
