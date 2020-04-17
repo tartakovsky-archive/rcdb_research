@@ -15,3 +15,9 @@ def ax_kwargs(titlesize: int = 15, labelsize: int = 14, ticksize: int = 14,
 
 
 def line_kwargs(linewidth: int = 2, marker: Optional[str] = None) -> dict: return locals()
+
+
+def suptitle_kwargs(fontsize=16, **kwargs) -> dict:
+    params = locals()
+    del params['kwargs']
+    return {**params, **kwargs}

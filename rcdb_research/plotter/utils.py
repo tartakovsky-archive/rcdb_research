@@ -63,3 +63,7 @@ def configure_axis(ax, title='', xlabel='', ylabel='',
         tick.set_fontfamily(ax_kwargs['fontfamily'])
 
     [lbl.set_rotation(ax_kwargs['tickrotation']) for lbl in ax.get_xticklabels()]
+
+
+def datestring(index_array: np.array):
+    return [d.strftime('%Y-%m-%d') for d in index_array]
