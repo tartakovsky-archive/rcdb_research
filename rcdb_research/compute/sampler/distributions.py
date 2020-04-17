@@ -11,6 +11,7 @@ import scipy.stats as stats
 @dataclass
 class Distribution:
     def __post_init__(self):
+        self.seed = getattr(self, 'seed', None)
         self.rs = np.random.RandomState(self.seed)
 
     def sample(self, n: int) -> Union[np.ndarray, float, int]:
