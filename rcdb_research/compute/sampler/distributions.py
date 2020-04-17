@@ -7,6 +7,12 @@ import numpy as np
 import scipy.stats as stats
 
 
+class Sampler: pass  # noqa
+def register(c):     # noqa
+    setattr(Sampler, c.abbrev, c)
+    return c
+
+
 # Base class
 @dataclass
 class Distribution:
@@ -21,22 +27,26 @@ class Distribution:
 ##########
 # Uniform
 ##########
+@register
 @dataclass
 class Uniform(Distribution):
     low: float
     high: float
     seed: int = None
+    abbrev = 'uniform'
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.uniform(self.low, self.high, n)
         return draw[0] if n == 1 else draw
 
 
+@register
 @dataclass
 class LogUniform(Distribution):
     low: float
     high: float
     seed: int = None
+    abbrev = 'loguniform'
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.uniform(self.low, self.high, n)
@@ -44,12 +54,14 @@ class LogUniform(Distribution):
         return draw[0] if n == 1 else draw
 
 
+@register
 @dataclass
 class QuantizedUniform(Distribution):
     low: float
     high: float
     q: float
     seed: int = None
+    abbrev = 'quniform'
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.uniform(self.low, self.high, n)
@@ -57,12 +69,14 @@ class QuantizedUniform(Distribution):
         return draw[0] if n == 1 else draw
 
 
+@register
 @dataclass
 class QuantizedLogUniform(Distribution):
     low: float
     high: float
     q: float
     seed: int = None
+    abbrev = 'qloguniform'
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.uniform(self.low, self.high, n)
@@ -71,12 +85,14 @@ class QuantizedLogUniform(Distribution):
         return draw[0] if n == 1 else draw
 
 
+@register
 @dataclass
 class DiscreteUniform(Distribution):
     low: int
     high: int
     step: int = 1
     seed: int = None
+    abbrev = 'duniform'
 
     def sample(self, n: int = 1) -> Union[np.ndarray, int]:
         values = np.arange(self.low, self.high, self.step)
@@ -87,22 +103,26 @@ class DiscreteUniform(Distribution):
 ##########
 # Normal
 ##########
+@register
 @dataclass
 class Normal(Distribution):
     loc: float
     scale: float
     seed: int = None
+    abbrev = 'normal'
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.normal(self.loc, self.scale, n)
         return draw[0] if n == 1 else draw
 
 
+@register
 @dataclass
 class LogNormal(Distribution):
     loc: float
     scale: float
     seed: int = None
+    abbrev = 'lognormal'
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.normal(self.loc, self.scale, n)
@@ -110,12 +130,14 @@ class LogNormal(Distribution):
         return draw[0] if n == 1 else draw
 
 
+@register
 @dataclass
 class QuantizedNormal(Distribution):
     loc: float
     scale: float
     q: float
     seed: int = None
+    abbrev = 'qnormal'
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.normal(self.loc, self.scale, n)
@@ -123,12 +145,14 @@ class QuantizedNormal(Distribution):
         return draw[0] if n == 1 else draw
 
 
+@register
 @dataclass
 class QuantizedLogNormal(Distribution):
     loc: float
     scale: float
     q: float
     seed: int = None
+    abbrev = 'qlognormal'
 
     def sample(self, n: int = 1) -> Union[np.ndarray, float]:
         draw = self.rs.normal(self.loc, self.scale, n)
@@ -137,6 +161,7 @@ class QuantizedLogNormal(Distribution):
         return draw[0] if n == 1 else draw
 
 
+@register
 @dataclass
 class TruncatedNormal(Distribution):
     low: float
@@ -145,6 +170,7 @@ class TruncatedNormal(Distribution):
     scale: float
 
     seed: int = None
+    abbrev = 'truncnormal'
 
     def __post_init__(self):
         super().__post_init__()
@@ -160,6 +186,7 @@ class TruncatedNormal(Distribution):
         return draw[0] if n == 1 else draw
 
 
+@register
 @dataclass
 class DiscreteNormal(Distribution):
     low: int = -100
@@ -168,6 +195,7 @@ class DiscreteNormal(Distribution):
     scale: float = None
     step: int = 1
     seed: int = None
+    abbrev = 'dnormal'
 
     def __post_init__(self):
         super().__post_init__()
