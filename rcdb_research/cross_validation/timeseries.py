@@ -72,6 +72,8 @@ class WalkForwardCV(BaseCrossValidator):
         self.gap_size = gap_size
         self.expanding = expanding
         self.is_fixed = is_fixed
+        
+        self.last_n_gap_size = None
 
     def get_n_splits(self, X=None, y=None, groups=None):
         """
@@ -166,7 +168,9 @@ class WalkForwardCV(BaseCrossValidator):
 
         (n_wf_split, n_train, n_gap, n_test)\
             = self._calculate_sizes_fixed(n_samples) if self.is_fixed else self._calculate_sizes(n_samples)
-
+        
+        self.last_n_gap_size = n_gap
+        
         if n_test <= 0 or n_train <= 0:
             raise ValueError(
                 f"Couldn't build splits(n_train={n_train}, n_test={n_test}). "
