@@ -11,8 +11,8 @@ from .. import style
 from .. import utils
 
 
-def threshold_colors(activity: str = 'deepskyblue',
-                     precision: str = 'tomato', ) -> dict: return locals()
+def threshold_colors(activity: str = '#49b4f2',
+                     precision: str = '#f27549', ) -> dict: return locals()
 
 
 def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
@@ -21,8 +21,11 @@ def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
                      ax_kwargs: Optional[dict] = None, line_kwargs: Optional[dict] = None,
                      ):
     colors = colors or threshold_colors()
-    fig_kwargs = fig_kwargs or style.fig_kwargs()
-    ax_kwargs = ax_kwargs or style.ax_kwargs(tickrotation=45)
+    fig_kwargs = fig_kwargs or style.fig_kwargs(figsize=(16, 6))
+    ax_kwargs = ax_kwargs or style.ax_kwargs(
+        tickrotation=45,
+        yformatter=ticker.FormatStrFormatter('%.3f'),
+    )
     line_kwargs = line_kwargs or style.line_kwargs(marker='.')
 
     # Calculate threshold range, predictions and activities arrays
@@ -39,9 +42,8 @@ def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
     x_ticks = np.arange(len(x_labels))
 
     fig, ax = plt.subplots(1, 1, **fig_kwargs)
-    fig.suptitle("Threshold report", x=0.5, y=1.05, **style.suptitle_kwargs())
+    fig.suptitle("Threshold report", x=0.5, y=1.1, **style.suptitle_kwargs())
 
-    formatter = ticker.FormatStrFormatter('%.3f')
     ax2 = ax.twinx()
 
     primitives.line(precisions,
@@ -49,7 +51,7 @@ def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
                     ylabel='Precision',
                     legend='Precision',
                     colors={'main': colors['precision']},
-                    ax_kwargs=ax_kwargs,
+                    ax_kwargs={**ax_kwargs, 'ylocator': ticker.LinearLocator(20)},
                     line_kwargs=line_kwargs,
                     ax=ax)
 
@@ -58,7 +60,7 @@ def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
                     ylabel='Activity',
                     legend='Activity',
                     colors={'main': colors['activity']},
-                    ax_kwargs=ax_kwargs,
+                    ax_kwargs={**ax_kwargs, 'ylocator': ticker.LinearLocator(20)},
                     line_kwargs=line_kwargs,
                     ax=ax2)
 
@@ -74,7 +76,7 @@ def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
             ax.annotate(f'{p:.3f}',
                         xy=(x - 0.6, p + p_range * 0.03),
                         color=colors['precision'],
-                        # fontweight='bold',
+                        fontweight='bold',
                         fontfamily=ax_kwargs['fontfamily'])
 
     for (x, a) in zip(x_ticks, activities):
@@ -82,13 +84,8 @@ def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),
             ax2.annotate(f'{a:.3f}',
                          xy=(x - 0.6, a + a_range * 0.03),
                          color=colors['activity'],
-                         # fontweight='bold',
+                         fontweight='bold',
                          fontfamily=ax_kwargs['fontfamily'])
-
-    ax.yaxis.set_major_formatter(formatter)
-    ax.yaxis.set_major_locator(ticker.LinearLocator(20))
-    ax2.yaxis.set_major_formatter(formatter)
-    ax2.yaxis.set_major_locator(ticker.LinearLocator(20))
 
     # Setup axis spines
     ax.set_frame_on(True)

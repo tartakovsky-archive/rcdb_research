@@ -6,7 +6,7 @@ from .. import style
 from ..utils import configure_axis
 
 
-def bars_colors(pos: str = 'deepskyblue', neg: str = 'tomato') -> dict: return locals()
+def bars_colors(pos: str = '#49b4f2', neg: str = '#f27549') -> dict: return locals()
 
 
 def bars_legend(pos: Optional[str] = None, neg: Optional[str] = None) -> dict: return locals()

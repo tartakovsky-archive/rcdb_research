@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+from matplotlib import ticker
 from typing import Optional
 
 from .. import style
 from ..utils import configure_axis
 
 
-def hist_colors(bars: str = 'deepskyblue') -> dict: return locals()
+def hist_colors(main: str = '#49b4f2') -> dict: return locals()
 
 
 def hist(array: np.array, bins: int = 20, ticks=20,
@@ -19,7 +19,8 @@ def hist(array: np.array, bins: int = 20, ticks=20,
     colors = colors or hist_colors()
     fig_kwargs = fig_kwargs or style.fig_kwargs()
     ax_kwargs = ax_kwargs or style.ax_kwargs(tickrotation=45)
-    hist_kwargs = hist_kwargs or {}
+    _ = ax_kwargs.pop('xlocator')
+    hist_kwargs = hist_kwargs or style.hist_kwargs()
     _ = hist_kwargs.pop('color', None)
 
     fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
@@ -27,7 +28,7 @@ def hist(array: np.array, bins: int = 20, ticks=20,
 
     axis.xaxis.set_major_locator(ticker.MaxNLocator(ticks))
 
-    axis.hist(array, bins=bins, color=colors['bars'], **hist_kwargs)
+    axis.hist(array, bins=bins, color=colors['main'], **hist_kwargs)
 
     if ax is None:
         return fig, axis

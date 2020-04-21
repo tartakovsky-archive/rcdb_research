@@ -6,8 +6,8 @@ from .. import style
 from ..utils import configure_axis
 
 
-# def curve_colors(pos: str = '#49b4f2', neg: str = '#f27549') -> dict: return locals()
-def curve_colors(pos: str = 'deepskyblue', neg: str = 'tomato') -> dict: return locals()
+def curve_colors(pos: str = '#49b4f2', neg: str = '#f27549') -> dict: return locals()
+# def curve_colors(pos: str = 'deepskyblue', neg: str = 'tomato') -> dict: return locals()
 
 
 def curve_legend(pos: Optional[str] = None, neg: Optional[str] = None) -> dict: return locals()
@@ -19,7 +19,6 @@ def curve(y: np.array, x: np.array = None, threshold: float = 0, title: Optional
           fig_kwargs: Optional[dict] = None, ax_kwargs: Optional[dict] = None,
           line_kwargs: Optional[dict] = None,
           fill: bool = False, ax=None) -> Optional[tuple]:
-
     # Validate arguments
     colors = colors or curve_colors()
     legend = legend or curve_legend()
@@ -28,7 +27,7 @@ def curve(y: np.array, x: np.array = None, threshold: float = 0, title: Optional
     line_kwargs = line_kwargs or style.line_kwargs()
     _ = line_kwargs.pop('color', None)
     _ = line_kwargs.pop('label', None)
-    
+
     x = np.arange(y.size) if x is None else x
 
     fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
@@ -39,14 +38,14 @@ def curve(y: np.array, x: np.array = None, threshold: float = 0, title: Optional
         y_pos[_edges_of_nans(y_pos)] = threshold
         axis.plot(x, y_pos, color=colors['pos'], label=legend['pos'], **line_kwargs)
         if fill:
-            axis.fill_between(x, threshold, y_pos, facecolor=colors['pos'], alpha=0.5)
+            axis.fill_between(x, threshold, y_pos, facecolor=colors['pos'], alpha=0.65)
 
     if np.any(y < threshold):
         y_neg = np.where(y < threshold, y, np.nan)
         y_neg[_edges_of_nans(y_neg)] = threshold
         axis.plot(x, y_neg, color=colors['neg'], label=legend['neg'], **line_kwargs)
         if fill:
-            axis.fill_between(x, threshold, y_neg, facecolor=colors['neg'], alpha=0.5)
+            axis.fill_between(x, threshold, y_neg, facecolor=colors['neg'], alpha=0.65)
 
     if ax is None:
         return fig, axis

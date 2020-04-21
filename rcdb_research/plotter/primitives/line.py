@@ -6,7 +6,7 @@ from .. import style
 from ..utils import configure_axis
 
 
-def line_colors(main: str = 'deepskyblue') -> dict: return locals()
+def line_colors(main: str = '#49b4f2') -> dict: return locals()
 
 
 def line(y: np.array, x: np.array = None, title: Optional[str] = None,
@@ -29,8 +29,9 @@ def line(y: np.array, x: np.array = None, title: Optional[str] = None,
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     axis.plot(x, y, color=colors['main'], label=legend, **line_kwargs)
+
     if fill:
-        axis.fill_between(x, y, facecolor=colors['main'], alpha=0.5)
+        axis.fill_between(x, y, facecolor=colors['main'], alpha=0.65)
 
     if ax is None:
         return fig, axis

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from matplotlib.ticker import Formatter
+from matplotlib.ticker import Formatter, Locator
 
 from . import style
 
@@ -27,27 +27,29 @@ def second_index(ax, x2: np.array, xlabel: Optional[str] = None, ax_kwargs=None)
     ax2.spines['bottom'].set_position(('outward', 20))
 
     ax2.set_xlabel(xlabel, fontsize=ax_kwargs['labelsize'], labelpad=ax_kwargs['labelpad'])
+    ax2.tick_params(axis='both', which='major', labelsize=ax_kwargs['ticksize'])
 
     [lbl.set_rotation(ax_kwargs['tickrotation']) for lbl in ax2.get_xticklabels()]
 
 
-def configure_axis(ax, title='', xlabel='', ylabel='',
-                   xformatter: Formatter = ticker.FormatStrFormatter('%.2f'),
-                   yformatter: Formatter = ticker.FormatStrFormatter('%.2f'),
-                   ax_kwargs=None):
+def configure_axis(ax, title='', xlabel='', ylabel='', ax_kwargs=None):
     ax_kwargs = ax_kwargs or style.ax_kwargs()
 
     ax.set_frame_on(False)
     ax.grid(color='lightgray', linestyle='-.', linewidth=0.5)
-    ax.xaxis.set_major_formatter(xformatter)
-    ax.yaxis.set_major_formatter(yformatter)
+    ax.xaxis.set_major_formatter(ax_kwargs['xformatter'])
+    ax.yaxis.set_major_formatter(ax_kwargs['yformatter'])
+
+    if ax_kwargs.get('xlocator', None) is not None:
+        ax.xaxis.set_major_locator(ax_kwargs['xlocator'])
+    if ax_kwargs.get('ylocator', None) is not None:
+        ax.yaxis.set_major_locator(ax_kwargs['ylocator'])
 
     if not ax_kwargs['showx']:
         ax.xaxis.set_major_formatter(ticker.NullFormatter())
     if not ax_kwargs['showy']:
         ax.yaxis.set_major_formatter(ticker.NullFormatter())
 
-    ax.tick_params(axis='both', which='major', labelsize=ax_kwargs['ticksize'])
     ax.set_title(title, fontsize=ax_kwargs['titlesize'],
                  family=ax_kwargs['fontfamily'], pad=ax_kwargs['titlepad'])
     ax.set_xlabel(xlabel, fontsize=ax_kwargs['labelsize'],
@@ -55,7 +57,7 @@ def configure_axis(ax, title='', xlabel='', ylabel='',
     ax.set_ylabel(ylabel, fontsize=ax_kwargs['labelsize'],
                   labelpad=ax_kwargs['labelpad'], family=ax_kwargs['fontfamily'])
 
-    ax.tick_params(axis='both', which='major', labelsize=ax_kwargs['labelsize'])
+    ax.tick_params(axis='both', which='major', labelsize=ax_kwargs['ticksize'])
 
     for tick in ax.get_xticklabels():
         tick.set_fontfamily(ax_kwargs['fontfamily'])

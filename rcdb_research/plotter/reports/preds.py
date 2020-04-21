@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import ticker
+
 from typing import Optional
 
 from .. import primitives
@@ -9,7 +11,7 @@ from .. import style
 from .. import utils
 
 
-def preds_colors(pos: str = 'deepskyblue', neg: str = 'tomato') -> dict: return locals()
+def preds_colors(pos: str = '#49b4f2', neg: str = '#f27549') -> dict: return locals()
 
 
 def preds_report(preds: Predictions, window: int, threshold: float = 0.5, show_dates: bool = False,
@@ -18,8 +20,10 @@ def preds_report(preds: Predictions, window: int, threshold: float = 0.5, show_d
                  line_kwargs: Optional[dict] = None):
     colors = colors or preds_colors()
     fig_kwargs = fig_kwargs or style.fig_kwargs()
-    ax_kwargs = ax_kwargs or style.ax_kwargs()
-    line_kwargs = line_kwargs or style.line_kwargs()
+    ax_kwargs = ax_kwargs or style.ax_kwargs(
+        xformatter=ticker.FormatStrFormatter('%.0f'),
+    )
+    line_kwargs = line_kwargs or style.line_kwargs(linewidth=1)
 
     precision = preds.metrics.precision(window=window, dense=True).fillna(threshold)
 
@@ -38,6 +42,7 @@ def preds_report(preds: Predictions, window: int, threshold: float = 0.5, show_d
                      colors=colors,
                      ax_kwargs=ax_kwargs,
                      line_kwargs=line_kwargs,
+                     fill=True,
                      ax=axes[0])
 
     if show_dates:

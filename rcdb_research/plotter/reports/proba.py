@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 from typing import Optional
 
 from .. import primitives
@@ -9,18 +10,18 @@ from .. import style
 from .. import utils
 
 
-def proba_colors(probas: str = 'deepskyblue',
-                 calibration: str = 'deepskyblue',
-                 hist: str = 'deepskyblue') -> dict: return locals()
+def proba_colors(probas: str = '#49b4f2',
+                 calibration: str = '#49b4f2',
+                 hist: str = '#49b4f2') -> dict: return locals()
 
 
 def proba_report(probas: Probabilities, n_bins: int = 40, show_dates: bool = False, colors: Optional[dict] = None,
                  fig_kwargs: Optional[dict] = None, ax_kwargs: Optional[dict] = None,
                  line_kwargs: Optional[dict] = None, hist_kwargs: Optional[dict] = None) -> tuple:
     colors = colors or proba_colors()
-    fig_kwargs = fig_kwargs or style.fig_kwargs()
+    fig_kwargs = fig_kwargs or style.fig_kwargs(figsize=(16, 9))
     ax_kwargs = ax_kwargs or style.ax_kwargs()
-    line_kwargs = line_kwargs or style.line_kwargs()
+    line_kwargs = line_kwargs or style.line_kwargs(linewidth=1)
 
     fig = plt.figure(**fig_kwargs)
     fig.suptitle("Probability report", x=0.526, y=1.05, **style.suptitle_kwargs())
@@ -34,7 +35,10 @@ def proba_report(probas: Probabilities, n_bins: int = 40, show_dates: bool = Fal
                     title='Probabilities over bars',
                     ylabel='Probability',
                     colors={'main': colors['probas']},
-                    ax_kwargs=ax_kwargs,
+                    ax_kwargs={
+                        **ax_kwargs,
+                        'xformatter': ticker.FormatStrFormatter('%.0f')
+                    },
                     line_kwargs=line_kwargs,
                     ax=ax1)
 
@@ -64,4 +68,5 @@ def proba_report(probas: Probabilities, n_bins: int = 40, show_dates: bool = Fal
     primitives.hist(probas.y_pred_proba, bins=n_bins, ticks=20,
                     xlabel='Mean predicted probability', ylabel='Count',
                     colors={'main': colors['hist']},
-                    ax_kwargs=ax_kwargs, hist_kwargs=hist_kwargs, ax=ax3)
+                    ax_kwargs={**ax_kwargs, 'tickrotation': 45},
+                    hist_kwargs=hist_kwargs, ax=ax3)
