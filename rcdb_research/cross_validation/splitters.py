@@ -1,8 +1,11 @@
-from typing import Union, List, Tuple, Iterable, Dict
+from operator import itemgetter
+from typing import Union, List, Tuple, Iterable, Dict, Optional
 
 import numpy as np
 import pandas as pd
+from sklearn.base import clone, BaseEstimator
 from sklearn.model_selection import BaseCrossValidator, KFold
+from joblib import Parallel, delayed
 
 PandasLike = Union[pd.DataFrame, pd.Series]
 Split = Tuple[np.ndarray, np.ndarray]
@@ -54,14 +57,14 @@ class EmbargoedKFoldSplitterWithTainting(BaseCrossValidator):
         for train, test in splits[:-1]:
             after_test = train > test[-1]
             before_test = ~after_test
-        
+
             if np.sum(before_test):
                 train = np.hstack((train[before_test], train[after_test][embargo:]))
             else:
                 train = train[embargo:]
-                
+
             _splits.append((train, test))
-        
+
         _splits.append(splits[-1])
         return _splits
 
@@ -118,11 +121,14 @@ class EmbargoedKFoldSplitterWithTainting(BaseCrossValidator):
 def split_indexes_to_bars(
     X: Union[PandasLike, np.ndarray],
     y: Union[PandasLike, np.ndarray],
-    indexes: Iterable[Split]
+    indexes: Iterable[Split],
+    raw: bool = False
 ) -> List[Dict[str, PandasLike]]:
 
     if isinstance(X, np.ndarray):
         iloc = lambda data, idxs: data[idxs]
+    elif raw:
+        iloc = lambda data, idxs: data.iloc[idxs].values
     else:
         iloc = lambda data, idxs: data.iloc[idxs]
 
@@ -135,3 +141,65 @@ def split_indexes_to_bars(
         }
         for train, test in indexes
     ]
+
+
+def predict_splits(
+    clf: BaseEstimator,
+    splits: List[Dict[str, PandasLike]],
+    predict_proba: bool = False,
+    predict_train: bool = False,
+    fit_args: Optional[dict] = None,
+    predict_args: Optional[dict] = None,
+    n_jobs: int = -1
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Aggregated splits prediction
+    :param cls: predictor
+    :param splits: aggregated splits
+    :param predict_proba: if True returns probabilities of 1 instead of binary output
+    :param predict_train: if True returns predictions for train set in addition to y_true, y_pred
+    :param fit_args: params for clf.fit
+    :param predict_args: params for clf.predict
+    :param n_jobs: count of jobs for joblib.Parallel
+    :return: (y_true, y_pred, y_train_pred) if predict_train else (y_true, y_pred)
+    """
+
+    fit_args = fit_args or {}
+    predict_args = predict_args or {}
+
+    def predict_split(clf, split, predict_proba, predict_train, fit_args, predict_args):
+        X_train, y_train, X_test, y_test = itemgetter('X_train', 'y_train', 'X_test', 'y_test')(split)
+
+        clf.fit(X_train, y_train, **fit_args)
+
+        y_train_pred = None
+        if predict_proba:
+            y_pred = clf.predict_proba(X_test, **predict_args)[:, 1]
+            if predict_train:
+                y_train_pred = clf.predict_proba(X_train, **predict_args)[:, 1]
+        else:
+            y_pred = clf.predict(X_test, **predict_args)
+            if predict_train:
+                y_train_pred = clf.predict(X_train, **predict_args)
+
+        res = {
+            'y_test': np.array(y_test.values),
+            'y_pred': y_pred,
+            'index': X_test.index.values if hasattr(X_test, 'index') else None
+        }
+
+        if predict_train:
+            res = {
+                'y_train': np.array(y_train),
+                'y_train_pred': y_train_pred,
+                'train_index': X_train.index.values if hasattr(X_train, 'index') else X_train,
+                **res
+            }
+        return res
+
+    parallel = Parallel(n_jobs=n_jobs)
+    return parallel(
+        delayed(predict_split)(clone(clf), split, predict_proba,
+                               predict_train, fit_args, predict_args)
+        for split in splits
+    )
