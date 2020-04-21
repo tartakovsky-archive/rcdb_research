@@ -126,9 +126,9 @@ def split_indexes_to_bars(
 ) -> List[Dict[str, PandasLike]]:
 
     if isinstance(X, np.ndarray):
-        iloc = lambda data, idxs: data[idxs]
+        def iloc(data, idxs): return data[idxs]
     else:
-        iloc = lambda data, idxs: data.iloc[idxs]
+        def iloc(data, idxs): return data.iloc[idxs]
 
     return [
         {

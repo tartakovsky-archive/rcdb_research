@@ -1,7 +1,6 @@
 import logging
 from typing import List, Tuple, Optional, Callable
 
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,118 +8,28 @@ import matplotlib.ticker as ticker
 from matplotlib.axes import Axes
 from sklearn.model_selection import BaseCrossValidator
 
-
-def pieces(a: np.ndarray) -> Tuple[List[int], List[int]]:
-    """
-    Split dataset idxs into bar peaces
-
-    1,2,4,5,8 -> 1,2 | 4,5 | 8 -> bar starts: [1, 4, 8], bar sizes: [2, 3, 1]
-
-    :param a: dataset indexes
-    :return:
-    """
-    idxs = np.argwhere(np.diff(a) > 1)
-
-    if not len(idxs):
-        return None, None
-
-    idxs_after = np.hstack(idxs) + 1
-
-    starts = [a[0]]
-    sizes = [idxs_after[0]]
-
-    for item, item_next in zip(idxs_after, idxs_after[1:]):
-        starts.append(a[item])
-        sizes.append(item_next - item + 1)
-
-    starts.append(a[idxs_after[-1]])
-    sizes.append(a[-1] - a[idxs_after[-1]] + 1)
-
-    return starts, sizes
+from .. import style
+from .. import utils
 
 
-def get_embargo_start(train: np.ndarray, test: np.ndarray, X: pd.DataFrame) -> Optional[int]:
-    test_end = test[-1]
-
-    if test_end != len(X) - 1:
-        train_after_test = train[train >= test_end]
-        train_after_test_start = train_after_test[0] if len(train_after_test) else None
-
-        if train_after_test_start is not None and train_after_test_start - test_end != 1:
-            return test_end + 1
-
-    return None
-
-
-def get_gap_start(train: np.ndarray, test: np.ndarray, *args) -> Optional[int]:
-    test_start = test[0]
-    if test_start != 0:
-        train_before_test = train[train <= test_start]
-        train_before_test_start = train_before_test[-1] if len(train_before_test) else None
-
-        if train_before_test_start is not None and test_start - train_before_test_start != 1:
-            return train_before_test_start + 1
-
-    return None
-
-
-def get_custom_bars(
-    func: Callable,
-    splits: List[Tuple[np.ndarray, np.ndarray]],
-    size: int,
-    X: pd.DataFrame
-) -> Tuple[List[int], List[int]]:
-
-    starts = []
-    sizes = []
-    for train, test in splits:
-        if len(train) and len(test):
-            start = func(train, test, X)
-            if start is not None:
-                starts.append(start)
-                sizes.append(size)
-                continue
-
-        starts.append(0)
-        sizes.append(0)
-
-    return starts, sizes
-
-
-def get_dataset_bars(index: np.ndarray) -> Tuple[List[int], List[int]]:
-    """
-    Calculates bars start indexes & starts from dataset index
-    :param index: dataset index
-    :return: tuple of lists with start bar indexes and bar sizes (starts, sizes)
-    """
-
-    parts = pieces(index)
-
-    if len(index):
-        if parts != (None, None):
-            return parts
-        else:
-            return [index[0]], [index[-1] - index[0] + 1]
-
-    return [], []
+def splits_colors(tainted='#414BB2',
+                  train='#2D9BF0',
+                  test='#FAC710',
+                  embargo='#F24726',
+                  gap='lightcoral') -> dict: return locals()
 
 
 def splits(
-    cv: BaseCrossValidator,
-    X: pd.DataFrame,
-    y: Optional[pd.Series] = None,
-    ax: Optional[Axes] = None,
-    colors: Optional[dict] = None
-):
-
-    if colors is None:
-        colors = dict(
-            tainted='#414BB2',
-            train='#2D9BF0',
-            test='#FAC710',
-            embargo='#F24726',
-            gap='lightcoral',
-        )
+        cv: BaseCrossValidator,
+        X: pd.DataFrame,
+        y: Optional[pd.Series] = None,
+        colors: Optional[dict] = None,
+        fig_kwargs: Optional[dict] = None,
+        ax_kwargs: Optional[dict] = None,
+        ax: Optional[Axes] = None):
+    colors = colors or splits_colors()
+    fig_kwargs = fig_kwargs or style.fig_kwargs()
+    ax_kwargs = ax_kwargs or style.ax_kwargs()
 
     train_start = []
     train_size = []
@@ -216,6 +125,100 @@ def splits(
 
     ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, shadow=False, ncol=5)
 
-    if ax is None:
-        plt.tight_layout()
-        plt.show()
+
+#########################################
+# Utility functions for the main report #
+#########################################
+
+def pieces(a: np.ndarray) -> Tuple[Optional[List[int]], Optional[List[int]]]:
+    """
+    Split dataset idxs into bar pieces
+
+    1,2,4,5,8 -> 1,2 | 4,5 | 8 -> bar starts: [1, 4, 8], bar sizes: [2, 3, 1]
+
+    :param a: dataset indexes
+    :return:
+    """
+    idxs = np.argwhere(np.diff(a) > 1)
+
+    if not len(idxs):
+        return None, None
+
+    idxs_after = np.hstack(idxs) + 1
+
+    starts = [a[0]]
+    sizes = [idxs_after[0]]
+
+    for item, item_next in zip(idxs_after, idxs_after[1:]):
+        starts.append(a[item])
+        sizes.append(item_next - item + 1)
+
+    starts.append(a[idxs_after[-1]])
+    sizes.append(a[-1] - a[idxs_after[-1]] + 1)
+
+    return starts, sizes
+
+
+def get_embargo_start(train: np.ndarray, test: np.ndarray, X: pd.DataFrame) -> Optional[int]:
+    test_end = test[-1]
+
+    if test_end != len(X) - 1:
+        train_after_test = train[train >= test_end]
+        train_after_test_start = train_after_test[0] if len(train_after_test) else None
+
+        if train_after_test_start is not None and train_after_test_start - test_end != 1:
+            return test_end + 1
+
+    return None
+
+
+def get_gap_start(train: np.ndarray, test: np.ndarray, *args) -> Optional[int]:
+    test_start = test[0]
+    if test_start != 0:
+        train_before_test = train[train <= test_start]
+        train_before_test_start = train_before_test[-1] if len(train_before_test) else None
+
+        if train_before_test_start is not None and test_start - train_before_test_start != 1:
+            return train_before_test_start + 1
+
+    return None
+
+
+def get_custom_bars(
+        func: Callable,
+        splits: List[Tuple[np.ndarray, np.ndarray]],
+        size: int,
+        X: pd.DataFrame
+) -> Tuple[List[int], List[int]]:
+    starts = []
+    sizes = []
+    for train, test in splits:
+        if len(train) and len(test):
+            start = func(train, test, X)
+            if start is not None:
+                starts.append(start)
+                sizes.append(size)
+                continue
+
+        starts.append(0)
+        sizes.append(0)
+
+    return starts, sizes
+
+
+def get_dataset_bars(index: np.ndarray) -> Tuple[List[int], List[int]]:
+    """
+    Calculates bars start indexes & starts from dataset index
+    :param index: dataset index
+    :return: tuple of lists with start bar indexes and bar sizes (starts, sizes)
+    """
+
+    parts = pieces(index)
+
+    if len(index):
+        if parts != (None, None):
+            return parts
+        else:
+            return [index[0]], [index[-1] - index[0] + 1]
+
+    return [], []
