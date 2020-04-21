@@ -10,8 +10,8 @@ from matplotlib import ticker
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 
-from rcdb_research.plotter import style
-from rcdb_research.plotter.utils import configure_axis
+from ...plotter import style
+from ...plotter.utils import configure_axis
 
 
 def distcomp_colors(

@@ -1,17 +1,24 @@
+import logging
+from typing import List, Tuple, Optional, Callable
+
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib import ticker
-import logging
-from typing import Optional
-
-from .. import primitives
-
-from .. import style
-from .. import utils
+import matplotlib.ticker as ticker
+from matplotlib.axes import Axes
+from sklearn.model_selection import BaseCrossValidator
 
 
-def pieces(a):
+def pieces(a: np.ndarray) -> Tuple[List[int], List[int]]:
+    """
+    Split dataset idxs into bar peaces
+
+    1,2,4,5,8 -> 1,2 | 4,5 | 8 -> bar starts: [1, 4, 8], bar sizes: [2, 3, 1]
+
+    :param a: dataset indexes
+    :return:
+    """
     idxs = np.argwhere(np.diff(a) > 1)
 
     if not len(idxs):
@@ -32,7 +39,7 @@ def pieces(a):
     return starts, sizes
 
 
-def get_embargo_start(train, test):
+def get_embargo_start(train: np.ndarray, test: np.ndarray, X: pd.DataFrame) -> Optional[int]:
     test_end = test[-1]
 
     if test_end != len(X) - 1:
@@ -45,7 +52,7 @@ def get_embargo_start(train, test):
     return None
 
 
-def get_gap_start(train, test):
+def get_gap_start(train: np.ndarray, test: np.ndarray, *args) -> Optional[int]:
     test_start = test[0]
     if test_start != 0:
         train_before_test = train[train <= test_start]
@@ -57,12 +64,18 @@ def get_gap_start(train, test):
     return None
 
 
-def get_custom_bars(func, splits, size):
+def get_custom_bars(
+    func: Callable,
+    splits: List[Tuple[np.ndarray, np.ndarray]],
+    size: int,
+    X: pd.DataFrame
+) -> Tuple[List[int], List[int]]:
+
     starts = []
     sizes = []
     for train, test in splits:
         if len(train) and len(test):
-            start = func(train, test)
+            start = func(train, test, X)
             if start is not None:
                 starts.append(start)
                 sizes.append(size)
@@ -74,19 +87,32 @@ def get_custom_bars(func, splits, size):
     return starts, sizes
 
 
-def get_dataset_bars(dataset):
-    parts = pieces(dataset)
+def get_dataset_bars(index: np.ndarray) -> Tuple[List[int], List[int]]:
+    """
+    Calculates bars start indexes & starts from dataset index
+    :param index: dataset index
+    :return: tuple of lists with start bar indexes and bar sizes (starts, sizes)
+    """
 
-    if len(dataset):
+    parts = pieces(index)
+
+    if len(index):
         if parts != (None, None):
             return parts
         else:
-            return [dataset[0]], [dataset[-1] - dataset[0] + 1]
+            return [index[0]], [index[-1] - index[0] + 1]
 
     return [], []
 
 
-def plot_splits(cv, X, y=None, ax=None, colors=None):
+def splits(
+    cv: BaseCrossValidator,
+    X: pd.DataFrame,
+    y: Optional[pd.Series] = None,
+    ax: Optional[Axes] = None,
+    colors: Optional[dict] = None
+):
+
     if colors is None:
         colors = dict(
             tainted='#414BB2',
@@ -113,6 +139,7 @@ def plot_splits(cv, X, y=None, ax=None, colors=None):
     splits = list(cv.split(X=X, y=y))
     index = list(range(1, len(splits) + 1))
 
+    # calculate starts & sizes of train & test bars for each split
     for i, (train, test) in enumerate(splits):
         logging.debug(f'{i} train {train[:1]} {train[-1:]} test {test[:1]} {test[-1:]}')
         for dataset, starts, sizes in zip((train, test), (train_start, test_start), (train_size, test_size)):
@@ -120,14 +147,19 @@ def plot_splits(cv, X, y=None, ax=None, colors=None):
             starts.append(bars[0])
             sizes.append(bars[1])
 
+    # calculate starts & sizes of embargo bars
     if hasattr(cv, 'embargo') and cv.embargo:
-        embargo_start, embargo_size = get_custom_bars(get_embargo_start, splits, cv.embargo)
+        embargo_start, embargo_size = get_custom_bars(get_embargo_start, splits, cv.embargo, X)
 
+    # calculate starts & sizes of gap bars
     if hasattr(cv, 'last_n_gap_size') and cv.last_n_gap_size:
-        gap_start, gap_size = get_custom_bars(get_gap_start, splits, cv.last_n_gap_size)
+        gap_start, gap_size = get_custom_bars(get_gap_start, splits, cv.last_n_gap_size, X)
 
+    # calculate starts & sizes of tainted bars
     if hasattr(cv, 'tainted_up_to') and hasattr(cv, 'split_by_index') and cv.tainted_up_to:
         _X = X
+
+        # cv.split_by_index works only with pandaslike objects
         if not isinstance(X, pd.DataFrame):
             _X = pd.DataFrame(X)
 
@@ -144,7 +176,7 @@ def plot_splits(cv, X, y=None, ax=None, colors=None):
 
     # Title
     ax1.set_title('CV splits over number of bars')
-    # Legend
+
     # Y Axis
     if len(index) == 1:
         loc = ticker.MultipleLocator(base=5)
@@ -159,22 +191,22 @@ def plot_splits(cv, X, y=None, ax=None, colors=None):
     ax1.set_xlabel('Bars', fontsize=12, labelpad=15)
 
     # Bars
-
     def draw_barh(starts, sizes, label, color):
         if not (len(sizes) and any(sizes)):
             return
 
         logging.debug(label)
-        for i in index:
-            logging.debug(f'{i} {starts[i - 1]} {sizes[i - 1]}')
+        for i in range(len(splits)):
+            y = i + 1
+            logging.debug(f'{i} {starts[i]} {sizes[i]}')
 
-            if hasattr(starts[i - 1], '__len__'):
-                for start, size in zip(starts[i - 1], sizes[i - 1]):
-                    ax1.barh(y=i, height=0.75, width=size, left=start, label=label, color=color)
-                    label = ''
+            if hasattr(starts[i], '__len__'):
+                for start, size in zip(starts[i], sizes[i]):
+                    ax1.barh(y=y, height=0.75, width=size, left=start, label=label, color=color)
+                    label = ''  # fix duplicates in legend
             else:
-                ax1.barh(y=i, height=0.75, width=sizes[i - 1], left=starts[i - 1], label=label, color=color)
-                label = ''
+                ax1.barh(y=y, height=0.75, width=sizes[i], left=starts[i], label=label, color=color)
+                label = ''  # fix duplicates in legend
 
     draw_barh(train_start, train_size, 'train', colors['train'])
     draw_barh(test_start, test_size, 'test', colors['test'])

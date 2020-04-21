@@ -10,6 +10,7 @@ Splits = List[Split]
 
 
 class EmbargoedKFoldSplitterWithTainting(BaseCrossValidator):
+
     class SplitterException(Exception):
         pass
 
@@ -24,7 +25,7 @@ class EmbargoedKFoldSplitterWithTainting(BaseCrossValidator):
         self.embargo = embargo
         self.tainted_up_to = tainted_up_to
 
-    def get_n_splits(self):
+    def get_n_splits(self, X=None, y=None, groups=None):
         return self.k_fold
 
     @staticmethod
@@ -54,14 +55,14 @@ class EmbargoedKFoldSplitterWithTainting(BaseCrossValidator):
         for train, test in splits[:-1]:
             after_test = train > test[-1]
             before_test = ~after_test
-        
+
             if np.sum(before_test):
                 train = np.hstack((train[before_test], train[after_test][embargo:]))
             else:
                 train = train[embargo:]
-                
+
             _splits.append((train, test))
-        
+
         _splits.append(splits[-1])
         return _splits
 
@@ -70,7 +71,7 @@ class EmbargoedKFoldSplitterWithTainting(BaseCrossValidator):
             if not len(train):
                 raise self.SplitterException(f'Not enough data left to perform {self.k_fold} folds')
 
-    def split(self, X, *args, **kwargs):
+    def split(self, X, *args, **kwargs) -> List[Split]:
         """
         Generate indices to split data into training and test set.
 
@@ -113,6 +114,9 @@ class EmbargoedKFoldSplitterWithTainting(BaseCrossValidator):
         self.validate_splits(splits)
 
         return splits
+
+    def _iter_test_indices(self, X=None, y=None, groups=None):
+        return map(lambda split: split[1], self.split(X, y, groups))
 
 
 def split_indexes_to_bars(
