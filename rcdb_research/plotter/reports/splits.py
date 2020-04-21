@@ -23,13 +23,21 @@ def splits(
         cv: BaseCrossValidator,
         X: pd.DataFrame,
         y: Optional[pd.Series] = None,
+        title: Optional[str] = 'CV splits over number of bars',
+        xlabel: Optional[str] = 'Bar number',
+        ylabel: Optional[str] = 'Split number',
         colors: Optional[dict] = None,
         fig_kwargs: Optional[dict] = None,
         ax_kwargs: Optional[dict] = None,
+        show_dates: bool = False,
         ax: Optional[Axes] = None):
     colors = colors or splits_colors()
     fig_kwargs = fig_kwargs or style.fig_kwargs()
-    ax_kwargs = ax_kwargs or style.ax_kwargs()
+    ax_kwargs = ax_kwargs or style.ax_kwargs(
+        xformatter=ticker.FormatStrFormatter('%.0f'),
+        yformatter=ticker.FormatStrFormatter('%.0f'),
+        xlocator=ticker.MaxNLocator(18, integer=True),
+    )
 
     train_start = []
     train_size = []
@@ -45,6 +53,7 @@ def splits(
     tainted_start = []
     tainted_size = []
 
+    x_index = list(range(X.index.size))
     splits = list(cv.split(X=X, y=y))
     index = list(range(1, len(splits) + 1))
 
@@ -76,15 +85,8 @@ def splits(
         tainted_start = np.repeat(0, len(index))
         tainted_size = np.repeat(len(X_tainted), len(index))
 
-    fig, ax1 = plt.subplots(figsize=(12, 5), dpi=150) if ax is None else (None, ax)
-
-    # Background
-    ax1.set_frame_on(False)
-    #     ax1.grid(color='lightgray', linestyle='-.', linewidth=0.5)
-    ax1.grid(False)
-
-    # Title
-    ax1.set_title('CV splits over number of bars')
+    fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
+    utils.configure_axis(axis, title, None if show_dates else xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     # Y Axis
     if len(index) == 1:
@@ -92,12 +94,10 @@ def splits(
     else:
         loc = ticker.MaxNLocator(integer=True)
 
-    ax1.yaxis.set_major_locator(loc)
-    #     ax1.xaxis.set_major_locator(ticker.MultipleLocator(base=2))
-    ax1.set_ylim(index[0] - 0.5, index[-1] + 0.5)
-    ax1.set_ylabel('Split number', fontsize=12, labelpad=15)
-    # X Axis
-    ax1.set_xlabel('Bars', fontsize=12, labelpad=15)
+    axis.yaxis.set_major_locator(loc)
+
+    axis.set_ylim(index[0] - 0.5, index[-1] + 0.5)
+    axis.set_xlim(x_index[0], x_index[-1])
 
     # Bars
     def draw_barh(starts, sizes, label, color):
@@ -111,10 +111,10 @@ def splits(
 
             if hasattr(starts[i], '__len__'):
                 for start, size in zip(starts[i], sizes[i]):
-                    ax1.barh(y=y, height=0.75, width=size, left=start, label=label, color=color)
+                    axis.barh(y=y, height=0.75, width=size, left=start, label=label, color=color)
                     label = ''  # fix duplicates in legend
             else:
-                ax1.barh(y=y, height=0.75, width=sizes[i], left=starts[i], label=label, color=color)
+                axis.barh(y=y, height=0.75, width=sizes[i], left=starts[i], label=label, color=color)
                 label = ''  # fix duplicates in legend
 
     draw_barh(train_start, train_size, 'train', colors['train'])
@@ -123,7 +123,16 @@ def splits(
     draw_barh(gap_start, gap_size, 'gap', colors['gap'])
     draw_barh(tainted_start, tainted_size, 'tainted', colors['tainted'])
 
-    ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, shadow=False, ncol=5)
+    axis.legend(loc='lower center', bbox_to_anchor=(0.5, -0.35),
+                fancybox=True, shadow=False, ncol=5,
+                prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
+
+    if show_dates:
+        utils.second_index(axis,
+                           x2=utils.datestring(X.index),
+                           x1=x_index,
+                           xlabel='Bar number / Date',
+                           ax_kwargs={**ax_kwargs, 'tickrotation': 15})
 
 
 #########################################

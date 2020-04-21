@@ -8,10 +8,10 @@ from . import style
 from typing import Optional
 
 
-def second_index(ax, x2: np.array, xlabel: Optional[str] = None, ax_kwargs=None):
+def second_index(ax, x2: np.ndarray, x1: Optional[list] = None, xlabel: Optional[str] = None, ax_kwargs=None):
     ax_kwargs = ax_kwargs or style.ax_kwargs()
 
-    x1 = list(ax.lines[0].get_xdata())
+    x1 = list(ax.lines[0].get_xdata()) if x1 is None else x1
 
     x1_tick_locs = ax.get_xticks()
     x1_tick_loc_ids = [(x1.index(loc) if loc in x1 else None) for loc in x1_tick_locs]
