@@ -6,7 +6,7 @@ import seaborn as sns
 from typing import Optional
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+from matplotlib import ticker
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 
@@ -18,10 +18,10 @@ def distribution_colors(
         std_span='lightgray',
         std_border='gray',
         mean='gray',
-        hist='deepskyblue',
-        dots='deepskyblue',
+        hist='#49b4f2',
+        dots='#49b4f2',
         pdf='darkblue',
-        kde='tomato') -> dict: return locals()
+        kde='#f27549') -> dict: return locals()
 
 
 def distribution_report(array: np.array, bins: int = 20, ticks=20,
@@ -32,8 +32,12 @@ def distribution_report(array: np.array, bins: int = 20, ticks=20,
                         pdf_kwargs: Optional[dict] = None,
                         ax=None):
     colors = colors or distribution_colors()
-    fig_kwargs = fig_kwargs or style.fig_kwargs()
-    ax_kwargs = ax_kwargs or style.ax_kwargs(tickrotation=45)
+    fig_kwargs = fig_kwargs or style.fig_kwargs(figsize=(16, 8))
+    ax_kwargs = ax_kwargs or style.ax_kwargs(
+        tickrotation=45,
+        xformatter=ticker.FormatStrFormatter('%.3f'),
+        yformatter=ticker.FormatStrFormatter('%.0f'),
+    )
     hist_kwargs = hist_kwargs or dict(alpha=0.9, zorder=100)
     kde_kwargs = kde_kwargs or dict(lw=3, alpha=0.85, zorder=102)
     pdf_kwargs = pdf_kwargs or dict(lw=3, alpha=0.85, zorder=102)
@@ -43,9 +47,7 @@ def distribution_report(array: np.array, bins: int = 20, ticks=20,
 
     # Configure axis. Set labels, fonts, formatters, grid, etc.
     fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
-    configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs,
-                   xformatter=ticker.FormatStrFormatter('%.3f'),
-                   yformatter=ticker.FormatStrFormatter('%.0f'))
+    configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     # Calculate mean and std
     mean = np.mean(array)
@@ -105,6 +107,6 @@ def distribution_report(array: np.array, bins: int = 20, ticks=20,
               label=f'99.7% confidence, [{mean - 3 * std:.3f}, {mean + 3 * std:.3f}]'),
     ]
 
-    axis.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.4),
+    axis.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.45),
                 fancybox=True, shadow=False, ncol=2,
                 prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
