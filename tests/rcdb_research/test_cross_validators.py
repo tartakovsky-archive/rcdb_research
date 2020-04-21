@@ -6,7 +6,7 @@ from sklearn.model_selection import cross_val_score
 
 from rcdb_research.cross_validation import \
     WalkForwardCV, cross_val_predict_timeseries_splits, \
-    EmbargoedKFoldSplitterWithTainting, split_indexes_to_bars
+    EmbargoedKFoldSplitterWithTainting, split_indexes_to_bars, predict_splits
 
 
 @pytest.fixture
@@ -362,3 +362,25 @@ def test_EmbargoedKFoldSplitterWithTainting_edge_cases_with_cross_val_score():
     cv = EmbargoedKFoldSplitterWithTainting(k_fold=2, embargo=2, tainted_up_to=1)
     score = cross_val_score(estimator, TEST_SPLIT_INPUT['X'], TEST_SPLIT_INPUT['y'], cv=cv)
     assert len(score) == 2
+
+
+def test_predict_splits(ohlcv_df):
+    df = ohlcv_df.copy()
+    df['y'] = np.random.randint(0, 2, len(df))
+    y = df.y
+    X = df.drop('y', 1)
+
+    n = 5
+
+    splits = split_indexes_to_bars(X, y, EmbargoedKFoldSplitterWithTainting(n, 10).split(X))
+
+    res = predict_splits(DecisionTreeClassifier(), splits)
+
+    assert len(res) == n
+
+    for i in range(n):
+        r = res[i]
+        split = splits[i]
+        assert np.array_equal(split['y_test'].values, r['y_test'])
+
+        assert r['y_test'].shape == r['y_pred'].shape and r['y_test'].shape == r['index'].shape
