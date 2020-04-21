@@ -133,6 +133,8 @@ def split_indexes_to_bars(
         def iloc(data, idxs): return data[idxs]
     elif raw:
         def iloc(data, idxs): return data.iloc[idxs].values
+    else:
+        def iloc(data, idxs): return data.iloc[idxs]
 
     return [
         {
