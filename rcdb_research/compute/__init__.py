@@ -1,6 +1,6 @@
 from .compute import symlog, symscale  # noqa
 
-from .distributions import Sampler  # noqa
-from .distributions import Uniform, LogUniform, QuantizedUniform, QuantizedLogUniform  # noqa
-from .distributions import Normal, LogNormal, QuantizedNormal, QuantizedLogNormal  # noqa
-from .distributions import DiscreteUniform, DiscreteNormal, TruncatedNormal  # noqa
+from .sampler import Sampler  # noqa
+from .sampler import Uniform, LogUniform, QuantizedUniform, QuantizedLogUniform  # noqa
+from .sampler import Normal, LogNormal, QuantizedNormal, QuantizedLogNormal  # noqa
+from .sampler import DiscreteUniform, DiscreteNormal, TruncatedNormal  # noqa
