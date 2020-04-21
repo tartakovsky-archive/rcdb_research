@@ -76,6 +76,7 @@ docs/_build/
 target/
 
 # Jupyter Notebook
+template.ipynb
 scratch.ipynb
 .ipynb_checkpoints
 
