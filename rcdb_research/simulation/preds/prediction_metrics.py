@@ -282,7 +282,7 @@ class Scores:
         return np.count_nonzero(cls.negatives_score(y_true, y_pred, direction, labels))
 
     @classmethod
-    def accuracy_score(cls, y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
+    def accuracy_score(cls, y_true: np.ndarray, y_pred: np.ndarray, *args, **kwargs) -> np.ndarray:
         return (y_true == y_pred).sum() / y_true.size
 
     @classmethod

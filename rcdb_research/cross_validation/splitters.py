@@ -130,11 +130,14 @@ def split_indexes_to_bars(
 ) -> List[Dict[str, PandasLike]]:
 
     if isinstance(X, np.ndarray):
-        def iloc(data, idxs): return data[idxs]
+        def iloc(data, idxs):
+            return data[idxs]
     elif raw:
-        def iloc(data, idxs): return data.iloc[idxs].values
+        def iloc(data, idxs):
+            return data.iloc[idxs].values
     else:
-        def iloc(data, idxs): return data.iloc[idxs]
+        def iloc(data, idxs):
+            return data.iloc[idxs]
 
     return [
         {

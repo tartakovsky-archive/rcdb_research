@@ -6,7 +6,8 @@ from .. import style
 from ..utils import configure_axis
 
 
-def line_colors(main: str = '#49b4f2') -> dict: return locals()
+def line_colors(main: str = '#49b4f2') -> dict:
+    return locals()
 
 
 def line(y: np.array, x: np.array = None, title: Optional[str] = None,

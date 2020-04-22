@@ -6,7 +6,8 @@ from .. import style
 from ..utils import configure_axis
 
 
-def area_colors(main: str = '#49b4f2') -> dict: return locals()
+def area_colors(main: str = '#49b4f2') -> dict:
+    return locals()
 
 
 def area(y1: np.array, y2: np.array, x: np.array = None,

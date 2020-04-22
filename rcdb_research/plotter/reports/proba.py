@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 from typing import Optional
@@ -12,7 +11,8 @@ from .. import utils
 
 def proba_colors(probas: str = '#49b4f2',
                  calibration: str = '#49b4f2',
-                 hist: str = '#49b4f2') -> dict: return locals()
+                 hist: str = '#49b4f2') -> dict:
+    return locals()
 
 
 def proba_report(probas: Probabilities, n_bins: int = 40, show_dates: bool = False, colors: Optional[dict] = None,

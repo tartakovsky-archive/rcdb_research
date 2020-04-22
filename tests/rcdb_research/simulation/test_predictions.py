@@ -11,7 +11,7 @@ def predictions():
         y_pred=np.array([0, 1, 0, 1, 0, 0, 1, 1, 0, 1]),
         y_true=np.array([0, 1, 0, 0, 1, 0, 0, 1, 1, 1]),
         index=np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
-    )
+    ).init_metrics()
 
 
 def test_Predictions_init(predictions):
@@ -249,7 +249,7 @@ def test_Predictions_tail_head_chain(predictions: Predictions, tail_n=3, head_n=
     ]
 )
 def test_Predictions_metrics(predictions, metric_name, params, test_result):
-    metric = getattr(predictions, metric_name)
+    metric = getattr(predictions.metrics, metric_name)
     res = metric(**params)
     print(res)
 
@@ -267,18 +267,18 @@ def test_Predictions_metrics(predictions, metric_name, params, test_result):
             )
 
         if params.get('dense', False):
-            assert len(test_result) == predictions.n_positives()
+            assert len(test_result) == predictions.metrics.n_positives()
 
         assert np.isnan(res[:window - 1]).all()
         assert np.array_equal(res[window - 1:], test_result[window - 1:])
 
 
-def test_Predictions_metrics_method(predictions):
-    metrics = predictions.metrics()
-    assert predictions.precision() == metrics.loc[0, 'precision']
-    assert predictions.activity() == metrics.loc[0, 'activity']
+def test_Predictions_dataframe_method(predictions):
+    metrics = predictions.metrics.dataframe()
+    assert predictions.metrics.precision() == metrics.loc[0, 'precision']
+    assert predictions.metrics.activity() == metrics.loc[0, 'activity']
     assert metrics.loc[0, 'observations'] == predictions.y_pred.size
 
     for column in metrics.columns:
         if column not in ['observations', 'activity', 'precision']:
-            assert metrics.loc[0, column] == getattr(predictions, f'n_{column}')()
+            assert metrics.loc[0, column] == getattr(predictions.metrics, f'n_{column}')()

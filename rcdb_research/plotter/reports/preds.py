@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
@@ -11,7 +10,8 @@ from .. import style
 from .. import utils
 
 
-def preds_colors(pos: str = '#49b4f2', neg: str = '#f27549') -> dict: return locals()
+def preds_colors(pos: str = '#49b4f2', neg: str = '#f27549') -> dict:
+    return locals()
 
 
 def preds_report(preds: Predictions, window: int, threshold: float = 0.5, show_dates: bool = False,

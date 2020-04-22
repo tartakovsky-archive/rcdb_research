@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import scipy
 import seaborn as sns
 
@@ -21,7 +20,8 @@ def distribution_colors(
         hist='#49b4f2',
         dots='#49b4f2',
         pdf='darkblue',
-        kde='#f27549') -> dict: return locals()
+        kde='#f27549') -> dict:
+    return locals()
 
 
 def distribution_report(array: np.array, bins: int = 20, ticks=20,
@@ -82,12 +82,13 @@ def distribution_report(array: np.array, bins: int = 20, ticks=20,
     axis.axvspan(mean - 3 * std, mean + 3 * std, ymin=zerolvl, color=colors['std_span'], alpha=std_alpha / 3, zorder=1)
 
     # Plot confidence intervals' borders
-    axis.axvline(mean - 1 * std, ymin=zerolvl, color=colors['std_border'], alpha=std_alpha, linestyle='-', zorder=101)
-    axis.axvline(mean + 1 * std, ymin=zerolvl, color=colors['std_border'], alpha=std_alpha, linestyle='-', zorder=101)
-    axis.axvline(mean - 2 * std, ymin=zerolvl, color=colors['std_border'], alpha=std_alpha / 2, linestyle='-', zorder=101)
-    axis.axvline(mean + 2 * std, ymin=zerolvl, color=colors['std_border'], alpha=std_alpha / 2, linestyle='-', zorder=101)
-    axis.axvline(mean - 3 * std, ymin=zerolvl, color=colors['std_border'], alpha=std_alpha / 3, linestyle='-', zorder=101)
-    axis.axvline(mean + 3 * std, ymin=zerolvl, color=colors['std_border'], alpha=std_alpha / 3, linestyle='-', zorder=101)
+    common_params = dict(ymin=zerolvl, color=colors['std_border'], linestyle='-', zorder=101)
+    axis.axvline(mean - 1 * std, alpha=std_alpha, **common_params)
+    axis.axvline(mean + 1 * std, alpha=std_alpha, **common_params)
+    axis.axvline(mean - 2 * std, alpha=std_alpha / 2, **common_params)
+    axis.axvline(mean + 2 * std, alpha=std_alpha / 2, **common_params)
+    axis.axvline(mean - 3 * std, alpha=std_alpha / 3, **common_params)
+    axis.axvline(mean + 3 * std, alpha=std_alpha / 3, **common_params)
 
     # Plot `ticks` number of xticks
     axis.xaxis.set_major_locator(ticker.MaxNLocator(ticks))

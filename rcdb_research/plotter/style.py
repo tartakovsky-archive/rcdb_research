@@ -20,10 +20,12 @@ def ax_kwargs(titlesize: int = 16, labelsize: int = 14, ticksize: int = 12,
     return locals()
 
 
-def line_kwargs(linewidth: int = 2, marker: Optional[str] = None) -> dict: return locals()
+def line_kwargs(linewidth: int = 2, marker: Optional[str] = None) -> dict:
+    return locals()
 
 
-def hist_kwargs(rwidth: float = 0.7) -> dict: return locals()
+def hist_kwargs(rwidth: float = 0.7) -> dict:
+    return locals()
 
 
 def suptitle_kwargs(fontsize=18, fontweight='500', **kwargs) -> dict:

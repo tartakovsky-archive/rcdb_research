@@ -16,7 +16,8 @@ def splits_colors(tainted='#414BB2',
                   train='#2D9BF0',
                   test='#FAC710',
                   embargo='#F24726',
-                  gap='lightcoral') -> dict: return locals()
+                  gap='lightcoral') -> dict:
+    return locals()
 
 
 def splits(

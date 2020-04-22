@@ -8,11 +8,11 @@ from .. import primitives
 from ...simulation import Probabilities, PredictionSimulator
 
 from .. import style
-from .. import utils
 
 
 def threshold_colors(activity: str = '#49b4f2',
-                     precision: str = '#f27549', ) -> dict: return locals()
+                     precision: str = '#f27549', ) -> dict:
+    return locals()
 
 
 def threshold_report(probas: Probabilities, activity_range: tuple = (0.05, 0.6),

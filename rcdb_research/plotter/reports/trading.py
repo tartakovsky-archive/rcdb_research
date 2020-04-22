@@ -1,4 +1,3 @@
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
@@ -12,7 +11,8 @@ from .. import utils
 
 
 def trading_colors(pos: str = '#49b4f2',
-                   neg: str = '#f27549') -> dict: return locals()
+                   neg: str = '#f27549') -> dict:
+    return locals()
 
 
 def trading_report(trades: Trades, show_dates: bool = False,
@@ -35,10 +35,7 @@ def trading_report(trades: Trades, show_dates: bool = False,
                      ylabel='Gain',
                      fill=True,
                      colors=colors,
-                     ax_kwargs={
-                         **ax_kwargs,
-                         'ylocator': ticker.MaxNLocator(12),
-                     },
+                     ax_kwargs={**ax_kwargs, 'ylocator': ticker.MaxNLocator(12)},
                      line_kwargs=line_kwargs,
                      ax=ax0)
 
@@ -46,10 +43,7 @@ def trading_report(trades: Trades, show_dates: bool = False,
                     ylabel='Drawdown',
                     fill=True,
                     colors={'main': colors['neg']},
-                    ax_kwargs={
-                        **ax_kwargs,
-                        'ylocator': ticker.MaxNLocator(5),
-                    },
+                    ax_kwargs={**ax_kwargs, 'ylocator': ticker.MaxNLocator(5)},
                     line_kwargs=line_kwargs,
                     ax=ax1)
 
@@ -59,10 +53,7 @@ def trading_report(trades: Trades, show_dates: bool = False,
     primitives.curve(trades.metrics.returns(),
                      ylabel='Returns',
                      colors=colors,
-                     ax_kwargs={
-                         **ax_kwargs,
-                         'ylocator': ticker.MaxNLocator(5),
-                     },
+                     ax_kwargs={**ax_kwargs, 'ylocator': ticker.MaxNLocator(5)},
                      line_kwargs=line_kwargs,
                      ax=ax2)
 

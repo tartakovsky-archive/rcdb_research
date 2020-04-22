@@ -1,6 +1,4 @@
 import numpy as np
-import pandas as pd
-import scipy
 import seaborn as sns
 
 from typing import Optional
@@ -15,18 +13,20 @@ from ..utils import configure_axis
 
 
 def distcomp_colors(
-        std1_span='lightgray',
-        std1_border='#49b4f2',
-        mean1='#49b4f2',
-        hist1='#49b4f2',
-        kde1='#49b4f2',
-        dots1='#49b4f2',
-        std2_span='lightgray',
-        std2_border='#f27549',
-        mean2='#f27549',
-        hist2='#f27549',
-        kde2='#f27549',
-        dots2='#f27549') -> dict: return locals()
+    std1_span='lightgray',
+    std1_border='#49b4f2',
+    mean1='#49b4f2',
+    hist1='#49b4f2',
+    kde1='#49b4f2',
+    dots1='#49b4f2',
+    std2_span='lightgray',
+    std2_border='#f27549',
+    mean2='#f27549',
+    hist2='#f27549',
+    kde2='#f27549',
+    dots2='#f27549'
+) -> dict:
+    return locals()
 
 
 # Distribution Comparison Report

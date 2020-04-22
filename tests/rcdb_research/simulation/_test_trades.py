@@ -4,7 +4,7 @@ import pandas as pd
 
 from rcdb_research.simulation import TradesOld
 
-from .test_converter import raises
+from ._test_converter import raises
 
 
 TRADES_INDEX = pd.DatetimeIndex([

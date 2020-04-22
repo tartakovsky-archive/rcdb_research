@@ -1,7 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from matplotlib.ticker import Formatter, Locator
 
 from . import style
 
