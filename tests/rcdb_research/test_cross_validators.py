@@ -6,7 +6,7 @@ from sklearn.model_selection import cross_val_score
 
 from rcdb_research.cross_validation import \
     WalkForwardCV, cross_val_predict_timeseries_splits, \
-    EmbargoedKFoldSplitterWithTainting, split_indexes_to_bars, predict_splits
+    split_indexes_to_bars, predict_splits, CombinatorialKFold
 
 
 @pytest.fixture
@@ -275,13 +275,14 @@ TEST_SPLIT_INPUT = dict(
         ),
     ]
 )
-def test_EmbargoedKFoldSplitterWithTainting(class_params, test_res, is_numpy_input):
+def test_CombinatorialKFold(class_params, test_res, is_numpy_input):
     input = TEST_SPLIT_INPUT
 
     if is_numpy_input:
         input = {k: v.T.values[0] if isinstance(v, pd.DataFrame) else v.values for k, v in input.items()}
 
-    split_idxs = EmbargoedKFoldSplitterWithTainting(**class_params).split(**input)
+    split_idxs = CombinatorialKFold(**class_params).split(**input)
+    print(split_idxs)
     res = split_indexes_to_bars(indexes=split_idxs, **input)
 
     assert len(res) == len(test_res)
@@ -346,20 +347,21 @@ def print_splits(splits):
         (
             dict(k_fold=2, embargo=4, tainted_up_to=None),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
-            'Not enough data left to perform 2 folds'
+            'Not enough train set data to embargo'
         ),
 
     ]
 )
-def test_EmbargoedKFoldSplitterWithTainting_edge_cases(class_params, input, error_msg):
-    with pytest.raises(EmbargoedKFoldSplitterWithTainting.SplitterException) as err:
-        list(EmbargoedKFoldSplitterWithTainting(**class_params).split(**input))
-    assert err.match(error_msg)
+def test_CombinatorialKFold_edge_cases(class_params, input, error_msg):
+    with pytest.raises(CombinatorialKFold.SplitterException) as err:
+        list(CombinatorialKFold(**class_params).split(**input))
+
+    assert str(err.value) == error_msg
 
 
-def test_EmbargoedKFoldSplitterWithTainting_edge_cases_with_cross_val_score():
+def test_CombinatorialKFold_edge_cases_with_cross_val_score():
     estimator = DecisionTreeRegressor()
-    cv = EmbargoedKFoldSplitterWithTainting(k_fold=2, embargo=2, tainted_up_to=1)
+    cv = CombinatorialKFold(k_fold=2, embargo=2, tainted_up_to=1)
     score = cross_val_score(estimator, TEST_SPLIT_INPUT['X'], TEST_SPLIT_INPUT['y'], cv=cv)
     assert len(score) == 2
 
@@ -372,7 +374,7 @@ def test_predict_splits(ohlcv_df):
 
     n = 5
 
-    splits = split_indexes_to_bars(X, y, EmbargoedKFoldSplitterWithTainting(n, 10).split(X))
+    splits = split_indexes_to_bars(X, y, CombinatorialKFold(n, 10).split(X))
 
     res = predict_splits(DecisionTreeClassifier(), splits)
 

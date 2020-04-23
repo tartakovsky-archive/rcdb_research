@@ -1,10 +1,12 @@
 from operator import itemgetter
-from typing import Union, List, Tuple, Iterable, Dict, Optional
+from itertools import combinations
+from functools import reduce
+from typing import Union, List, Tuple, Iterable, Dict, Optional, Any
 
 import numpy as np
 import pandas as pd
 from sklearn.base import clone, BaseEstimator
-from sklearn.model_selection import BaseCrossValidator, KFold
+from sklearn.model_selection import BaseCrossValidator
 from joblib import Parallel, delayed
 
 PandasLike = Union[pd.DataFrame, pd.Series]
@@ -12,79 +14,42 @@ Split = Tuple[np.ndarray, np.ndarray]
 Splits = List[Split]
 
 
-class EmbargoedKFoldSplitterWithTainting(BaseCrossValidator):
-
+class CombinatorialKFold(BaseCrossValidator):
     class SplitterException(Exception):
         pass
 
-    def __init__(self, k_fold: int, embargo: int = None, tainted_up_to=None):
+    def __init__(
+        self,
+        k_fold: int,
+        embargo: Optional[int] = None,
+        tainted_up_to: Optional[Any] = None,
+        n_test: int = 1
+    ):
         if k_fold <= 1 and tainted_up_to is None:
             raise self.SplitterException(
                 "No data left for training set. "
                 "Either set k_fold to > 1 or mark some data as tainted by setting tainted_up_to to not None"
             )
 
+        if k_fold <= n_test and not (k_fold <= 1 and n_test == 1):
+            raise ValueError('k_fold value must be higher then n_test')
+
         self.k_fold = k_fold
         self.embargo = embargo
         self.tainted_up_to = tainted_up_to
+        self.n_test = n_test
 
-    def get_n_splits(self, X=None, y=None, groups=None):
-        return self.k_fold
+    def get_n_splits(self, X=None, y=None, groups=None) -> int:
+        return reduce(
+            lambda a, b: a * b,
+            map(lambda i: self.k_fold - i, range(self.n_test))
+        ) // np.math.factorial(self.n_test)
 
     @staticmethod
     def split_by_index(data: PandasLike, index) -> Tuple[PandasLike, PandasLike]:
         return data[data.index <= index], data[data.index > index]
 
-    @staticmethod
-    def add_tainted_to_train(
-        splits: Splits,
-        tainted: np.ndarray
-    ) -> Splits:
-        return [
-            (np.hstack((tainted, train)), test)
-            for (train, test) in splits
-        ]
-
-    @staticmethod
-    def kfold_splits(data, n_splits: int) -> Splits:
-        return [
-            (data[train_idx], data[test_idx])
-            for train_idx, test_idx in KFold(n_splits=n_splits).split(data)
-        ]
-
-    @staticmethod
-    def embargo_splits(splits: Splits, embargo: int) -> Splits:
-        _splits = []
-        for train, test in splits[:-1]:
-            after_test = train > test[-1]
-            before_test = ~after_test
-
-            if np.sum(before_test):
-                train = np.hstack((train[before_test], train[after_test][embargo:]))
-            else:
-                train = train[embargo:]
-
-            _splits.append((train, test))
-
-        _splits.append(splits[-1])
-        return _splits
-
-    def validate_splits(self, splits: Splits):
-        for train, _ in splits:
-            if not len(train):
-                raise self.SplitterException(f'Not enough data left to perform {self.k_fold} folds')
-
-    def split(self, X, *args, **kwargs) -> List[Split]:
-        """
-        Generate indices to split data into training and test set.
-
-        :param array-like X: shape (n_samples, n_features).
-                             Training data, where n_samples is the number of samples
-                             and n_features is the number of features
-        :param array-like y:
-        :param array-like groups:
-        :return: yield of train ndarray and test ndarray
-        """
+    def split_by_tainted(self, X: Union[PandasLike, np.ndarray]) -> Tuple[np.ndarray, np.ndarray]:
         if self.tainted_up_to is not None:
             if not isinstance(X, pd.DataFrame) or not isinstance(X, pd.Series):
                 X = pd.DataFrame(X)
@@ -95,26 +60,42 @@ class EmbargoedKFoldSplitterWithTainting(BaseCrossValidator):
 
             if not len(idxs) or (self.k_fold <= 1 and not len(tainted_idxs)):
                 raise self.SplitterException('No data left for test set after separating tainted observations')
-
-            if self.k_fold <= 1:
-                return [(tainted_idxs, idxs)]
-
         else:
-            tainted_idxs = np.array([])
+            tainted_idxs = np.array([], dtype=np.int)
             idxs = np.arange(len(X))
 
-        try:
-            splits = self.kfold_splits(idxs, self.k_fold)
-        except ValueError:
+        return tainted_idxs, idxs
+
+    def split(self, X: Union[PandasLike, np.ndarray], *args, **kwargs) -> List[Split]:
+        tainted_idxs, idxs = self.split_by_tainted(X)
+
+        if self.k_fold <= 1 and self.n_test == 1:
+            return [(tainted_idxs, idxs)]
+
+        if len(idxs) < self.k_fold:
             raise self.SplitterException(f'Not enough data left to perform {self.k_fold} folds')
 
-        if self.embargo:
-            splits = self.embargo_splits(splits, self.embargo)
+        groups = np.array_split(idxs, self.k_fold)
+        if self.embargo and not all(len(g) - self.embargo > 0 for g in groups[self.n_test:]):
+            raise self.SplitterException('Not enough train set data to embargo')
 
-        if self.tainted_up_to is not None:
-            splits = self.add_tainted_to_train(splits, tainted_idxs)
+        groups_idxs = np.arange(self.k_fold)
 
-        self.validate_splits(splits)
+        splits = []
+
+        for test_folds in combinations(range(self.k_fold), self.n_test):
+            train_folds = groups_idxs[~np.isin(groups_idxs, test_folds)]
+
+            train_groups = [
+                groups[i][self.embargo:] if self.embargo and any(i - ti == 1 for ti in test_folds) else groups[i]
+                for i in train_folds
+            ]
+            train_groups.insert(0, tainted_idxs)
+            train = np.hstack(train_groups)
+
+            test = np.hstack((itemgetter(*test_folds)(groups)))
+
+            splits.append((train, test))
 
         return splits
 
