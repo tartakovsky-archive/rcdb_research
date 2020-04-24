@@ -383,9 +383,9 @@ def test_predict_splits(ohlcv_df):
     for i in range(n):
         r = res[i]
         split = splits[i]
-        assert np.array_equal(split['y_test'].values, r['y_test'])
+        assert np.array_equal(split['y_test'].values, r['y_true'])
 
-        assert r['y_test'].shape == r['y_pred'].shape and r['y_test'].shape == r['index'].shape
+        assert r['y_true'].shape == r['y_pred'].shape and r['y_true'].shape == r['index'].shape
 
 
 @pytest.mark.parametrize(
