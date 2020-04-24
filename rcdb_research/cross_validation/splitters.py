@@ -9,6 +9,8 @@ from sklearn.base import clone, BaseEstimator
 from sklearn.model_selection import BaseCrossValidator
 from joblib import Parallel, delayed
 
+from .. import utils
+
 PandasLike = Union[pd.DataFrame, pd.Series]
 Split = Tuple[np.ndarray, np.ndarray]
 Splits = List[Split]
@@ -38,6 +40,10 @@ class CombinatorialKFold(BaseCrossValidator):
         self.embargo = embargo
         self.tainted_up_to = tainted_up_to
         self.n_test = n_test
+
+    @staticmethod
+    def get_n_paths(n_test, k_fold):
+        return reduce(lambda a, b: a * b, map(lambda i: k_fold - i, range(1, n_test))) // np.math.factorial(n_test - 1)
 
     def get_n_splits(self, X=None, y=None, groups=None) -> int:
         return reduce(
@@ -191,3 +197,49 @@ def predict_splits(
                                predict_train, fit_args, predict_args)
         for split in splits
     )
+
+
+def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], n_test: int, k_fold: int) -> List[Dict[str, np.ndarray]]:
+    if n_test > 1:
+        n_paths = CombinatorialKFold.get_n_paths(n_test, k_fold)
+    elif n_test == 1:
+        n_paths = 1
+    else:
+        raise ValueError('Unexpected value of n_test')
+
+    # place preds to folds
+    preds_splits = [
+        [None for _ in range(k_fold)]
+        for _ in predicts
+    ]
+    for split_i, (predict, test_ids) in enumerate(zip(predicts, combinations(range(k_fold), n_test))):
+        splitted_predicts = utils.split_dict_array_values(predict, n_test)
+        for fold_i, i in zip(test_ids, range(n_test)):
+            preds_splits[split_i][fold_i] = splitted_predicts[i]
+
+    # calculate paths
+    paths: List[List[Dict[str, np.ndarray]]] = []
+    used_folds = set()
+
+    for p in range(n_paths):
+        paths.append([])
+        last_fold_id = -1
+        for split_id, folds in enumerate(combinations(range(k_fold), n_test)):
+
+            for fold_id in folds:
+                if (split_id, fold_id) in used_folds:
+                    continue
+
+                if fold_id > last_fold_id:
+                    last_fold_id = fold_id
+                    used_folds.add((split_id, fold_id))
+
+                    paths[-1].append(
+                        preds_splits[split_id][fold_id]
+                    )
+
+                    if last_fold_id == k_fold - 1:  # full path found
+                        print(paths[-1])
+                        break
+
+    return [utils.merge_dicts_array_values(path_dicts) for path_dicts in paths]

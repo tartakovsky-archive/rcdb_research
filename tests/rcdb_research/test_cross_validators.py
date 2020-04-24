@@ -6,7 +6,7 @@ from sklearn.model_selection import cross_val_score
 
 from rcdb_research.cross_validation import \
     WalkForwardCV, cross_val_predict_timeseries_splits, \
-    split_indexes_to_bars, predict_splits, CombinatorialKFold
+    split_indexes_to_bars, predict_splits, CombinatorialKFold, predicts_to_paths
 
 
 @pytest.fixture
@@ -386,3 +386,61 @@ def test_predict_splits(ohlcv_df):
         assert np.array_equal(split['y_test'].values, r['y_test'])
 
         assert r['y_test'].shape == r['y_pred'].shape and r['y_test'].shape == r['index'].shape
+
+
+@pytest.mark.parametrize(
+    'params, x_size, ys_true',
+    [
+        (
+            dict(k_fold=5, n_test=3),
+            15,
+            [
+                [0.01, 1.01, 2.01, 3.01, 4.01, 5.01, 6.01, 7.01, 8.01, 9.02, 10.02, 11.02, 12.03, 13.03, 14.03],
+                [0.02, 1.02, 2.02, 3.02, 4.02, 5.02, 6.04, 7.04, 8.04, 9.04, 10.04, 11.04, 12.05, 13.05, 14.05],
+                [0.03, 1.03, 2.03, 3.03, 4.03, 5.03, 6.05, 7.05, 8.05, 9.06, 10.06, 11.06, 12.06, 13.06, 14.06],
+                [0.04, 1.04, 2.04, 3.07, 4.07, 5.07, 6.07, 7.07, 8.07, 9.07, 10.07, 11.07, 12.08, 13.08, 14.08],
+                [0.05, 1.05, 2.05, 3.08, 4.08, 5.08, 6.08, 7.08, 8.08, 9.09, 10.09, 11.09, 12.09, 13.09, 14.09],
+                [0.06, 1.06, 2.06, 3.09, 4.09, 5.09, 6.10, 7.10, 8.10, 9.10, 10.10, 11.10, 12.10, 13.10, 14.10],
+            ],
+        ),
+        (
+            dict(k_fold=3, n_test=2),
+            15,
+            [
+                [0.01, 1.01, 2.01, 3.01, 4.01, 5.01, 6.01, 7.01, 8.01, 9.01, 10.02, 11.02, 12.02, 13.02, 14.02],
+                [0.02, 1.02, 2.02, 3.02, 4.02, 5.03, 6.03, 7.03, 8.03, 9.03, 10.03, 11.03, 12.03, 13.03, 14.03],
+
+            ]
+        ),
+        (
+            dict(k_fold=3, n_test=1),
+            15,
+            [
+                [0.01, 1.01, 2.01, 3.01, 4.01, 5.02, 6.02, 7.02, 8.02, 9.02, 10.03, 11.03, 12.03, 13.03, 14.03],
+            ]
+        )
+    ]
+)
+def test_predicts_to_paths(params, x_size, ys_true):
+    preds = [
+        dict(
+            y_true=test_idxs + (i + 1) * .01,
+            y_pred=test_idxs,
+            index=test_idxs
+        )
+        for i, (_, test_idxs) in enumerate(CombinatorialKFold(**params).split(np.arange(x_size)))
+    ]
+
+    paths = predicts_to_paths(preds, **params)
+
+    assert len(paths) == len(ys_true)
+    for path, test_y_true in zip(paths, ys_true):
+        test_y_true = np.array(test_y_true)
+        test_path = {
+            'y_true': test_y_true,
+            'y_pred': test_y_true.astype(np.int),
+            'index': test_y_true.astype(np.int)
+        }
+        assert path.keys() == test_path.keys()
+        for k in test_path:
+            assert np.array_equal(path[k], test_path[k])
