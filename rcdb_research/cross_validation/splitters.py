@@ -177,7 +177,7 @@ def predict_splits(
                 y_train_pred = clf.predict(X_train, **predict_args)
 
         res = {
-            'y_test': np.array(y_test.values),
+            'y_true': np.array(y_test.values),
             'y_pred': y_pred,
             'index': X_test.index.values if hasattr(X_test, 'index') else None
         }
