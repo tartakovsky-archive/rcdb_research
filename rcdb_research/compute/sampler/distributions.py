@@ -40,7 +40,7 @@ class Sampler:
         self.transforms = transforms if transforms else []
 
     @staticmethod
-    def uniform(low: float, high: float, *args, **kwargs):
+    def uniform(low: float = 0, high: float = 1, *args, **kwargs):
         loc = low
         scale = high - loc
         return Sampler("uniform", *args, loc=loc, scale=scale, **kwargs)
