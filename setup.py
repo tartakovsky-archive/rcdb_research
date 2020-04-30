@@ -18,7 +18,7 @@ def install(package):
 
 
 def parse_reqs(path):
-    return [str(r.req) for r in parse_requirements(path, session=pip_session)]
+    return [r.requirement for r in parse_requirements(path, session=pip_session)]
 
 
 INSTALL_REQUIREMENTS = parse_reqs(os.path.join(REQUIREMENTS_DIR, "requirements.txt"))
