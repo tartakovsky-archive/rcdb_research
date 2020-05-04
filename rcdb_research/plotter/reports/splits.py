@@ -62,7 +62,7 @@ def splits(
     for i, (train, test) in enumerate(splits):
         logging.debug(f'{i} train {train[:1]} {train[-1:]} test {test[:1]} {test[-1:]}')
         for dataset, starts, sizes in zip((train, test), (train_start, test_start), (train_size, test_size)):
-            bars = get_dataset_bars(dataset)
+            bars = pieces(dataset)
             starts.append(bars[0])
             sizes.append(bars[1])
 
@@ -83,8 +83,8 @@ def splits(
             _X = pd.DataFrame(X)
 
         X_tainted, _ = cv.split_by_index(_X, cv.tainted_up_to)
-        tainted_start = np.repeat(0, len(index))
-        tainted_size = np.repeat(len(X_tainted), len(index))
+        tainted_start = np.repeat([0], len(index))
+        tainted_size = np.repeat([len(X_tainted)], len(index))
 
     fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
     utils.configure_axis(axis, title, None if show_dates else xlabel, ylabel, ax_kwargs=ax_kwargs)
@@ -98,7 +98,7 @@ def splits(
     axis.yaxis.set_major_locator(loc)
 
     axis.set_ylim(index[0] - 0.5, index[-1] + 0.5)
-    axis.set_xlim(x_index[0], x_index[-1])
+    axis.set_xlim(x_index[0], x_index[-1] + 1)
 
     # Bars
     def draw_barh(starts, sizes, label, color):
@@ -149,47 +149,33 @@ def pieces(a: np.ndarray) -> Tuple[Optional[List[int]], Optional[List[int]]]:
     :param a: dataset indexes
     :return:
     """
-    idxs = np.argwhere(np.diff(a) > 1)
+    idxs = np.where(np.hstack(([-1], np.diff(a))) != 1)[0]
 
-    if not len(idxs):
-        return None, None
-
-    idxs_after = np.hstack(idxs) + 1
-
-    starts = [a[0]]
-    sizes = [idxs_after[0]]
-
-    for item, item_next in zip(idxs_after, idxs_after[1:]):
-        starts.append(a[item])
-        sizes.append(item_next - item + 1)
-
-    starts.append(a[idxs_after[-1]])
-    sizes.append(a[-1] - a[idxs_after[-1]] + 1)
+    starts = a[idxs]
+    sizes = [end_i - i for i, end_i in zip(idxs, idxs[1:].tolist() + [len(a)])]
 
     return starts, sizes
 
 
-def get_embargo_start(train: np.ndarray, test: np.ndarray, X: pd.DataFrame) -> Optional[int]:
-    test_end = test[-1]
+def get_embargo_start(train: np.ndarray, test: np.ndarray, size: int, *args, **kwargs) -> Optional[List[int]]:
+    embargo_start = []
 
-    if test_end != len(X) - 1:
-        train_after_test = train[train >= test_end]
-        train_after_test_start = train_after_test[0] if len(train_after_test) else None
+    for test_end in map(lambda b: sum(b) - 1, zip(*pieces(test))):
+        for train_start in pieces(train)[0]:
+            if train_start - test_end == size + 1:
+                embargo_start.append(test_end + 1)
 
-        if train_after_test_start is not None and train_after_test_start - test_end != 1:
-            return test_end + 1
-
-    return None
+    return embargo_start
 
 
-def get_gap_start(train: np.ndarray, test: np.ndarray, *args) -> Optional[int]:
+def get_gap_start(train: np.ndarray, test: np.ndarray, *args, **kwargs) -> Optional[List[int]]:
     test_start = test[0]
     if test_start != 0:
         train_before_test = train[train <= test_start]
         train_before_test_start = train_before_test[-1] if len(train_before_test) else None
 
         if train_before_test_start is not None and test_start - train_before_test_start != 1:
-            return train_before_test_start + 1
+            return [train_before_test_start + 1]
 
     return None
 
@@ -198,37 +184,19 @@ def get_custom_bars(
         func: Callable,
         splits: List[Tuple[np.ndarray, np.ndarray]],
         size: int,
-        X: pd.DataFrame
-) -> Tuple[List[int], List[int]]:
+        *args, **kwargs
+) -> Tuple[List[List[int]], List[List[int]]]:
     starts = []
     sizes = []
     for train, test in splits:
         if len(train) and len(test):
-            start = func(train, test, X)
+            start = func(train, test, size=size)
             if start is not None:
                 starts.append(start)
-                sizes.append(size)
+                sizes.append(np.repeat(size, len(start)).tolist())
                 continue
 
-        starts.append(0)
-        sizes.append(0)
+        starts.append([0])
+        sizes.append([0])
 
     return starts, sizes
-
-
-def get_dataset_bars(index: np.ndarray) -> Tuple[List[int], List[int]]:
-    """
-    Calculates bars start indexes & starts from dataset index
-    :param index: dataset index
-    :return: tuple of lists with start bar indexes and bar sizes (starts, sizes)
-    """
-
-    parts = pieces(index)
-
-    if len(index):
-        if parts != (None, None):
-            return parts
-        else:
-            return [index[0]], [index[-1] - index[0] + 1]
-
-    return [], []

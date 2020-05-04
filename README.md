@@ -18,7 +18,7 @@ $ pip install -U --extra-index-url https://pypi-private:***TOKEN***@pkgs.dev.azu
 ## Installation for development
 
 `$ pip install --extra-index-url $(cat extra-index-url) .` - install requirements from source  
-`$ pip install --extra-index-url $(cat extra-index-url) -e '.[dev]'` - install requirements from source for development  
+`$ pip install --extra-index-url $(cat extra-index-url) -e .[dev]` - install requirements from source for development  
 `$ pip install --extra-index-url $(cat extra-index-url) -e <git url>` - install requirements from git  
 `$ jupyter notebook` - start jupyter  
 
