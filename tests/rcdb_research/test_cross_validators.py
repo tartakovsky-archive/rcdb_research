@@ -361,7 +361,7 @@ def test_CombinatorialKFold_edge_cases(class_params, input, error_msg):
 
 def test_CombinatorialKFold_edge_cases_with_cross_val_score():
     estimator = DecisionTreeRegressor()
-    cv = CombinatorialKFold(k_fold=2, embargo=2, tainted_up_to=1)
+    cv = CombinatorialKFold(n_folds=2, embargo=2, tainted_up_to=1)
     score = cross_val_score(estimator, TEST_SPLIT_INPUT['X'], TEST_SPLIT_INPUT['y'], cv=cv)
     assert len(score) == 2
 

@@ -22,34 +22,37 @@ class CombinatorialKFold(BaseCrossValidator):
 
     def __init__(
         self,
-        k_fold: int,
+        n_folds: int,
         embargo: Optional[int] = None,
         tainted_up_to: Optional[Any] = None,
-        n_test: int = 1
+        k_tests: int = 1
     ):
-        if k_fold <= 1 and tainted_up_to is None:
+        if n_folds <= 1 and tainted_up_to is None:
             raise self.SplitterException(
                 "No data left for training set. "
                 "Either set k_fold to > 1 or mark some data as tainted by setting tainted_up_to to not None"
             )
 
-        if k_fold <= n_test and not (k_fold <= 1 and n_test == 1):
+        if n_folds <= k_tests and not (n_folds <= 1 and k_tests == 1):
             raise ValueError('k_fold value must be higher then n_test')
 
-        self.k_fold = k_fold
+        self.n_folds = n_folds
         self.embargo = embargo
         self.tainted_up_to = tainted_up_to
-        self.n_test = n_test
+        self.k_tests = k_tests
 
     @staticmethod
-    def get_n_paths(n_test, k_fold):
-        return reduce(lambda a, b: a * b, map(lambda i: k_fold - i, range(1, n_test))) // np.math.factorial(n_test - 1)
+    def get_n_paths(k_tests, n_folds):
+        return reduce(
+            lambda a, b: a * b,
+            map(lambda i: n_folds - i, range(1, k_tests))
+        ) // np.math.factorial(k_tests - 1)
 
     def get_n_splits(self, X=None, y=None, groups=None) -> int:
         return reduce(
             lambda a, b: a * b,
-            map(lambda i: self.k_fold - i, range(self.n_test))
-        ) // np.math.factorial(self.n_test)
+            map(lambda i: self.n_folds - i, range(self.k_tests))
+        ) // np.math.factorial(self.k_tests)
 
     @staticmethod
     def split_by_index(data: PandasLike, index) -> Tuple[PandasLike, PandasLike]:
@@ -64,7 +67,7 @@ class CombinatorialKFold(BaseCrossValidator):
             tainted_idxs = np.arange(0, len(X_tainted))
             idxs = np.arange(len(X_tainted), len(X_tainted) + len(X))
 
-            if not len(idxs) or (self.k_fold <= 1 and not len(tainted_idxs)):
+            if not len(idxs) or (self.n_folds <= 1 and not len(tainted_idxs)):
                 raise self.SplitterException('No data left for test set after separating tainted observations')
         else:
             tainted_idxs = np.array([], dtype=np.int)
@@ -75,21 +78,21 @@ class CombinatorialKFold(BaseCrossValidator):
     def split(self, X: Union[PandasLike, np.ndarray], *args, **kwargs) -> List[Split]:
         tainted_idxs, idxs = self.split_by_tainted(X)
 
-        if self.k_fold <= 1 and self.n_test == 1:
+        if self.n_folds <= 1 and self.k_tests == 1:
             return [(tainted_idxs, idxs)]
 
-        if len(idxs) < self.k_fold:
-            raise self.SplitterException(f'Not enough data left to perform {self.k_fold} folds')
+        if len(idxs) < self.n_folds:
+            raise self.SplitterException(f'Not enough data left to perform {self.n_folds} folds')
 
-        groups = np.array_split(idxs, self.k_fold)
-        if self.embargo and not all(len(g) - self.embargo > 0 for g in groups[self.n_test:]):
+        groups = np.array_split(idxs, self.n_folds)
+        if self.embargo and not all(len(g) - self.embargo > 0 for g in groups[self.k_tests:]):
             raise self.SplitterException('Not enough train set data to embargo')
 
-        groups_idxs = np.arange(self.k_fold)
+        groups_idxs = np.arange(self.n_folds)
 
         splits = []
 
-        for test_folds in combinations(range(self.k_fold), self.n_test):
+        for test_folds in combinations(range(self.n_folds), self.k_tests):
             train_folds = groups_idxs[~np.isin(groups_idxs, test_folds)]
 
             train_groups = [
@@ -199,22 +202,22 @@ def predict_splits(
     )
 
 
-def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], n_test: int, k_fold: int) -> List[Dict[str, np.ndarray]]:
-    if n_test > 1:
-        n_paths = CombinatorialKFold.get_n_paths(n_test, k_fold)
-    elif n_test == 1:
+def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], k_tests: int, n_folds: int) -> List[Dict[str, np.ndarray]]:
+    if k_tests > 1:
+        n_paths = CombinatorialKFold.get_n_paths(k_tests, n_folds)
+    elif k_tests == 1:
         n_paths = 1
     else:
         raise ValueError('Unexpected value of n_test')
 
     # place preds to folds
     preds_splits = [
-        [None for _ in range(k_fold)]
+        [None for _ in range(n_folds)]
         for _ in predicts
     ]
-    for split_i, (predict, test_ids) in enumerate(zip(predicts, combinations(range(k_fold), n_test))):
-        splitted_predicts = utils.split_dict_array_values(predict, n_test)
-        for fold_i, i in zip(test_ids, range(n_test)):
+    for split_i, (predict, test_ids) in enumerate(zip(predicts, combinations(range(n_folds), k_tests))):
+        splitted_predicts = utils.split_dict_array_values(predict, k_tests)
+        for fold_i, i in zip(test_ids, range(k_tests)):
             preds_splits[split_i][fold_i] = splitted_predicts[i]
 
     # calculate paths
@@ -224,7 +227,7 @@ def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], n_test: int, k_fold
     for p in range(n_paths):
         paths.append([])
         last_fold_id = -1
-        for split_id, folds in enumerate(combinations(range(k_fold), n_test)):
+        for split_id, folds in enumerate(combinations(range(n_folds), k_tests)):
 
             for fold_id in folds:
                 if (split_id, fold_id) in used_folds:
@@ -238,7 +241,7 @@ def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], n_test: int, k_fold
                         preds_splits[split_id][fold_id]
                     )
 
-                    if last_fold_id == k_fold - 1:  # full path found
+                    if last_fold_id == n_folds - 1:  # full path found
                         print(paths[-1])
                         break
 
