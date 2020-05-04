@@ -30,11 +30,11 @@ class CombinatorialKFold(BaseCrossValidator):
         if n_folds <= 1 and tainted_up_to is None:
             raise self.SplitterException(
                 "No data left for training set. "
-                "Either set k_fold to > 1 or mark some data as tainted by setting tainted_up_to to not None"
+                "Either set n_folds to > 1 or mark some data as tainted by setting tainted_up_to to not None"
             )
 
         if n_folds <= k_tests and not (n_folds <= 1 and k_tests == 1):
-            raise ValueError('k_fold value must be higher then n_test')
+            raise ValueError('n_folds value must be higher then k_tests')
 
         self.n_folds = n_folds
         self.embargo = embargo
@@ -208,7 +208,7 @@ def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], k_tests: int, n_fol
     elif k_tests == 1:
         n_paths = 1
     else:
-        raise ValueError('Unexpected value of n_test')
+        raise ValueError('Unexpected value of k_tests')
 
     # place preds to folds
     preds_splits = [
@@ -242,7 +242,6 @@ def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], k_tests: int, n_fol
                     )
 
                     if last_fold_id == n_folds - 1:  # full path found
-                        print(paths[-1])
                         break
 
     return [utils.merge_dicts_array_values(path_dicts) for path_dicts in paths]

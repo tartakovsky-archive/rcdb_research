@@ -167,7 +167,7 @@ TEST_SPLIT_INPUT = dict(
     'class_params, test_res',
     [
         (
-            dict(k_fold=2, embargo=None, tainted_up_to=None),
+            dict(n_folds=2, embargo=None, tainted_up_to=None),
             [
                 dict(
                     X_train=pd.DataFrame([6, 7, 8, 9], index=[4, 5, 6, 7]),
@@ -184,7 +184,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(k_fold=2, embargo=2, tainted_up_to=None),
+            dict(n_folds=2, embargo=2, tainted_up_to=None),
             [
                 dict(
                     X_train=pd.DataFrame([8, 9], index=[6, 7]),
@@ -201,7 +201,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(k_fold=2, embargo=None, tainted_up_to=1),
+            dict(n_folds=2, embargo=None, tainted_up_to=1),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 7, 8, 9], index=[0, 1, 5, 6, 7]),
@@ -218,7 +218,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(k_fold=2, embargo=2, tainted_up_to=1),
+            dict(n_folds=2, embargo=2, tainted_up_to=1),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 9], index=[0, 1, 7]),
@@ -235,7 +235,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(k_fold=2, embargo=None, tainted_up_to=5),
+            dict(n_folds=2, embargo=None, tainted_up_to=5),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 4, 5, 6, 7, 9], index=[0, 1, 2, 3, 4, 5, 7]),
@@ -252,7 +252,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(k_fold=1, embargo=2, tainted_up_to=4),
+            dict(n_folds=1, embargo=2, tainted_up_to=4),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 4, 5, 6], index=[0, 1, 2, 3, 4]),
@@ -263,7 +263,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(k_fold=1, embargo=None, tainted_up_to=4),
+            dict(n_folds=1, embargo=None, tainted_up_to=4),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 4, 5, 6], index=[0, 1, 2, 3, 4]),
@@ -318,34 +318,34 @@ def print_splits(splits):
     'class_params, input, error_msg',
     [
         (
-            dict(k_fold=1, embargo=None, tainted_up_to=None),
+            dict(n_folds=1, embargo=None, tainted_up_to=None),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for training set. '
-            'Either set k_fold to > 1 or mark some data as tainted by setting tainted_up_to to not None'
+            'Either set n_folds to > 1 or mark some data as tainted by setting tainted_up_to to not None'
         ),
         (
-            dict(k_fold=0, embargo=None, tainted_up_to=None),
+            dict(n_folds=0, embargo=None, tainted_up_to=None),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for training set. '
-            'Either set k_fold to > 1 or mark some data as tainted by setting tainted_up_to to not None'
+            'Either set n_folds to > 1 or mark some data as tainted by setting tainted_up_to to not None'
         ),
         (
-            dict(k_fold=1, embargo=None, tainted_up_to=7),
+            dict(n_folds=1, embargo=None, tainted_up_to=7),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for test set after separating tainted observations'
         ),
         (
-            dict(k_fold=1, embargo=None, tainted_up_to=8),
+            dict(n_folds=1, embargo=None, tainted_up_to=8),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for test set after separating tainted observations'
         ),
         (
-            dict(k_fold=2, embargo=None, tainted_up_to=6),
+            dict(n_folds=2, embargo=None, tainted_up_to=6),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'Not enough data left to perform 2 folds'
         ),
         (
-            dict(k_fold=2, embargo=4, tainted_up_to=None),
+            dict(n_folds=2, embargo=4, tainted_up_to=None),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'Not enough train set data to embargo'
         ),
@@ -392,7 +392,7 @@ def test_predict_splits(ohlcv_df):
     'params, x_size, ys_true',
     [
         (
-            dict(k_fold=5, n_test=3),
+            dict(n_folds=5, k_tests=3),
             15,
             [
                 [0.01, 1.01, 2.01, 3.01, 4.01, 5.01, 6.01, 7.01, 8.01, 9.02, 10.02, 11.02, 12.03, 13.03, 14.03],
@@ -404,7 +404,7 @@ def test_predict_splits(ohlcv_df):
             ],
         ),
         (
-            dict(k_fold=3, n_test=2),
+            dict(n_folds=3, k_tests=2),
             15,
             [
                 [0.01, 1.01, 2.01, 3.01, 4.01, 5.01, 6.01, 7.01, 8.01, 9.01, 10.02, 11.02, 12.02, 13.02, 14.02],
@@ -413,7 +413,7 @@ def test_predict_splits(ohlcv_df):
             ]
         ),
         (
-            dict(k_fold=3, n_test=1),
+            dict(n_folds=3, k_tests=1),
             15,
             [
                 [0.01, 1.01, 2.01, 3.01, 4.01, 5.02, 6.02, 7.02, 8.02, 9.02, 10.03, 11.03, 12.03, 13.03, 14.03],
