@@ -36,7 +36,6 @@ def splits(
         show_groups: bool = False,
         show_paths: bool = False,
         ax: Optional[Axes] = None):
-
     colors = colors or splits_colors()
     fig_kwargs = fig_kwargs or style.fig_kwargs()
     ax_kwargs = ax_kwargs or style.ax_kwargs(
@@ -182,7 +181,6 @@ def get_custom_bars(
     size: int,
     *args, **kwargs
 ) -> Tuple[List[List[int]], List[List[int]]]:
-
     starts = []
     sizes = []
     for train, test in splits:
@@ -279,15 +277,16 @@ def draw_barh(starts, sizes, label, color, axis, splits):
 
 
 def draw_paths(paths, index, axis):
-    cmap = plt.get_cmap('YlOrBr')
-    mult = 256 // len(paths)
+    cmap = plt.get_cmap('tab20_r')
+    colors = np.linspace(0, 1, 20)
+
     for i, path in enumerate(paths):
-        c = cmap(i * mult)
+        c = cmap(colors[i % colors.size])
         for y, start, width in path:
             axis.barh(y=len(index) - y, height=0.75, width=width, left=start, color=c)
 
 
 def draw_groups(groups: List[int], index: List, axis):
     for i, g in enumerate(groups):
-        axis.axvline(g, c='black')
+        axis.axvline(x=g, ymin=-1, ymax=2, c='black', linestyle='-', lw=0.5)
         axis.text(g - 0.3, len(index) + 0.7, str(i + 1))
