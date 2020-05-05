@@ -7,11 +7,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.axes import Axes
+from matplotlib.patches import Rectangle
 from sklearn.model_selection import BaseCrossValidator, KFold
 
 from .. import style
 from .. import utils
+from ..primitives.legend import HandlerColormap
 from ...cross_validation import CombinatorialKFold, predicts_to_paths
+
+MAX_NUM_COLORS_OF_PATHS = 20
 
 
 def splits_colors(tainted='#414BB2',
@@ -85,6 +89,8 @@ def splits(
         else:
             print('Warning: CV doesn`t support parameter `show_groups`')
 
+    stats = get_stats(cv, X, tainted_size, len(paths))
+
     fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
     utils.configure_axis(axis, title, None if show_dates else xlabel, ylabel, ax_kwargs=ax_kwargs)
 
@@ -119,9 +125,8 @@ def splits(
     if groups:
         draw_groups(groups, index, axis)
 
-    axis.legend(loc='lower center', bbox_to_anchor=(0.5, -0.35),
-                fancybox=True, shadow=False, ncol=5,
-                prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
+    draw_legend(axis, show_paths, len(paths), ax_kwargs)
+    draw_stats(stats, axis, ax_kwargs)
 
     if show_dates:
         utils.second_index(axis,
@@ -134,6 +139,7 @@ def splits(
 #########################################
 # Utility functions for the main report #
 #########################################
+
 
 def pieces(a: np.ndarray) -> Tuple[Optional[List[int]], Optional[List[int]]]:
     """
@@ -258,6 +264,38 @@ def get_train_test(splits):
     return train_start, test_start, train_size, test_size
 
 
+def get_stats(cv, X, tainted_size, num_paths):
+    embargo_size = getattr(cv, 'embargo', 0)
+    tainting_size = tainted_size[0] if len(tainted_size) else 0
+
+    if hasattr(cv, 'n_folds') or isinstance(cv, KFold):
+        folds = getattr(cv, 'n_folds', 0) or getattr(cv, 'n_splits', 0)
+    else:
+        folds = 0
+
+    if folds:
+        fold_size = (len(X) - tainting_size) // folds
+    else:
+        fold_size = 0
+
+    if folds and hasattr(cv, 'k_tests'):
+        tests = cv.k_tests
+        trains = folds - tests
+    else:
+        tests = 1
+        trains = 1
+
+    return {
+        'paths': num_paths or 1,
+        'folds': folds,
+        'trains': trains,
+        'tests': tests,
+        'fold size': fold_size,
+        'embargo size': embargo_size,
+        'tainting size': tainting_size
+    }
+
+
 def draw_barh(starts, sizes, label, color, axis, splits):
     if not (len(sizes) and any(sizes)):
         return
@@ -278,7 +316,7 @@ def draw_barh(starts, sizes, label, color, axis, splits):
 
 def draw_paths(paths, index, axis):
     cmap = plt.get_cmap('tab20_r')
-    colors = np.linspace(0, 1, 20)
+    colors = np.linspace(0, 1, MAX_NUM_COLORS_OF_PATHS)
 
     for i, path in enumerate(paths):
         c = cmap(colors[i % colors.size])
@@ -290,3 +328,39 @@ def draw_groups(groups: List[int], index: List, axis):
     for i, g in enumerate(groups):
         axis.axvline(x=g, ymin=-1, ymax=2, c='black', linestyle='-', lw=0.5)
         axis.text(g - 0.3, len(index) + 0.7, str(i + 1))
+
+
+def draw_stats(stats, axis, ax_kwargs):
+    labels = [
+        f'{k} = {v}'
+        for k, v in stats.items()
+    ]
+
+    axis.add_artist(
+        plt.legend(
+            labels=labels, handles=[Rectangle((0, 0), 0, 0, alpha=0.0) for _ in labels],
+            bbox_to_anchor=(0.8, -0.5), loc='lower center',
+            fancybox=True, shadow=False, ncol=2,
+            prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']},
+            handlelength=0
+        )
+    )
+
+
+def draw_legend(axis, show_paths, num_paths, ax_kwargs):
+    handles, labels = axis.get_legend_handles_labels()
+    if show_paths and num_paths:
+        handles.pop(labels.index('test'))
+        cmap_handle = Rectangle((0, 0), 1, 1, label='test')
+        num_stripes = num_paths if num_paths < MAX_NUM_COLORS_OF_PATHS else MAX_NUM_COLORS_OF_PATHS
+        handler_map = {cmap_handle: HandlerColormap(plt.get_cmap('tab20_r'), MAX_NUM_COLORS_OF_PATHS, num_stripes)}
+        handles += [cmap_handle]
+    else:
+        handler_map = {}
+
+    axis.add_artist(
+        plt.legend(handles=handles, handler_map=handler_map,
+                   loc='lower left', bbox_to_anchor=(0., -0.4),
+                   fancybox=True, shadow=False, ncol=2,
+                   prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
+    )
