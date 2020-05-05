@@ -37,6 +37,7 @@ class Context(NamedTuple):
         story = f"""----- New bar -----
 
         Bid = ${self.bidask.bid:.2f}, Ask = ${self.bidask.ask:.2f}
+        Spread = ${self.bidask.spread}, {(self.bidask.spread/self.bidask.mid_market)*100}%
 
         Current position:
             size = {position_pre_trade.size if position_pre_trade is not None else 0:.2f}
