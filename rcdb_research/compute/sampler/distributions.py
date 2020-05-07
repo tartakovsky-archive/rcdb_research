@@ -1,219 +1,112 @@
-from __future__ import annotations
-
-from typing import Union
-from dataclasses import dataclass
+import copy
 
 import numpy as np
 import scipy.stats as stats
 
 
-class Sampler: pass  # noqa
-def register(c):     # noqa
-    setattr(Sampler, c.abbrev, c)
-    return c
-
-
-# Base class
-@dataclass
-class Distribution:
-    def __post_init__(self):
-        self.seed = getattr(self, 'seed', None)
-        self.rs = np.random.RandomState(self.seed)
-
-    def sample(self, n: int) -> Union[np.ndarray, float, int]:
+class Transform:
+    def transform(self, *args, **kwargs):
         raise NotImplementedError
 
 
-##########
-# Uniform
-##########
-@register
-@dataclass
-class Uniform(Distribution):
-    low: float
-    high: float
-    seed: int = None
-    abbrev = 'uniform'
-
-    def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.uniform(self.low, self.high, n)
-        return draw[0] if n == 1 else draw
+class LogTransform(Transform):
+    def transform(self, v):
+        return np.exp(v)
 
 
-@register
-@dataclass
-class LogUniform(Distribution):
-    low: float
-    high: float
-    seed: int = None
-    abbrev = 'loguniform'
+class QuantizeTransform(Transform):
+    def __init__(self, q: float):
+        self.q = q
 
-    def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.uniform(self.low, self.high, n)
-        draw = np.exp(draw)
-        return draw[0] if n == 1 else draw
+    def transform(self, v: np.ndarray) -> np.ndarray:
+        return v // self.q * self.q  # np.round(v / self.q) * self.q
 
 
-@register
-@dataclass
-class QuantizedUniform(Distribution):
-    low: float
-    high: float
-    q: float
-    seed: int = None
-    abbrev = 'quniform'
+class DiscretizeTransform(Transform):
+    def __init__(self, step: int):
+        if type(step) != int:
+            raise ValueError("Discretize step is `int` only")
+        self.step = step
 
-    def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.uniform(self.low, self.high, n)
-        draw = np.round(draw / self.q) * self.q
-        return draw[0] if n == 1 else draw
+    def transform(self, v: np.ndarray) -> np.ndarray:
+        return (v // self.step * self.step).astype(np.int)
 
 
-@register
-@dataclass
-class QuantizedLogUniform(Distribution):
-    low: float
-    high: float
-    q: float
-    seed: int = None
-    abbrev = 'qloguniform'
+class Sampler:
+    def __init__(self, name, seed=None, transforms=None, **kwargs):
+        self.name = name
+        self.seed = seed
+        self.kwargs = kwargs
+        self.transforms = transforms if transforms else []
 
-    def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.uniform(self.low, self.high, n)
-        draw = np.exp(draw)
-        draw = np.round(draw / self.q) * self.q
-        return draw[0] if n == 1 else draw
+    @staticmethod
+    def uniform(low: float = 0, high: float = 1, *args, **kwargs):
+        loc = low
+        scale = high - loc
+        return Sampler("uniform", *args, loc=loc, scale=scale, **kwargs)
 
+    @staticmethod
+    def normal(loc: float = 0, scale: float = 3, *args, **kwargs):
+        return Sampler("norm", loc=loc, scale=scale, *args, **kwargs)
 
-@register
-@dataclass
-class DiscreteUniform(Distribution):
-    low: int
-    high: int
-    step: int = 1
-    seed: int = None
-    abbrev = 'duniform'
+    @staticmethod
+    def truncnormal(low: float = 0, high: float = 1, loc: float = None, scale: float = None, *args, **kwargs):
+        return Sampler("truncnormal", low=low, high=high, loc=loc, scale=scale, *args, **kwargs)
 
-    def sample(self, n: int = 1) -> Union[np.ndarray, int]:
-        values = np.arange(self.low, self.high, self.step)
-        draw = self.rs.choice(values, n)
-        return draw[0] if n == 1 else draw
+    ##########
 
+    def __get_distribution__(self):
+        if self.name == "truncnormal":
+            low = self.kwargs['low']
+            high = self.kwargs['high']
 
-##########
-# Normal
-##########
-@register
-@dataclass
-class Normal(Distribution):
-    loc: float
-    scale: float
-    seed: int = None
-    abbrev = 'normal'
+            if 'scale' not in self.kwargs:
+                # why 7 works? replace with something logical
+                scale = (high - low) / 7
+            else:
+                scale = self.kwargs['scale']
 
-    def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.normal(self.loc, self.scale, n)
-        return draw[0] if n == 1 else draw
+            if 'loc' not in self.kwargs:
+                loc = (high + low) / 2
+            else:
+                loc = self.kwargs['loc']
 
+            d = stats.truncnorm(
+                (low - loc) / scale,
+                (high - loc) / scale,
+                loc=loc,
+                scale=scale
+            )
+        else:
+            d = getattr(stats, self.name)(**self.kwargs)
 
-@register
-@dataclass
-class LogNormal(Distribution):
-    loc: float
-    scale: float
-    seed: int = None
-    abbrev = 'lognormal'
+        return d
 
-    def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.normal(self.loc, self.scale, n)
-        draw = np.exp(draw)
-        return draw[0] if n == 1 else draw
+    def draw(self, n: int = 1):
+        rs = np.random.RandomState(self.seed)
+        d = self.__get_distribution__()
+        val = d.rvs(size=n, random_state=rs)
 
+        if self.transforms:
+            for t in self.transforms:
+                val = t.transform(val)
 
-@register
-@dataclass
-class QuantizedNormal(Distribution):
-    loc: float
-    scale: float
-    q: float
-    seed: int = None
-    abbrev = 'qnormal'
+        return val[0] if n == 1 else val
 
-    def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.normal(self.loc, self.scale, n)
-        draw = np.round(draw / self.q) * self.q
-        return draw[0] if n == 1 else draw
+    def cp(self):
+        return copy.deepcopy(self)
 
+    def log(self):
+        obj = self.cp()
+        obj.transforms.append(LogTransform())
+        return obj
 
-@register
-@dataclass
-class QuantizedLogNormal(Distribution):
-    loc: float
-    scale: float
-    q: float
-    seed: int = None
-    abbrev = 'qlognormal'
+    def quantize(self, q: float):
+        obj = self.cp()
+        obj.transforms.append(QuantizeTransform(q=q))
+        return obj
 
-    def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.rs.normal(self.loc, self.scale, n)
-        draw = np.exp(draw)
-        draw = np.round(draw / self.q) * self.q
-        return draw[0] if n == 1 else draw
-
-
-@register
-@dataclass
-class TruncatedNormal(Distribution):
-    low: float
-    high: float
-    loc: float
-    scale: float
-
-    seed: int = None
-    abbrev = 'truncnormal'
-
-    def __post_init__(self):
-        super().__post_init__()
-        self.distribution = stats.truncnorm(
-            (self.low - self.loc) / self.scale,
-            (self.high - self.loc) / self.scale,
-            loc=self.loc,
-            scale=self.scale
-        )
-
-    def sample(self, n: int = 1) -> Union[np.ndarray, float]:
-        draw = self.distribution.rvs(n, random_state=self.rs)
-        return draw[0] if n == 1 else draw
-
-
-@register
-@dataclass
-class DiscreteNormal(Distribution):
-    low: int = -100
-    high: int = 100
-    loc: float = None
-    scale: float = None
-    step: int = 1
-    seed: int = None
-    abbrev = 'dnormal'
-
-    def __post_init__(self):
-        super().__post_init__()
-        if self.loc is None:
-            self.loc = (self.high + self.low) / 2
-        if self.scale is None:
-            self.scale = (self.high - self.low) / 7  # why 7 works? replace with something locingful
-
-    def sample(self, n: int = 1) -> Union[np.ndarray, int]:
-        # based on https://stackoverflow.com/a/37412692
-        x = np.arange(self.low, self.high, self.step)
-
-        x_upper = x + 0.5
-        x_lower = x - 0.5
-        p_upper = stats.norm.cdf(x_upper, loc=self.loc, scale=self.scale)
-        p_lower = stats.norm.cdf(x_lower, loc=self.loc, scale=self.scale)
-        prob = p_upper - p_lower
-        prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
-
-        draw = self.rs.choice(x, n, p=prob)
-        return draw[0] if n == 1 else draw
+    def discretize(self, step: int):
+        obj = self.cp()
+        obj.transforms.append(DiscretizeTransform(step=step))
+        return obj
