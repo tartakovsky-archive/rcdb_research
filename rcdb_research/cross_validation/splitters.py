@@ -117,7 +117,7 @@ def split_indexes_to_bars(
     y: Union[PandasLike, np.ndarray],
     indexes: Iterable[Split],
     raw: bool = False
-) -> List[Dict[str, PandasLike]]:
+) -> List[Dict[str, Union[PandasLike, np.ndarray]]]:
 
     if isinstance(X, np.ndarray):
         def iloc(data, idxs):
@@ -148,10 +148,10 @@ def predict_splits(
     fit_args: Optional[dict] = None,
     predict_args: Optional[dict] = None,
     n_jobs: int = -1
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> List[Dict[str, np.ndarray]]:
     """
     Aggregated splits prediction
-    :param cls: predictor
+    :param clf: predictor
     :param splits: aggregated splits
     :param predict_proba: if True returns probabilities of 1 instead of binary output
     :param predict_train: if True returns predictions for train set in addition to y_true, y_pred
