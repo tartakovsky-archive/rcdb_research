@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.metrics import log_loss
 
 from ..simulation.probas import Probabilities
+from ..utils import probabilities_to_predictions
 
 
 def neg_log_loss(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -16,16 +17,20 @@ def neg_log_loss(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return -1 * log_loss(y_true, y_pred)
 
 
-def pwa(y_true: np.ndarray, y_pred: np.ndarray, y_proba: np.ndarray) -> float:
+def pwa(y_true: np.ndarray, y_proba: np.ndarray, labels=(-1, 1)) -> float:
     """
     Calculates Probability-weighted accuracy.
     For more details see: Lopez, Machine Learning for Asset Managers, 6.4
 
     :param y_true: trues values
     :param y_pred: predicted values
-    :param y_proba: probabilities (n_sample, n_labels)
+    :param y_proba: probabilities (n_sample, n_labels) or positive label (n_sample,)
     :return:
     """
+    if len(y_proba.shape) == 1:
+        y_proba = np.vstack((1 - y_proba, y_proba)).T
+
+    y_pred = probabilities_to_predictions(y_proba, labels)
 
     num_labels = y_proba.shape[1]
     pn_minus_k = np.max(y_proba, axis=1) - num_labels ** -1

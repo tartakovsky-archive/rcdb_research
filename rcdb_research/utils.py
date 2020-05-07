@@ -154,3 +154,19 @@ def merge_dicts_array_values(l: List[Dict[str, Union[np.ndarray]]]) -> Dict[str,
         d[k] = d[k] + v.tolist()
 
     return dict(zip(d.keys(), map(lambda v: np.array(v), d.values())))
+
+
+def probabilities_to_predictions(probabilities: np.ndarray, labels=(-1, 1)) -> np.ndarray:
+    """
+
+    :param probabilities: probabilities matrix, (n_samples, n_labels)
+    :param labels: labels (n_labels,)
+    :return:
+    """
+    if probabilities.shape[1] != len(labels):
+        raise ValueError('Count of probas columns does not equals to labels')
+
+    return np.choose(
+        np.argmax(probabilities, axis=1),
+        np.array(labels)
+    )
