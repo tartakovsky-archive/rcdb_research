@@ -3,7 +3,9 @@ import uuid
 import json
 import inspect
 import importlib
-from typing import Callable, Union
+from itertools import chain, repeat
+from collections import defaultdict
+from typing import Callable, Union, List, Dict
 
 import pandas as pd
 import numpy as np
@@ -108,3 +110,47 @@ def generate_constraints_function(constraints_string):
     return eval(
         f"lambda p: {constraints_string}", {"__builtins__": {"all": all, "any": any}}
     )
+
+
+def split_dict_array_values(
+    d: Dict[str, Union[List, np.ndarray]],
+    splits: int
+) -> List[Dict[str, Union[np.ndarray]]]:
+    """
+    Split dict with array values to list of dict
+
+    Example:
+
+    >>> split_dict_array_values(dict(a=[1,2,3,4], b=[-1, -2, -3, -4]), 2)
+    [{'a': array([1, 2]), 'b': array([-1, -2])},
+    {'a': array([3, 4]), 'b': array([-3, -4])}]
+
+    :param d: input dict
+    :param splits: number of splits
+    :return:
+    """
+    return [
+        dict(zip(*x))
+        for x in zip(
+            repeat(d.keys(), splits),
+            zip(*list(map(lambda v: np.array_split(v, splits), d.values())))
+        )
+    ]
+
+
+def merge_dicts_array_values(l: List[Dict[str, Union[np.ndarray]]]) -> Dict[str, np.ndarray]:
+    """
+    Merge dicts and them values
+
+    Example:
+    >>> a = [{'a': np.array([1, 2]), 'b': np.array([-1, -2])}, {'a': np.array([3, 4]), 'b': np.array([-3, -4])}]
+    {'a': array([1, 2, 3, 4]), 'b': array([-1, -2, -3, -4])}
+
+    :param l: list of dict
+    :return:
+    """
+    d = defaultdict(list)
+    for k, v in chain.from_iterable(map(lambda d: d.items(), l)):
+        d[k] = d[k] + v.tolist()
+
+    return dict(zip(d.keys(), map(lambda v: np.array(v), d.values())))
