@@ -114,7 +114,7 @@ def distcomp_report(a: np.ndarray, b: np.ndarray,
 
         Line2D([0], [0], color=colors['hist2'], lw=3, label='(B) KDE, estimated'),
         Line2D([0], [0], marker='o', color='w', markerfacecolor=colors['dots2'], markersize=10,
-               label=f'(B) Datapoints, {a.shape[0]}'),
+               label=f'(B) Datapoints, {b.shape[0]}'),
         Line2D([0], [0], color=colors['mean2'], linestyle='--', lw=3, label=f'(B) Mean, {mean2:.3f}'),
         Patch(facecolor=colors['std2_span'], alpha=std_alpha, edgecolor=colors['std2_border'],
               label=f'(B) 95.0% confidence, [{mean2 - 2 * std2:.3f}, {mean2 + 2 * std2:.3f}]'),
