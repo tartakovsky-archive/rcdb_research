@@ -181,12 +181,10 @@ def get_gap_start(train: np.ndarray, test: np.ndarray, *args, **kwargs) -> Optio
     return None
 
 
-def get_custom_bars(
-    func: Callable,
-    splits: List[Tuple[np.ndarray, np.ndarray]],
-    size: int,
-    *args, **kwargs
-) -> Tuple[List[List[int]], List[List[int]]]:
+def get_custom_bars(func: Callable,
+                    splits: List[Tuple[np.ndarray, np.ndarray]],
+                    size: int,
+                    *args, **kwargs) -> Tuple[List[List[int]], List[List[int]]]:
     starts = []
     sizes = []
     for train, test in splits:
@@ -287,12 +285,12 @@ def get_stats(cv, X, tainted_size, num_paths):
 
     return {
         'paths': num_paths or 1,
-        'folds': folds,
-        'trains': trains,
-        'tests': tests,
         'fold size': fold_size,
+        'folds': folds,
         'embargo size': embargo_size,
-        'tainting size': tainting_size
+        'trains': trains,
+        'tainting size': tainting_size,
+        'tests': tests,
     }
 
 
@@ -339,8 +337,8 @@ def draw_stats(stats, axis, ax_kwargs):
     axis.add_artist(
         plt.legend(
             labels=labels, handles=[Rectangle((0, 0), 0, 0, alpha=0.0) for _ in labels],
-            bbox_to_anchor=(0.8, -0.5), loc='lower center',
-            fancybox=True, shadow=False, ncol=2,
+            bbox_to_anchor=(1.0, -0.34), loc='lower right',
+            fancybox=True, shadow=False, ncol=4,
             prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']},
             handlelength=0
         )
@@ -360,7 +358,7 @@ def draw_legend(axis, show_paths, num_paths, ax_kwargs):
 
     axis.add_artist(
         plt.legend(handles=handles, handler_map=handler_map,
-                   loc='lower left', bbox_to_anchor=(0., -0.4),
-                   fancybox=True, shadow=False, ncol=2,
+                   loc='lower left', bbox_to_anchor=(0., -0.3),
+                   fancybox=True, shadow=False, ncol=4,
                    prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
     )
