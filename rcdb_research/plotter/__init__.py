@@ -11,6 +11,7 @@ from .reports import proba_report, proba_colors  # noqa
 from .reports import threshold_report, threshold_colors  # noqa
 from .reports import trading_report, trading_colors  # noqa
 from .reports import splits, splits_colors  # noqa
+from .reports import monte_carlo_report  # noqa
 
 from .utils import second_index, configure_axis  # noqa
 
