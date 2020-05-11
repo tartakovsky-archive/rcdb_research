@@ -91,7 +91,7 @@ def splits(
             show_folds = False
             print('Warning: CV doesn`t support parameter `show_folds`')
 
-    stats = get_stats(cv, X, tainted_size, len(paths), show_paths, show_folds)
+    stats = get_stats(cv, X, tainted_size, len(paths))
 
     fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
     utils.configure_axis(axis, title, None if show_dates else xlabel, ylabel, ax_kwargs=ax_kwargs)
@@ -264,11 +264,11 @@ def get_train_test(splits):
     return train_start, test_start, train_size, test_size
 
 
-def get_stats(cv, X, tainted_size, num_paths, show_paths, show_folds):
+def get_stats(cv, X, tainted_size, num_paths):
     embargo_size = getattr(cv, 'embargo', 0)
     tainting_size = tainted_size[0] if len(tainted_size) else 0
 
-    if show_folds and hasattr(cv, 'n_folds') or isinstance(cv, KFold):
+    if hasattr(cv, 'n_folds') or isinstance(cv, KFold):
         folds = getattr(cv, 'n_folds', 0) or getattr(cv, 'n_splits', 0)
     else:
         folds = 0
@@ -285,16 +285,15 @@ def get_stats(cv, X, tainted_size, num_paths, show_paths, show_folds):
         tests = 1
         trains = 1
 
+    if not num_paths and hasattr(cv, 'get_n_paths'):
+        num_paths = cv.get_n_paths(cv.k_tests, cv.n_folds)
+
     return {
-        **({'paths': num_paths} if show_paths else {}),
-        **(
-            {
-                'fold size': fold_size,
-                'folds': folds,
-                'trains folds': trains,
-                'tests folds': tests,
-            } if show_folds else {}
-        ),
+        'paths': num_paths or 1,
+        'fold size': fold_size,
+        'folds': folds,
+        'trains folds': trains,
+        'tests folds': tests,
         'embargo size': embargo_size,
         'tainting size': tainting_size,
     }
