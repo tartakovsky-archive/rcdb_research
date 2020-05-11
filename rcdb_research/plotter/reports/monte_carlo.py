@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
-from matplotlib import ticker
+# from matplotlib import ticker
 from typing import List, Optional
 import numpy as np
 
-from .. import primitives
+# from .. import primitives
 from ..utils import configure_axis
 
 from .. import style
-from .. import utils
+# from .. import utils
 
 
 #
