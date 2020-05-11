@@ -37,7 +37,7 @@ def splits(
         fig_kwargs: Optional[dict] = None,
         ax_kwargs: Optional[dict] = None,
         show_dates: bool = False,
-        show_groups: bool = False,
+        show_folds: bool = False,
         show_paths: bool = False,
         ax: Optional[Axes] = None):
     colors = colors or splits_colors()
@@ -79,17 +79,19 @@ def splits(
         if hasattr(cv, 'n_folds') and hasattr(cv, 'k_tests'):
             paths = get_paths(X, cv)
         else:
+            show_paths = False
             print('Warning: CV doesn`t support parameter `show_paths`')
 
-    # calculate ys of groups
-    groups = []
-    if show_groups:
+    # calculate ys of folds
+    folds = []
+    if show_folds:
         if hasattr(cv, 'n_folds') or isinstance(cv, KFold):
-            groups = get_groups(cv, X, train_start, test_start, tainted_size[0] if len(tainted_size) else None)
+            folds = get_folds(cv, X, train_start, test_start, tainted_size[0] if len(tainted_size) else None)
         else:
-            print('Warning: CV doesn`t support parameter `show_groups`')
+            show_folds = False
+            print('Warning: CV doesn`t support parameter `show_folds`')
 
-    stats = get_stats(cv, X, tainted_size, len(paths))
+    stats = get_stats(cv, X, tainted_size, len(paths), show_paths, show_folds)
 
     fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
     utils.configure_axis(axis, title, None if show_dates else xlabel, ylabel, ax_kwargs=ax_kwargs)
@@ -122,8 +124,8 @@ def splits(
     if paths:
         draw_paths(paths, index, axis)
 
-    if groups:
-        draw_groups(groups, index, axis)
+    if folds:
+        draw_folds(folds, index, axis)
 
     draw_legend(axis, show_paths, len(paths), ax_kwargs)
     draw_stats(stats, axis, ax_kwargs)
@@ -222,21 +224,21 @@ def get_paths(X: pd.DataFrame, cv: CombinatorialKFold) -> List[List[Tuple[int, i
     return paths
 
 
-def get_groups(cv, X, train_start, test_start, tainted_size=0):
+def get_folds(cv, X, train_start, test_start, tainted_size=0):
     n_folds = getattr(cv, 'n_folds', None) or getattr(cv, 'n_splits')
 
     if not tainted_size:
-        group_start = min(
+        folds_start = min(
             [
                 min(np.hstack(train_start)),
                 min(np.hstack(test_start))
             ]
         )
     else:
-        group_start = tainted_size
+        folds_start = tainted_size
 
-    group_sizes = list(map(len, np.array_split(np.arange(len(X[group_start:])), n_folds)))
-    return [group_start] + (group_start + np.cumsum(group_sizes)).tolist()[:-1]
+    group_sizes = list(map(len, np.array_split(np.arange(len(X[folds_start:])), n_folds)))
+    return [folds_start] + (folds_start + np.cumsum(group_sizes)).tolist()[:-1]
 
 
 def get_tainted(X, cv, index):
@@ -262,11 +264,11 @@ def get_train_test(splits):
     return train_start, test_start, train_size, test_size
 
 
-def get_stats(cv, X, tainted_size, num_paths):
+def get_stats(cv, X, tainted_size, num_paths, show_paths, show_folds):
     embargo_size = getattr(cv, 'embargo', 0)
     tainting_size = tainted_size[0] if len(tainted_size) else 0
 
-    if hasattr(cv, 'n_folds') or isinstance(cv, KFold):
+    if show_folds and hasattr(cv, 'n_folds') or isinstance(cv, KFold):
         folds = getattr(cv, 'n_folds', 0) or getattr(cv, 'n_splits', 0)
     else:
         folds = 0
@@ -284,13 +286,17 @@ def get_stats(cv, X, tainted_size, num_paths):
         trains = 1
 
     return {
-        'paths': num_paths or 1,
-        'fold size': fold_size,
-        'folds': folds,
+        **({'paths': num_paths} if show_paths else {}),
+        **(
+            {
+                'fold size': fold_size,
+                'folds': folds,
+                'trains folds': trains,
+                'tests folds': tests,
+            } if show_folds else {}
+        ),
         'embargo size': embargo_size,
-        'trains': trains,
         'tainting size': tainting_size,
-        'tests': tests,
     }
 
 
@@ -322,16 +328,19 @@ def draw_paths(paths, index, axis):
             axis.barh(y=len(index) - y, height=0.75, width=width, left=start, color=c)
 
 
-def draw_groups(groups: List[int], index: List, axis):
+def draw_folds(groups: List[int], index: List, axis):
     for i, g in enumerate(groups):
         axis.axvline(x=g, ymin=-1, ymax=2, c='black', linestyle='-', lw=0.5)
         axis.text(g - 0.3, len(index) + 0.7, str(i + 1))
 
 
 def draw_stats(stats, axis, ax_kwargs):
+    labels_order = [
+        'paths', 'fold size', 'folds', 'embargo size', 'trains folds', 'tainting size', 'tests folds'
+    ]
     labels = [
         f'{k} = {v}'
-        for k, v in stats.items()
+        for k, v in sorted(stats.items(), key=lambda x: labels_order.index(x[0]))
     ]
 
     axis.add_artist(
@@ -352,7 +361,7 @@ def draw_legend(axis, show_paths, num_paths, ax_kwargs):
         cmap_handle = Rectangle((0, 0), 1, 1, label='test')
         num_stripes = num_paths if num_paths < MAX_NUM_COLORS_OF_PATHS else MAX_NUM_COLORS_OF_PATHS
         handler_map = {cmap_handle: HandlerColormap(plt.get_cmap('tab20_r'), MAX_NUM_COLORS_OF_PATHS, num_stripes)}
-        handles += [cmap_handle]
+        handles.insert(1, cmap_handle)
     else:
         handler_map = {}
 
