@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional
 import numpy as np
+import logging
 
 from .general import optimal_block_size, bootstrap
 
@@ -10,7 +11,13 @@ def bootstrap_path(data: Dict[str, np.ndarray],
                    subsample_size: int = None,
                    repeats: int = 100,
                    verbose: bool = True) -> List[Dict[str, np.ndarray]]:
-    block_size = block_size or optimal_block_size(data['y_pred'], method)
+    if block_size is None and method in ['mbb', 'cbb', 'sbb']:
+        block_size = optimal_block_size(data['y_pred'], method)
+        if verbose:
+            logging.warning(
+                f'\nParameter block_size is necessary for selected bootstrap method = {method}, but was not set'
+                f'Setting block_size to optimal = {block_size}'
+            )
 
     indices = np.arange(data['y_pred'].size)
     samples = bootstrap(indices, method=method, block_size=block_size,

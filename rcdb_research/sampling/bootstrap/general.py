@@ -44,7 +44,7 @@ def bootstrap(data: np.ndarray,
             logging.warning(
                 f'Parameter subsample_size was not set. Setting subsample_size to data.size = {data.size}'
             )
-    if block_size is None:
+    if block_size is None and method in ['mbb', 'cbb', 'sbb']:
         block_size = optimal_block_size(data, method)
         if verbose:
             logging.warning(
