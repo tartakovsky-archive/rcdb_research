@@ -26,7 +26,7 @@ def optimal_block_size(data: np.ndarray, method: str) -> Optional[float]:
 def bootstrap(data: np.ndarray,
               method: str,
               block_size: Optional[int] = None,
-              subsamble_size: int = None,
+              subsample_size: int = None,
               repeats: int = 100,
               verbose: bool = True) -> List[np.ndarray]:
     supported_methods = ['iid', 'mbb', 'cbb', 'sbb']
@@ -38,11 +38,11 @@ def bootstrap(data: np.ndarray,
         logging.warning(
             f'block_size parameter is ignored for iid bootstrap'
         )
-    if subsamble_size is None:
-        subsamble_size = data.size
+    if subsample_size is None:
+        subsample_size = data.size
         if verbose:
             logging.warning(
-                f'Parameter subsamble_size was not set. Setting subsamble_size to data.size = {data.size}'
+                f'Parameter subsample_size was not set. Setting subsample_size to data.size = {data.size}'
             )
     if block_size is None:
         block_size = optimal_block_size(data, method)
@@ -53,13 +53,13 @@ def bootstrap(data: np.ndarray,
             )
 
     if method == 'mbb':
-        samples = moving_block_bootstrap(data, block_size, repeats, subsamble_size)
+        samples = moving_block_bootstrap(data, block_size, repeats, subsample_size)
     elif method == 'cbb':
-        samples = circular_block_bootstrap(data, block_size, repeats, subsamble_size)
+        samples = circular_block_bootstrap(data, block_size, repeats, subsample_size)
     elif method == 'sbb':
-        samples = stationary_bootstrap(data, block_size, repeats, subsamble_size)
+        samples = stationary_bootstrap(data, block_size, repeats, subsample_size)
     else:  # iid
-        samples = iid_bootstrap_via_loop(data, repeats, subsamble_size)
+        samples = iid_bootstrap_via_loop(data, repeats, subsample_size)
 
     return list(samples)
 
@@ -67,10 +67,10 @@ def bootstrap(data: np.ndarray,
 def bootstrap_2d(data: List[np.ndarray],
                  method: str,
                  block_size: Optional[int] = None,
-                 subsamble_size: int = None,
+                 subsample_size: int = None,
                  repeats: int = 100,
                  verbose: bool = True) -> List[List[np.ndarray]]:
     return [
-        bootstrap(array, method, block_size, subsamble_size, repeats, verbose)
+        bootstrap(array, method, block_size, subsample_size, repeats, verbose)
         for array in data
     ]
