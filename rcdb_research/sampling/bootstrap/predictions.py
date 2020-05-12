@@ -7,14 +7,14 @@ from .general import optimal_block_size, bootstrap
 def bootstrap_path(data: Dict[str, np.ndarray],
                    method: str,
                    block_size: Optional[int] = None,
-                   subsamble_size: int = None,
+                   subsample_size: int = None,
                    repeats: int = 100,
                    verbose: bool = True) -> List[Dict[str, np.ndarray]]:
     block_size = block_size or optimal_block_size(data['y_pred'], method)
 
     indices = np.arange(data['y_pred'].size)
     samples = bootstrap(indices, method=method, block_size=block_size,
-                        subsamble_size=subsamble_size, repeats=repeats, verbose=verbose)
+                        subsample_size=subsample_size, repeats=repeats, verbose=verbose)
     resampled_paths = [
         {
             'y_true': data['y_true'][sample],
@@ -30,10 +30,10 @@ def bootstrap_path(data: Dict[str, np.ndarray],
 def bootstrap_path_2d(data: List[Dict[str, np.ndarray]],
                       method: str,
                       block_size: Optional[int] = None,
-                      subsamble_size: int = None,
+                      subsample_size: int = None,
                       repeats: int = 100,
                       verbose: bool = True) -> List[List[Dict[str, np.ndarray]]]:
     return [
-        bootstrap_path(path, method, block_size, subsamble_size, repeats, verbose)
+        bootstrap_path(path, method, block_size, subsample_size, repeats, verbose)
         for path in data
     ]
