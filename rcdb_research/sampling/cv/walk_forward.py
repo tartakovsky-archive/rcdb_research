@@ -316,9 +316,12 @@ def cross_val_predict_timeseries_splits(estimator, X, y=None, groups=None, cv='w
     # independent, and that it is pickle-able.
     parallel = Parallel(n_jobs=n_jobs, verbose=verbose,
                         pre_dispatch=pre_dispatch)
-    prediction_blocks = parallel(delayed(_fit_and_predict)(
-        clone(estimator), X, y, train, test, verbose, fit_params, method)
-                                 for train, test in cv.split(X, y, groups))
+    prediction_blocks = parallel(
+        delayed(_fit_and_predict)(
+            clone(estimator), X, y, train, test, verbose, fit_params, method
+        )
+        for train, test in cv.split(X, y, groups)
+    )
 
     result = [(pred_block_i, y[indxs]) for pred_block_i, indxs in prediction_blocks]
 
