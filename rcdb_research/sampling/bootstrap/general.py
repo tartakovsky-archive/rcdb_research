@@ -32,11 +32,11 @@ def bootstrap(data: np.ndarray,
     supported_methods = ['iid', 'mbb', 'cbb', 'sbb']
     if method not in supported_methods:
         raise ValueError(
-            f'{method} method is not supported. Should be one of the following: {supported_methods}'
+            f'"{method}" method is not supported. Should be one of the following: {supported_methods}'
         )
     if method == 'iid' and block_size is not None and verbose:
         logging.warning(
-            f'block_size parameter is ignored for iid bootstrap'
+            f'block_size parameter is ignored for "iid" bootstrap'
         )
     if subsample_size is None:
         subsample_size = data.size
@@ -48,8 +48,8 @@ def bootstrap(data: np.ndarray,
         block_size = optimal_block_size(data, method)
         if verbose:
             logging.warning(
-                f'\nParameter block_size is necessary for selected bootstrap method = {method}, but was not set'
-                f'Setting block_size to optimal = {block_size}'
+                f'\nParameter block_size is necessary for selected bootstrap method "sbb", but was not set'
+                f'\nSetting block_size to optimal = {block_size:.2f}'
             )
 
     if method == 'mbb':

@@ -15,8 +15,8 @@ def bootstrap_path(data: Dict[str, np.ndarray],
         block_size = optimal_block_size(data['y_pred'], method)
         if verbose:
             logging.warning(
-                f'\nParameter block_size is necessary for selected bootstrap method = {method}, but was not set'
-                f'Setting block_size to optimal = {block_size}'
+                f'\nParameter block_size is necessary for selected bootstrap method "sbb", but was not set'
+                f'\nSetting block_size to optimal = {block_size:.2f}'
             )
 
     indices = np.arange(data['y_pred'].size)
