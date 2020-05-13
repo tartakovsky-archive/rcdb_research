@@ -5,7 +5,7 @@ import logging
 
 from recombinator.optimal_block_length import optimal_block_length
 from recombinator.block_bootstrap import moving_block_bootstrap, circular_block_bootstrap, stationary_bootstrap
-from recombinator.iid_bootstrap import iid_bootstrap_via_loop
+from recombinator.iid_bootstrap import iid_bootstrap
 
 
 def optimal_block_size(data: np.ndarray, method: str) -> Optional[float]:
@@ -16,7 +16,7 @@ def optimal_block_size(data: np.ndarray, method: str) -> Optional[float]:
         )
 
     if method in ['mbb', 'cbb']:
-        return optimal_block_length(data)[0].b_star_cb
+        return int(optimal_block_length(data)[0].b_star_cb)
     elif method == 'sbb':
         return optimal_block_length(data)[0].b_star_sb
     else:
@@ -48,7 +48,7 @@ def bootstrap(data: np.ndarray,
         block_size = optimal_block_size(data, method)
         if verbose:
             logging.warning(
-                f'\nParameter block_size is necessary for selected bootstrap method "sbb", but was not set'
+                f'\nParameter block_size is necessary for selected bootstrap method "{method}", but was not set'
                 f'\nSetting block_size to optimal = {block_size:.2f}'
             )
 
@@ -59,7 +59,7 @@ def bootstrap(data: np.ndarray,
     elif method == 'sbb':
         samples = stationary_bootstrap(data, block_size, repeats, subsample_size)
     else:  # iid
-        samples = iid_bootstrap_via_loop(data, repeats, subsample_size)
+        samples = iid_bootstrap(data, repeats, subsample_size)
 
     return list(samples)
 
