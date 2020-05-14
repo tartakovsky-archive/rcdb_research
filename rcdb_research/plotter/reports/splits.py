@@ -328,9 +328,10 @@ def draw_paths(paths, index, axis):
 
 
 def draw_folds(groups: List[int], index: List, axis):
+    text_y = 0.7 if len(groups) > 5 else 0.4
     for i, g in enumerate(groups):
         axis.axvline(x=g, ymin=-1, ymax=2, c='black', linestyle='-', lw=0.5)
-        axis.text(g - 0.3, len(index) + 0.7, str(i + 1))
+        axis.text(g - 0.3, len(index) + text_y, str(i + 1))
 
 
 def draw_stats(stats, axis, ax_kwargs):
