@@ -5,8 +5,10 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.model_selection import cross_val_score
 
 from rcdb_research.cross_validation import \
-    WalkForwardCV, cross_val_predict_timeseries_splits, \
-    split_indexes_to_bars, predict_splits, CombinatorialKFold, predicts_to_paths
+    WalkForwardCV, cross_val_predict_timeseries_splits
+
+from rcdb_research.sampling.cv.combinatorial import \
+    CombinatorialCV, split_indexes_to_bars, predict_splits, predicts_to_paths
 
 
 @pytest.fixture
@@ -281,7 +283,7 @@ def test_CombinatorialKFold(class_params, test_res, is_numpy_input):
     if is_numpy_input:
         input = {k: v.T.values[0] if isinstance(v, pd.DataFrame) else v.values for k, v in input.items()}
 
-    split_idxs = CombinatorialKFold(**class_params).split(**input)
+    split_idxs = CombinatorialCV(**class_params).split(**input)
     print(split_idxs)
     res = split_indexes_to_bars(indexes=split_idxs, **input)
 
@@ -353,15 +355,15 @@ def print_splits(splits):
     ]
 )
 def test_CombinatorialKFold_edge_cases(class_params, input, error_msg):
-    with pytest.raises(CombinatorialKFold.SplitterException) as err:
-        list(CombinatorialKFold(**class_params).split(**input))
+    with pytest.raises(CombinatorialCV.SplitterException) as err:
+        list(CombinatorialCV(**class_params).split(**input))
 
     assert str(err.value) == error_msg
 
 
 def test_CombinatorialKFold_edge_cases_with_cross_val_score():
     estimator = DecisionTreeRegressor()
-    cv = CombinatorialKFold(n_folds=2, embargo=2, tainted_up_to=1)
+    cv = CombinatorialCV(n_folds=2, embargo=2, tainted_up_to=1)
     score = cross_val_score(estimator, TEST_SPLIT_INPUT['X'], TEST_SPLIT_INPUT['y'], cv=cv)
     assert len(score) == 2
 
@@ -374,7 +376,7 @@ def test_predict_splits(ohlcv_df):
 
     n = 5
 
-    splits = split_indexes_to_bars(X, y, CombinatorialKFold(n, 10).split(X))
+    splits = split_indexes_to_bars(X, y, CombinatorialCV(n, 10).split(X))
 
     res = predict_splits(DecisionTreeClassifier(), splits)
 
@@ -428,7 +430,7 @@ def test_predicts_to_paths(params, x_size, ys_true):
             y_pred=test_idxs,
             index=test_idxs
         )
-        for i, (_, test_idxs) in enumerate(CombinatorialKFold(**params).split(np.arange(x_size)))
+        for i, (_, test_idxs) in enumerate(CombinatorialCV(**params).split(np.arange(x_size)))
     ]
 
     paths = predicts_to_paths(preds, **params)

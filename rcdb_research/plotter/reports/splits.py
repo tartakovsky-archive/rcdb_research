@@ -13,7 +13,7 @@ from sklearn.model_selection import BaseCrossValidator, KFold
 from .. import style
 from .. import utils
 from ..primitives.legend import HandlerColormap
-from ...cross_validation import CombinatorialKFold, predicts_to_paths
+from ...sampling.cv.combinatorial import CombinatorialCV, predicts_to_paths
 
 MAX_NUM_COLORS_OF_PATHS = 20
 
@@ -203,7 +203,7 @@ def get_custom_bars(func: Callable,
     return starts[::-1], sizes[::-1]
 
 
-def get_paths(X: pd.DataFrame, cv: CombinatorialKFold) -> List[List[Tuple[int, int, int]]]:
+def get_paths(X: pd.DataFrame, cv: CombinatorialCV) -> List[List[Tuple[int, int, int]]]:
     predicts_like = [
         {'idxs': test, 'split': np.repeat(split, test.shape)}
         for split, (_, test) in enumerate(cv.split(X))

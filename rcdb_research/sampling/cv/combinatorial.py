@@ -43,6 +43,9 @@ class CombinatorialCV(BaseCrossValidator):
 
     @staticmethod
     def get_n_paths(k_tests, n_folds):
+        if k_tests == 1:
+            return 1
+
         return reduce(
             lambda a, b: a * b,
             map(lambda i: n_folds - i, range(1, k_tests))
