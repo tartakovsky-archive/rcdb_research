@@ -4,8 +4,7 @@ from .primitives import curve, curve_colors, curve_legend  # noqa
 from .primitives import hist, hist_colors  # noqa
 from .primitives import line, line_colors  # noqa
 
-from .reports import distcomp_report, distcomp_colors  # noqa
-from .reports import distribution_report, distribution_colors  # noqa
+from .reports import distcomp_report, distcomp_colors # noqa
 from .reports import preds_report, preds_colors  # noqa
 from .reports import proba_report, proba_colors  # noqa
 from .reports import threshold_report, threshold_colors  # noqa
