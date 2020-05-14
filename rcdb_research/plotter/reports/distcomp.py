@@ -1,7 +1,7 @@
 import numpy as np
 import seaborn as sns
 
-from typing import Optional, List
+from typing import Optional
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker
@@ -127,7 +127,8 @@ def distcomp_report(a: np.ndarray,
 
         # Plot confidence intervals' spans
         std_alpha = 0.2
-        axis.axvspan(mean - confint_n_std * std, mean + confint_n_std * std, ymin=zerolvl, color=colors['span'], alpha=std_alpha, zorder=1)
+        axis.axvspan(mean - confint_n_std * std, mean + confint_n_std * std,
+                     ymin=zerolvl, color=colors['span'], alpha=std_alpha, zorder=1)
 
         # Plot confidence intervals' borders
         axis.axvline(mean - confint_n_std * std, ymin=zerolvl, color=cs[i],
@@ -139,9 +140,11 @@ def distcomp_report(a: np.ndarray,
         axis.xaxis.set_major_locator(ticker.MaxNLocator(ticks))
 
         legend_elements += [
-            Line2D([0], [0], color=cs[i], linestyle='--', lw=3, label=f'({names[i]}) mean = {mean:.3f}±{confint_n_std * std:.3f}'),
+            Line2D([0], [0], color=cs[i], linestyle='--', lw=3,
+                   label=f'({names[i]}) mean = {mean:.3f}±{confint_n_std * std:.3f}'),
             Patch(facecolor=colors['span'], alpha=1, edgecolor=cs[i], lw=2,
-                  label=f'({names[i]}) std*{confint_n_std:.1f} = ({mean - confint_n_std * std:.3f}, {mean + confint_n_std * std:.3f})'),
+                  label=f'({names[i]}) std*{confint_n_std:.1f} = '
+                        f'({mean - confint_n_std * std:.3f}, {mean + confint_n_std * std:.3f})'),
         ]
 
     n_columns = len(arrays)
