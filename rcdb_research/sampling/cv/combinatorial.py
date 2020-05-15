@@ -196,6 +196,12 @@ def predict_splits(
             }
         return res
 
+    if n_jobs == 1:
+        return [
+            predict_split(clf, split, predict_proba, predict_train, fit_args, predict_args)
+            for split in splits
+        ]
+
     parallel = Parallel(n_jobs=n_jobs)
     return parallel(
         delayed(predict_split)(clone(clf), split, predict_proba,
