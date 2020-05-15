@@ -95,7 +95,7 @@ def distcomp_report(a: np.ndarray,
 
             dots_y = np.zeros_like(array) - j * offset_below_zero * (ylim[1] - ylim[0])
 
-            if a.size < 100 and b.size < 100:
+            if array.size < 100:
                 axis.scatter(array, dots_y, color=cs[i])
             else:
                 axis.boxplot(
