@@ -50,10 +50,10 @@ class BtRcdbStrategy(bt.Strategy):
         self.verbose = verbose
 
     def get_size(self):
-        return self.sizing.size(self.data0.signal + 0.0)
+        return self.sizing.size(self.data.signal[0])
 
     def has_signal(self):
-        signal = self.data0.signal + 0
+        signal = self.data.signal[0]
         return not math.isnan(signal)
 
     def next(self):
@@ -125,7 +125,7 @@ class BtRcdbStrategy(bt.Strategy):
         size_to_execute = size_desired - self.position.size
 
         return dict(
-            datetime=self.data.num2date(self.data0.datetime[0]),
+            datetime=self.data.num2date(self.data.datetime[0]),
             balance=portfolio_value - position_pnl_close,
             unrealized_pnl=position_pnl_worst if self.use_worst_pnl else position_pnl_close,
             exposure_curr=exposure_curr,
