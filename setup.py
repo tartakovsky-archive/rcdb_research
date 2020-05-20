@@ -43,16 +43,16 @@ if prefix_dev:
 # install mc_sizing
 if 'egg_info' in sys.argv:
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    source_dir = os.path.join(base_dir, 'sanitize')
+    source_dir = os.path.join(base_dir, module_name, 'sizing', 'mc_sizing_cpp')
     cmd(['make'], cwd=source_dir)
-    dist_path = os.path.join(base_dir, module_name, 'mc_sizing')
+    dist_path = os.path.join(base_dir, module_name, 'sizing', 'mc_sizing')
     copy2(os.path.join(source_dir, 'lib.so'), dist_path)
 
 
 setup(
     name=module_name,
     packages=find_packages(include=[f"{module_name}*"]),
-    package_data={f'{module_name}.mc_sizing': ['*.so']},
+    package_data={f'{module_name}.sizing.mc_sizing': ['*.so']},
     include_package_data=True,
     install_requires=INSTALL_REQUIREMENTS + SETUP_REQUIREMENTS,
     extras_require={
