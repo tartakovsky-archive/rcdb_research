@@ -28,6 +28,7 @@ def viz_clusters(matrix, clusters=None, ax=None, true_block_sizes=None, rearrang
 
     clusters = {k: v for k, v in sorted(clusters.items(), key=lambda item: sorted(item[1]))}
 
+    # TODO: use cycler and/or different colormap
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     if rearrange:
         new_order = [x for _, y in clusters.items() for x in y]
