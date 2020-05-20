@@ -28,6 +28,7 @@ def bootstrap(data: np.ndarray,
               block_size: Optional[int] = None,
               subsample_size: int = None,
               repeats: int = 100,
+              seed: int = None,
               verbose: bool = True) -> List[np.ndarray]:
     supported_methods = ['iid', 'mbb', 'cbb', 'sbb']
     if method not in supported_methods:
@@ -52,6 +53,9 @@ def bootstrap(data: np.ndarray,
                 f'\nSetting block_size to optimal = {block_size:.2f}'
             )
 
+    rs = np.random.get_state()
+    np.random.seed(seed)
+
     if method == 'mbb':
         samples = moving_block_bootstrap(data, block_size, repeats, subsample_size)
     elif method == 'cbb':
@@ -61,6 +65,8 @@ def bootstrap(data: np.ndarray,
     else:  # iid
         samples = iid_bootstrap(data, repeats, subsample_size)
 
+    np.random.set_state(rs)
+
     return list(samples)
 
 
@@ -69,8 +75,9 @@ def bootstrap_2d(data: List[np.ndarray],
                  block_size: Optional[int] = None,
                  subsample_size: int = None,
                  repeats: int = 100,
+                 seed: int = None,
                  verbose: bool = True) -> List[List[np.ndarray]]:
     return [
-        bootstrap(array, method, block_size, subsample_size, repeats, verbose)
+        bootstrap(array, method, block_size, subsample_size, repeats, seed, verbose)
         for array in data
     ]

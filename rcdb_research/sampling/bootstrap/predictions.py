@@ -10,6 +10,7 @@ def bootstrap_path(data: Dict[str, np.ndarray],
                    block_size: Optional[int] = None,
                    subsample_size: int = None,
                    repeats: int = 100,
+                   seed: int = None,
                    verbose: bool = True) -> List[Dict[str, np.ndarray]]:
     if block_size is None and method in ['mbb', 'cbb', 'sbb']:
         block_size = optimal_block_size(data['y_pred'], method)
@@ -21,7 +22,7 @@ def bootstrap_path(data: Dict[str, np.ndarray],
 
     indices = np.arange(data['y_pred'].size)
     samples = bootstrap(indices, method=method, block_size=block_size,
-                        subsample_size=subsample_size, repeats=repeats, verbose=verbose)
+                        subsample_size=subsample_size, repeats=repeats, seed=seed, verbose=verbose)
     resampled_paths = [
         {
             'y_true': data['y_true'][sample],
@@ -39,8 +40,9 @@ def bootstrap_path_2d(data: List[Dict[str, np.ndarray]],
                       block_size: Optional[int] = None,
                       subsample_size: int = None,
                       repeats: int = 100,
+                      seed: int = None,
                       verbose: bool = True) -> List[List[Dict[str, np.ndarray]]]:
     return [
-        bootstrap_path(path, method, block_size, subsample_size, repeats, verbose)
+        bootstrap_path(path, method, block_size, subsample_size, repeats, seed, verbose)
         for path in data
     ]
