@@ -24,6 +24,14 @@ def score_path_3d(data: List[List[Dict[str, np.ndarray]]],
     ]
 
 
+def calibrate_path(path, n_bins=20, strategy='quantile') -> Tuple[np.ndarray, np.ndarray]:
+    true, pred = calibration_curve(
+        path['y_true'], path['y_pred'], n_bins=n_bins, strategy=strategy
+    )
+
+    return true, pred
+
+
 def calibrate_path_2d(list2d, n_bins=20, strategy='quantile') -> Tuple[np.ndarray, np.ndarray]:
     trues = []
     preds = []
