@@ -19,7 +19,7 @@ def monte_carlo_report(curves: List[np.ndarray], mean_curve=False, mean_only=Fal
     line_kwargs = line_kwargs or style.line_kwargs(linewidth=2)
     _ = line_kwargs.pop('color', None)
 
-    fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
+    fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     # plot lines

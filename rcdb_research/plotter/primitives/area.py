@@ -24,7 +24,7 @@ def area(y1: np.array, y2: np.array, x: np.array = None,
 
     x = np.arange(y1.size) if x is None else x
 
-    fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
+    fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     axis.plot(x, y1, color=colors['main'], label=legend, **line_kwargs)

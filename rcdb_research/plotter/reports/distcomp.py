@@ -49,7 +49,7 @@ def distcomp_report(a: np.ndarray,
     )
 
     # Configure axis. Set labels, fonts, formatters, grid, etc.
-    fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
+    fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     legend_elements = []
@@ -149,6 +149,8 @@ def distcomp_report(a: np.ndarray,
 
     n_columns = len(arrays)
 
-    axis.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.35),
+    axis.legend(handles=legend_elements, loc='upper center',
+                bbox_to_anchor=(0.5, 0.0),
+                borderaxespad=6,
                 fancybox=True, shadow=False, ncol=n_columns,
                 prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
