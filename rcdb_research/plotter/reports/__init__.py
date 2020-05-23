@@ -1,4 +1,3 @@
-from .distcomp import distcomp_report, distcomp_colors  # noqa
 from .preds import preds_report, preds_colors  # noqa
 from .proba import proba_report, proba_colors  # noqa
 from .threshold import threshold_report, threshold_colors  # noqa

@@ -90,11 +90,9 @@ def calibration(a_true: np.ndarray,
     axis.set_xlim(0, 1)
     axis.set_ylim(0, 1)
 
-    axis.legend(handles=legend_elements, loc='upper center',
-                bbox_to_anchor=(0.5, 0.0),
-                borderaxespad=-2,
-                fancybox=True, shadow=False, ncol=2,
-                prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
+    axis.legend(handles=legend_elements, loc='upper left',
+                fancybox=False,
+                prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['ticksize']})
 
     if ax is None:
         return fig, axis

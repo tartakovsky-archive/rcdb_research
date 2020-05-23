@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 from typing import List, Optional
 import numpy as np
 
@@ -17,7 +18,9 @@ def monte_carlo(curves: List[np.ndarray],
                 line_kwargs: Optional[dict] = None,
                 ax=None) -> Optional[tuple]:
     fig_kwargs = fig_kwargs or style.fig_kwargs(figsize=(16, 7))
-    ax_kwargs = ax_kwargs or style.ax_kwargs()
+    ax_kwargs = ax_kwargs or style.ax_kwargs(
+        xformatter=ticker.FormatStrFormatter('%.0f'),
+    )
     line_kwargs = line_kwargs or style.line_kwargs(linewidth=2)
     _ = line_kwargs.pop('color', None)
 

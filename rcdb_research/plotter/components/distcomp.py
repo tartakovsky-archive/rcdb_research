@@ -12,34 +12,32 @@ from .. import style
 from ..utils import configure_axis
 
 
-def distcomp_colors(
-        span='lightgray',
-        a='#49b4f2',
-        b='#f27549',
-        baseline='#666666',
-) -> dict:
+def distcomp_colors(span='lightgray',
+                    a='#49b4f2',
+                    b='#f27549',
+                    baseline='#666666') -> dict:
     return locals()
 
 
 # Distribution Comparison Report
-def distcomp_report(a: np.ndarray,
-                    b: Optional[np.ndarray] = None,
-                    baseline: Optional[np.ndarray] = None,
-                    a_name: str = '1',
-                    b_name: str = '2',
-                    baseline_name: str = 'Baseline',
-                    confint_n_std: float = 2.0,
-                    bins: int = 20,
-                    ticks: int = 20,
-                    title: Optional[str] = 'Distributions of variables',
-                    xlabel: Optional[str] = 'Datapoints',
-                    ylabel: Optional[str] = 'Density',
-                    colors: Optional[dict] = None,
-                    fig_kwargs: Optional[dict] = None,
-                    ax_kwargs: Optional[dict] = None,
-                    hist_kwargs: Optional[dict] = None,
-                    kde_kwargs: Optional[dict] = None,
-                    ax=None):
+def distcomp(a: np.ndarray,
+             b: Optional[np.ndarray] = None,
+             baseline: Optional[np.ndarray] = None,
+             a_name: str = '1',
+             b_name: str = '2',
+             baseline_name: str = 'Baseline',
+             confint_n_std: float = 2.0,
+             bins: int = 20,
+             ticks: int = 20,
+             title: Optional[str] = 'Distributions of variables',
+             xlabel: Optional[str] = 'Datapoints',
+             ylabel: Optional[str] = 'Density',
+             colors: Optional[dict] = None,
+             fig_kwargs: Optional[dict] = None,
+             ax_kwargs: Optional[dict] = None,
+             hist_kwargs: Optional[dict] = None,
+             kde_kwargs: Optional[dict] = None,
+             ax=None) -> Optional[tuple]:
     colors = colors or distcomp_colors()
     fig_kwargs = fig_kwargs or style.fig_kwargs(figsize=(16, 7))
     ax_kwargs = ax_kwargs or style.ax_kwargs(
@@ -154,3 +152,6 @@ def distcomp_report(a: np.ndarray,
                 borderaxespad=6,
                 fancybox=True, shadow=False, ncol=n_columns,
                 prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
+
+    if ax is None:
+        return fig, axis
