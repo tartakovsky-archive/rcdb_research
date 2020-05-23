@@ -8,7 +8,6 @@ from ..utils import configure_axis
 
 def curve_colors(pos: str = '#49b4f2', neg: str = '#f27549') -> dict:
     return locals()
-# def curve_colors(pos: str = 'deepskyblue', neg: str = 'tomato') -> dict: return locals()
 
 
 def curve_legend(pos: Optional[str] = None, neg: Optional[str] = None) -> dict:
@@ -32,7 +31,7 @@ def curve(y: np.array, x: np.array = None, threshold: float = 0, title: Optional
 
     x = np.arange(y.size) if x is None else x
 
-    fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
+    fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     if np.any(y >= threshold):

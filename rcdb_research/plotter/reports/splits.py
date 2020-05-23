@@ -93,7 +93,7 @@ def splits(
 
     stats = get_stats(cv, X, tainted_size, len(paths))
 
-    fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
+    fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     utils.configure_axis(axis, title, None if show_dates else xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     # Y Axis

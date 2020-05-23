@@ -24,7 +24,7 @@ def hist(array: np.array, bins: int = 20, ticks=20,
     hist_kwargs = hist_kwargs or style.hist_kwargs()
     _ = hist_kwargs.pop('color', None)
 
-    fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
+    fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     axis.xaxis.set_major_locator(ticker.MaxNLocator(ticks))

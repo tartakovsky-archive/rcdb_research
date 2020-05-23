@@ -30,7 +30,7 @@ def bars(y: np.array, x: np.array = None, threshold: float = 0,
 
     x = np.arange(y.size) if x is None else x
 
-    fig, axis = (None, ax) if ax is not None else plt.subplots(**fig_kwargs)
+    fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     if np.any(y >= threshold):
