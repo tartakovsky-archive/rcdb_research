@@ -41,4 +41,3 @@ def monte_carlo(curves: List[np.ndarray],
 
     if ax is None:
         return fig, axis
-

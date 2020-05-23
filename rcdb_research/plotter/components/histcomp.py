@@ -1,5 +1,4 @@
 import numpy as np
-import seaborn as sns
 
 from typing import Optional
 
@@ -37,6 +36,9 @@ def histcomp(a: np.ndarray,
         xformatter=ticker.FormatStrFormatter('%.3f'),
         yformatter=ticker.FormatStrFormatter('%.2f'),
     )
+    hist_kwargs = hist_kwargs or dict(alpha=0.85)
+    _ = hist_kwargs.pop('color', None)
+    _ = hist_kwargs.pop('weights', None)
 
     # Configure axis. Set labels, fonts, formatters, grid, etc.
     fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
@@ -53,11 +55,6 @@ def histcomp(a: np.ndarray,
 
     # plot histograms
     for i, array in enumerate(arrays):
-        j = i + 1
-        hist_kwargs = hist_kwargs or dict(alpha=0.85)
-        _ = hist_kwargs.pop('color', None)
-        _ = hist_kwargs.pop('weights', None)
-
         axis.hist(array, bins=bins, color=cs[i], weights=np.ones(array.size) / array.size, **hist_kwargs)
 
         legend_elements += [
