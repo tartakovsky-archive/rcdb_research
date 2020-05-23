@@ -28,6 +28,7 @@ def calibration(a_true: np.ndarray,
                 colors: Optional[dict] = None,
                 fig_kwargs: Optional[dict] = None,
                 ax_kwargs: Optional[dict] = None,
+                line_kwargs: Optional[dict] = None,
                 ax=None) -> Optional[tuple]:
     colors = colors or calibration_colors()
     fig_kwargs = fig_kwargs or style.fig_kwargs(figsize=(16, 7))
@@ -35,6 +36,8 @@ def calibration(a_true: np.ndarray,
         xlocator=ticker.MaxNLocator(10),
         ylocator=ticker.MaxNLocator(10)
     )
+    line_kwargs = line_kwargs or style.line_kwargs(linewidth=2)
+    _ = line_kwargs.pop('color', None)
 
     # Configure axis. Set labels, fonts, formatters, grid, etc.
     fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
@@ -75,11 +78,11 @@ def calibration(a_true: np.ndarray,
             stds = np.array(stds)
             preds = np.array(preds)
 
-            axis.plot(means, preds, color=cs[i], lw=2)
+            axis.plot(means, preds, color=cs[i], **line_kwargs)
             axis.fill_betweenx(preds, means - n_std * stds, means + n_std * stds, color=cs[i], alpha=0.5)
 
             legend_elements += [
-                Patch(facecolor=cs[i], alpha=0.5, edgecolor=cs[i], lw=2, label=names[i])
+                Patch(facecolor=cs[i], alpha=0.5, edgecolor=cs[i], label=names[i], lw=2)
             ]
 
     axis.plot([0, 1], [0, 1], "--", color='gray')
