@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from . import mc_sizing
 
 
@@ -54,7 +55,7 @@ def kelly(win_proba: float, exp_win: float, exp_loss: float, direction='both') -
         return pos_kelly + neg_kelly
 
 
-def estimate_kelly_fraction(max_dd: float, max_dd_proba: float = 0.001, compounded: bool = True, mc_params={}) -> float:
+def estimate_kelly_fraction(max_dd: float, max_dd_proba: float = 0.001, compounded: bool = True, mc_params={}, cache_path=None) -> float:
     mc_params = {
         'xtol': 1e-4,
         'size_upper_bound': 100,
@@ -67,6 +68,15 @@ def estimate_kelly_fraction(max_dd: float, max_dd_proba: float = 0.001, compound
         minimum_wealth=1 - max_dd,
         max_drawdown_risk=max_dd_proba
     )
+
+    if cache_path is not None:
+        cache_path = os.path.expanduser(cache_path)
+        os.makedirs(cache_path, exist_ok=True)
+        d = {**risk_preferences, **mc_params}
+        d = {k: v for k, v in sorted(d.items(), key=lambda x: x[0])}
+        path = os.path.join(cache_path, str(d))
+        if os.path.exists(path):
+            return float(open(path, 'r').read())
 
     movement_sizes = np.arange(0.015, 0.99, 0.05)
     prob_points = np.linspace(0.6, 0.8, 10)
@@ -84,5 +94,9 @@ def estimate_kelly_fraction(max_dd: float, max_dd_proba: float = 0.001, compound
             )
             ke = kelly(p, movement_size, movement_size)
             coefficients.append(mc / ke)
+    result = np.mean(coefficients)
 
-    return np.mean(coefficients)  # noqa
+    if cache_path is not None:
+        open(path, 'w').write(str(result))
+
+    return float(result)  # noqa
