@@ -5,14 +5,18 @@ import matplotlib.pyplot as plt
 import itertools
 
 
-def _labels2groups(labels, based=0):
+def _labels2groups(labels, names=None):
     mapping = {k: [] for k in np.unique(labels)}
+    if names is None:
+        names = np.arange(len(labels))
+
     for i in range(len(labels)):
-        mapping[labels[i]].append(i - based)
+        mapping[labels[i]].append(names[i])
     return mapping
 
 
-def viz_clusters(matrix, clusters=None, ax=None, true_block_sizes=None, rearrange=False, annotate=True, labels=None):
+def viz_clusters(matrix, clusters=None, ax=None, true_block_sizes=None, rearrange=False, annotate=True, labels=None,
+                 goodbadclusters=None):
     if ax is None:
         side = round(18 / 30. * matrix.shape[0])
         fig, ax = plt.subplots(figsize=(side, side))
@@ -26,6 +30,8 @@ def viz_clusters(matrix, clusters=None, ax=None, true_block_sizes=None, rearrang
     if not isinstance(clusters, dict):
         clusters = _labels2groups(clusters)
 
+    if goodbadclusters is not None:
+        goodbad = [goodbadclusters[k] for k, _ in sorted(clusters.items(), key=lambda item: sorted(item[1]))]
     clusters = {k: v for k, v in sorted(clusters.items(), key=lambda item: sorted(item[1]))}
 
     # TODO: use cycler and/or different colormap
@@ -40,10 +46,16 @@ def viz_clusters(matrix, clusters=None, ax=None, true_block_sizes=None, rearrang
                     ax=ax, annot=annotate)
 
         left_borders = np.insert(np.cumsum(sizes), 0, 0)
-        for a, b in zip(left_borders, left_borders[1:]):
-            ax.add_patch(mpl.patches.Rectangle(
-                (a, a), b - a, b - a, fill=False
-            ))
+        if goodbadclusters is None:
+            for a, b in zip(left_borders, left_borders[1:]):
+                ax.add_patch(mpl.patches.Rectangle(
+                    (a, a), b - a, b - a, fill=False
+                ))
+        else:  # goodbad is not None
+            for a, b, isgood in zip(left_borders, left_borders[1:], goodbadclusters):
+                ax.add_patch(mpl.patches.Rectangle(
+                    (a, a), b - a, b - a, fill=True, alpha=0.5, hatch='x', color=['red', 'green'][int(isgood)]
+                ))
     else:
         if labels is None:
             labels = np.arange(matrix.shape[0])
