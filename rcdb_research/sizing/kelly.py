@@ -1,5 +1,8 @@
-import numpy as np
 import os
+from typing import Optional, Dict
+
+import numpy as np
+
 from . import mc_sizing
 
 
@@ -55,7 +58,16 @@ def kelly(win_proba: float, exp_win: float, exp_loss: float, direction='both') -
         return pos_kelly + neg_kelly
 
 
-def estimate_kelly_fraction(max_dd: float, max_dd_proba: float = 0.001, compounded: bool = True, mc_params={}, cache_path=None) -> float:
+def estimate_kelly_fraction(
+        max_dd: float,
+        max_dd_proba: float = 0.001,
+        compounded: bool = True,
+        mc_params: Optional[Dict] = None,
+        cache_path=None
+) -> float:
+    if mc_params is None:
+        mc_params = {}
+
     mc_params = {
         'xtol': 1e-4,
         'size_upper_bound': 100,

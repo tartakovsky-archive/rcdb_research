@@ -31,7 +31,8 @@ def viz_clusters(matrix, clusters=None, ax=None, true_block_sizes=None, rearrang
         clusters = _labels2groups(clusters)
 
     if goodbadclusters is not None:
-        goodbad = [goodbadclusters[k] for k, _ in sorted(clusters.items(), key=lambda item: sorted(item[1]))]
+        _ = [goodbadclusters[k] for k, _ in sorted(clusters.items(), key=lambda item: sorted(item[1]))]
+
     clusters = {k: v for k, v in sorted(clusters.items(), key=lambda item: sorted(item[1]))}
 
     # TODO: use cycler and/or different colormap

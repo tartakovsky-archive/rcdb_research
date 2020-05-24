@@ -14,13 +14,8 @@ joblib==0.14.1
 flock==0.1
 hyperopt==0.1.2
 json-tricks==3.13.2
-cufflinks==0.16
 xgboost==0.90
 lightgbm==2.2.3
-cytoolz==0.10.1
-toolz==0.10.0
 backtrader==1.9.74.123
 
 tulipindicators
-python-mne_features @ git+https://github.com/mne-tools/mne-features.git@629dad6345a61769c97a526c3878bd81c4d50ab6#egg=python-mne_features
-tsfresh==0.13.0
