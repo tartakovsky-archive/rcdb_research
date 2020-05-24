@@ -1,6 +1,5 @@
 FROM python:3.7.0
 ENV PYTHONUNBUFFERED 1
-
 WORKDIR /requirements
 COPY ./requirements /requirements
 COPY extra-index-url /requirements
