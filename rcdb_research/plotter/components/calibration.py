@@ -9,11 +9,6 @@ from .. import style
 from ..utils import configure_axis
 
 
-def calibration_colors(a='#49b4f2',
-                       b='#f27549') -> dict:
-    return locals()
-
-
 def calibration(a_true: np.ndarray,
                 a_pred: np.ndarray,
                 b_true: Optional[np.ndarray] = None,
@@ -25,19 +20,21 @@ def calibration(a_true: np.ndarray,
                 title: Optional[str] = 'Probability calibration curve',
                 xlabel: Optional[str] = 'True probas',
                 ylabel: Optional[str] = 'Predicted probas',
-                colors: Optional[dict] = None,
                 fig_kwargs: Optional[dict] = None,
                 ax_kwargs: Optional[dict] = None,
-                line_kwargs: Optional[dict] = None,
+                line_a_kwargs: Optional[dict] = None,
+                line_b_kwargs: Optional[dict] = None,
                 ax=None) -> Optional[tuple]:
-    colors = colors or calibration_colors()
-    fig_kwargs = fig_kwargs or style.fig_kwargs(figsize=(16, 7))
-    ax_kwargs = ax_kwargs or style.ax_kwargs(
-        xlocator=ticker.MaxNLocator(10),
-        ylocator=ticker.MaxNLocator(10)
-    )
-    line_kwargs = line_kwargs or style.line_kwargs(linewidth=2)
-    _ = line_kwargs.pop('color', None)
+    fig_kwargs = {**style.fig_kwargs(figsize=(16, 7)), **(fig_kwargs or {})}
+    ax_kwargs = {
+        **style.ax_kwargs(
+            xlocator=ticker.MaxNLocator(10),
+            ylocator=ticker.MaxNLocator(10)
+        ),
+        **(ax_kwargs or {})
+    }
+    line_a_kwargs = {**style.line_kwargs(color='#49b4f2'), **(line_a_kwargs or {})}
+    line_b_kwargs = {**style.line_kwargs(color='#f27549'), **(line_b_kwargs or {})}
 
     # Configure axis. Set labels, fonts, formatters, grid, etc.
     fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
@@ -47,19 +44,19 @@ def calibration(a_true: np.ndarray,
     y_trues = [a_true]
     y_preds = [a_pred]
     names = [a_name]
-    cs = [colors['a']]
+    line_kwargs = [line_a_kwargs]
 
     if b_true is not None and b_pred is not None:
         y_trues.append(b_true)
         y_preds.append(b_pred)
         names.append(b_name)
-        cs.append(colors['b'])
+        line_kwargs.append(line_b_kwargs)
 
     for i in range(len(y_trues)):
         if raw:
-            axis.scatter(y_trues[i], y_preds[i], color=cs[i], alpha=0.5)
+            axis.scatter(y_trues[i], y_preds[i], alpha=0.5, **line_kwargs[i])
             legend_elements += [
-                Line2D([0], [0], marker='o', color='w', markerfacecolor=cs[i], markersize=10, label=names[i])
+                Line2D([0], [0], marker='o', color='w', markerfacecolor=line_kwargs[i]['color'], markersize=10, label=names[i])
             ]
         else:
             bins = np.linspace(0, 1, 25)
@@ -78,11 +75,13 @@ def calibration(a_true: np.ndarray,
             stds = np.array(stds)
             preds = np.array(preds)
 
-            axis.plot(means, preds, color=cs[i], **line_kwargs)
-            axis.fill_betweenx(preds, means - n_std * stds, means + n_std * stds, color=cs[i], alpha=0.5)
+            axis.plot(means, preds, **line_kwargs[i])
+            axis.fill_betweenx(preds, means - n_std * stds, means + n_std * stds,
+                               color=line_kwargs[i]['color'], alpha=0.5)
 
             legend_elements += [
-                Patch(facecolor=cs[i], alpha=0.5, edgecolor=cs[i], label=names[i], lw=2)
+                Patch(facecolor=line_kwargs[i]['color'], alpha=0.5,
+                      edgecolor=line_kwargs[i]['color'], label=names[i], lw=2)
             ]
 
     axis.plot([0, 1], [0, 1], "--", color='gray')
@@ -90,8 +89,7 @@ def calibration(a_true: np.ndarray,
     axis.set_xlim(0, 1)
     axis.set_ylim(0, 1)
 
-    axis.legend(handles=legend_elements, loc='upper left',
-                fancybox=False,
+    axis.legend(handles=legend_elements, loc='upper left', fancybox=False,
                 prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['ticksize']})
 
     if ax is None:

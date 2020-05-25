@@ -1,6 +1,6 @@
 from .primitives import area, area_colors  # noqa
-from .primitives import bars, bars_colors, bars_legend  # noqa
-from .primitives import curve, curve_colors, curve_legend  # noqa
+from .primitives import bars_pn, bars_colors, bars_legend  # noqa
+from .primitives import line_pn, curve_colors, curve_legend  # noqa
 from .primitives import hist, hist_colors  # noqa
 from .primitives import line, line_colors  # noqa
 

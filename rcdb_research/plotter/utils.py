@@ -43,10 +43,8 @@ def configure_axis(ax, title='', xlabel='', ylabel='', ax_kwargs=None):
     if ax_kwargs.get('ylocator', None) is not None:
         ax.yaxis.set_major_locator(ax_kwargs['ylocator'])
 
-    if not ax_kwargs['showx']:
-        ax.xaxis.set_major_formatter(ticker.NullFormatter())
-    if not ax_kwargs['showy']:
-        ax.yaxis.set_major_formatter(ticker.NullFormatter())
+    if ax_kwargs.get('tick_params', None) is not None:
+        ax.tick_params(**ax_kwargs['tick_params'])
 
     ax.set_title(title, fontsize=ax_kwargs['titlesize'],
                  family=ax_kwargs['fontfamily'], pad=ax_kwargs['titlepad'])
