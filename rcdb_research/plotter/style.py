@@ -10,24 +10,35 @@ def fig_kwargs(figsize: tuple = (16, 7), dpi: int = 150, facecolor: str = 'w', *
     return {**params, **kwargs}
 
 
-def ax_kwargs(titlesize: int = 16, labelsize: int = 14, ticksize: int = 12, facecolor: str = 'w',
-              showx: bool = True, showy: bool = True, fontfamily: str = 'sans-serif',
-              labelpad: int = 15, titlepad: int = 15, tickrotation: int = 0,
+def ax_kwargs(titlesize: int = 16,
+              labelsize: int = 14,
+              ticksize: int = 12,
+              facecolor: str = 'w',
+              fontfamily: str = 'sans-serif',
+              labelpad: int = 15,
+              titlepad: int = 15,
+              tickrotation: int = 0,
+              tick_params: Optional[dict] = None,
               xformatter: Formatter = ticker.FormatStrFormatter('%.2f'),
               yformatter: Formatter = ticker.FormatStrFormatter('%.2f'),
               xlocator: Locator = None,
-              ylocator: Locator = None, **kwargs) -> dict:
+              ylocator: Locator = None,
+              **kwargs) -> dict:
     params = locals()
     del params['kwargs']
     return {**params, **kwargs}
 
 
-def line_kwargs(linewidth: int = 2, marker: Optional[str] = None) -> dict:
-    return locals()
+def line_kwargs(linewidth: int = 2, marker: Optional[str] = None, **kwargs) -> dict:
+    params = locals()
+    del params['kwargs']
+    return {**params, **kwargs}
 
 
-def hist_kwargs(rwidth: float = 0.7) -> dict:
-    return locals()
+def hist_kwargs(**kwargs) -> dict:
+    params = locals()
+    del params['kwargs']
+    return {**params, **kwargs}
 
 
 def suptitle_kwargs(fontsize=18, fontweight='500', **kwargs) -> dict:

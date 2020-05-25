@@ -41,12 +41,16 @@ def splits(
         show_paths: bool = False,
         ax: Optional[Axes] = None):
     colors = colors or splits_colors()
-    fig_kwargs = fig_kwargs or style.fig_kwargs()
-    ax_kwargs = ax_kwargs or style.ax_kwargs(
-        xformatter=ticker.FormatStrFormatter('%.0f'),
-        yformatter=ticker.FormatStrFormatter('%.0f'),
-        xlocator=ticker.MaxNLocator(18, integer=True),
-    )
+
+    fig_kwargs = {**style.fig_kwargs(), **(fig_kwargs or {})}
+    ax_kwargs = {
+        **style.ax_kwargs(
+            xformatter=ticker.FormatStrFormatter('%.0f'),
+            yformatter=ticker.FormatStrFormatter('%.0f'),
+            xlocator=ticker.MaxNLocator(18, integer=True)
+        ),
+        **(ax_kwargs or {})
+    }
 
     x_index = list(range(X.index.size))
     splits = list(cv.split(X=X, y=y))

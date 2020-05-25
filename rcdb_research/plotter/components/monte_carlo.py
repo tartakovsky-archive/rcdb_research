@@ -3,41 +3,59 @@ from matplotlib import ticker
 from typing import List, Optional
 import numpy as np
 
-from rcdb_research.plotter.utils import configure_axis
-
-from rcdb_research.plotter import style
+from ..utils import configure_axis
+from .. import style
+from ..primitives import line_pn
 
 
 def monte_carlo(curves: List[np.ndarray],
-                mean_curve=False,
-                mean_only=False,
+                plot_mean=False,
+                plot_median=False,
+                threshold=None,
                 title: Optional[str] = None,
                 xlabel: Optional[str] = 'Observations',
                 ylabel: Optional[str] = 'Cumulative return',
-                fig_kwargs: Optional[dict] = None, ax_kwargs: Optional[dict] = None,
+                fig_kwargs: Optional[dict] = None,
+                ax_kwargs: Optional[dict] = None,
                 line_kwargs: Optional[dict] = None,
+                pos_line_kwargs: Optional[dict] = None,
+                neg_line_kwargs: Optional[dict] = None,
+                mean_kwargs: Optional[dict] = None,
+                median_kwargs: Optional[dict] = None,
                 ax=None) -> Optional[tuple]:
-    fig_kwargs = fig_kwargs or style.fig_kwargs(figsize=(16, 7))
-    ax_kwargs = ax_kwargs or style.ax_kwargs(
-        xformatter=ticker.FormatStrFormatter('%.0f'),
-    )
-    line_kwargs = line_kwargs or style.line_kwargs(linewidth=2)
-    _ = line_kwargs.pop('color', None)
+    fig_kwargs = {**style.fig_kwargs(figsize=(16, 7)), **(fig_kwargs or {})}
+    ax_kwargs = {
+        **style.ax_kwargs(
+            xformatter=ticker.FormatStrFormatter('%.0f'),
+        ),
+        **(ax_kwargs or {})
+    }
+
+    line_kwargs = {**style.line_kwargs(), **(line_kwargs or {})}
+    mean_kwargs = {**style.line_kwargs(linewidth=4, color='red'), **(mean_kwargs or {})}
+    median_kwargs = {**style.line_kwargs(linewidth=4, color='orange'), **(median_kwargs or {})}
 
     # Configure axis. Set labels, fonts, formatters, grid, etc.
     fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     # plot lines
-    if not mean_only:
-        for curve in curves:
-            axis.plot(curve, **line_kwargs)
+    for c in curves:
+        if threshold is None:
+            axis.plot(c, **line_kwargs)
+        else:
+            line_pn(c, threshold=threshold, pos_line_kwargs=pos_line_kwargs,
+                    neg_line_kwargs=neg_line_kwargs, ax=axis)
 
-    if mean_curve or mean_only:
-        mean = np.array(curves).mean(axis=0)
-        axis.plot(mean, linewidth=4, color='red')
+    if plot_mean:
+        mean = np.mean(curves, axis=0)
+        axis.plot(mean, **mean_kwargs)
 
-    axis.axhline(linewidth=1, linestyle='--', color='black')
+    if plot_median:
+        median = np.median(curves, axis=0)
+        axis.plot(median, **median_kwargs)
+
+    axis.axhline(y=threshold or 0, linewidth=1, linestyle='--', color='black')
 
     if ax is None:
         return fig, axis
