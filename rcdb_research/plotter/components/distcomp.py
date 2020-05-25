@@ -86,7 +86,7 @@ def distcomp(a: np.ndarray,
     # plot spans
     for i, array in enumerate(arrays):
         color = hist_kwargs[i]['color'] if array is not baseline else '#666666'
-        
+
         j = i + 1
 
         # Calculate means and stds
