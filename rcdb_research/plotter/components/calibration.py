@@ -56,7 +56,8 @@ def calibration(a_true: np.ndarray,
         if raw:
             axis.scatter(y_trues[i], y_preds[i], alpha=0.5, **line_kwargs[i])
             legend_elements += [
-                Line2D([0], [0], marker='o', color='w', markerfacecolor=line_kwargs[i]['color'], markersize=10, label=names[i])
+                Line2D([0], [0], marker='o', color='w', markerfacecolor=line_kwargs[i]['color'],
+                       markersize=10, label=names[i])
             ]
         else:
             bins = np.linspace(0, 1, 25)
