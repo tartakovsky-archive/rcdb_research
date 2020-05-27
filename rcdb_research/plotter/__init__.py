@@ -6,6 +6,7 @@ from .primitives import line  # noqa
 
 from .reports import trading_report  # noqa
 from .reports import splits, splits_colors  # noqa
+from .reports import equities  # noqa
 
 from .utils import second_index, configure_axis  # noqa
 
