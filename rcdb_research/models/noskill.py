@@ -37,4 +37,4 @@ class NoSkillClassifier(BaseEstimator, ClassifierMixin):
         return self.clf.score(X, y, sample_weight=None)
 
     def get_params(self, deep=True):
-        return self.clf.get_params(deep=True)
+        return {'score': self.score}
