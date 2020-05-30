@@ -26,7 +26,6 @@ def distcomp(a: np.ndarray,
              a_name: str = 'A',
              b_name: str = 'B',
              baseline_name: str = 'Baseline',
-             confint_n_std: float = 2.0,
              bins: int = 20,
              ticks: int = 20,
              title: Optional[str] = 'Distributions of variables',
@@ -91,8 +90,8 @@ def distcomp(a: np.ndarray,
 
         # Calculate median and 95% CI
         median = np.median(array)
-        q025 = np.quantile(array, 0.25)
-        q975 = np.quantile(array, 0.75)
+        q025 = np.quantile(array, 0.025)
+        q975 = np.quantile(array, 0.975)
 
         # Plot dot or box plots
         if array is not baseline:
@@ -155,7 +154,7 @@ def distcomp(a: np.ndarray,
     axis.legend(handles=legend_elements, loc='upper center',
                 bbox_to_anchor=(0.5, 0.0),
                 borderaxespad=6,
-                fancybox=True, shadow=False, ncol=n_columns,
+                fancybox=False, shadow=False, ncol=n_columns,
                 prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
 
     if ax is None:

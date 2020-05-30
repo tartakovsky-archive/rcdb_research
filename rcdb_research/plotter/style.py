@@ -3,7 +3,11 @@ import matplotlib.ticker as ticker
 from matplotlib.ticker import Formatter, Locator
 
 
-def fig_kwargs(figsize: tuple = (16, 7), dpi: int = 150, facecolor: str = 'w', **kwargs) -> dict:
+def fig_kwargs(figsize: tuple = (16, 7),
+               dpi: int = 150,
+               facecolor: str = 'w',
+               constrained_layout=True,
+               **kwargs) -> dict:
     # return args as dict
     params = locals()
     del params['kwargs']
