@@ -4,7 +4,6 @@ from typing import Optional, List
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker
-from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 
 from .. import style

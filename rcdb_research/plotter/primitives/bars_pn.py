@@ -60,9 +60,11 @@ def bars_pn(y: np.array,
 
     elif orientation == 'vertical' and thr_orientation == 'horizontal':
         if np.any(y >= threshold):
-            axis.bar(x=x[y >= threshold], height=y[y >= threshold] - threshold, bottom=threshold, width=width, **pos_bar_kwargs)
+            axis.bar(x=x[y >= threshold], height=y[y >= threshold] - threshold,
+                     bottom=threshold, width=width, **pos_bar_kwargs)
         if np.any(y < threshold):
-            axis.bar(x=x[y < threshold], height=y[y < threshold] - threshold, bottom=threshold, width=width, **neg_bar_kwargs)
+            axis.bar(x=x[y < threshold], height=y[y < threshold] - threshold,
+                     bottom=threshold, width=width, **neg_bar_kwargs)
 
     elif orientation == 'horizontal' and thr_orientation == 'horizontal':
         if np.any(x >= threshold):
@@ -72,9 +74,11 @@ def bars_pn(y: np.array,
 
     elif orientation == 'horizontal' and thr_orientation == 'vertical':
         if np.any(y >= threshold):
-            axis.barh(y=x[y >= threshold], width=y[y >= threshold] - threshold, left=threshold, height=width, **pos_bar_kwargs)
+            axis.barh(y=x[y >= threshold], width=y[y >= threshold] - threshold,
+                      left=threshold, height=width, **pos_bar_kwargs)
         if np.any(y < threshold):
-            axis.barh(y=x[y < threshold], width=y[y < threshold] - threshold, left=threshold, height=width, **neg_bar_kwargs)
+            axis.barh(y=x[y < threshold], width=y[y < threshold] - threshold,
+                      left=threshold, height=width, **neg_bar_kwargs)
 
     if thr_orientation == 'vertical':
         axis.axvline(x=threshold, linewidth=1, linestyle='--', color='black')

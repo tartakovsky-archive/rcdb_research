@@ -59,7 +59,7 @@ def bars_partitioned(lengths: np.array,
             f'len(bar_kwargs) = {len(bar_kwargs)}, instead of expected {len(thresholds) + 1}'
         )
 
-    positions = np.arange(y.size) if positions is None else positions
+    positions = np.arange(lengths.size) if positions is None else positions
 
     fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
