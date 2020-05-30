@@ -1,11 +1,15 @@
+from .primitives import line  # noqa
+from .primitives import line_pn  # noqa
 from .primitives import area  # noqa
 from .primitives import bars_pn  # noqa
-from .primitives import line_pn  # noqa
 from .primitives import hist  # noqa
-from .primitives import line  # noqa
+from .primitives import hist_pn  # noqa
+from .primitives import bars_partitioned  # noqa
+from .primitives import hist_partitioned  # noqa
 
 from .reports import trading_report  # noqa
 from .reports import splits, splits_colors  # noqa
+from .reports import curves_and_outcomes  # noqa
 
 from .utils import second_index, configure_axis  # noqa
 

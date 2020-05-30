@@ -7,10 +7,6 @@ from .. import style
 from ..utils import configure_axis
 
 
-def hist_colors(main: str = '#49b4f2') -> dict:
-    return locals()
-
-
 def hist(array: np.array,
          bins: int = 20,
          ticks=20,

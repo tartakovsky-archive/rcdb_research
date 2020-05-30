@@ -26,7 +26,6 @@ def distcomp(a: np.ndarray,
              a_name: str = 'A',
              b_name: str = 'B',
              baseline_name: str = 'Baseline',
-             confint_n_std: float = 2.0,
              bins: int = 20,
              ticks: int = 20,
              title: Optional[str] = 'Distributions of variables',
@@ -89,9 +88,10 @@ def distcomp(a: np.ndarray,
 
         j = i + 1
 
-        # Calculate means and stds
-        mean = np.mean(array)
-        std = np.std(array, ddof=1)
+        # Calculate median and 95% CI
+        median = np.median(array)
+        q025 = np.quantile(array, 0.025)
+        q975 = np.quantile(array, 0.975)
 
         # Plot dot or box plots
         if array is not baseline:
@@ -108,14 +108,11 @@ def distcomp(a: np.ndarray,
                     array,
                     positions=[dots_y[0]],
                     patch_artist=True,
-                    notch=False,
+                    notch=True,
                     widths=(ylim[1] - ylim[0]) * 0.017,
                     vert=False,
                     manage_ticks=False,
-                    showmeans=True,
-                    meanline=True,
-                    medianprops=dict(lw=0),
-                    meanprops=dict(color='#666666', lw=1, linestyle='-', alpha=0.5),
+                    medianprops=dict(color='#666666', lw=1, linestyle='-', alpha=0.5),
                     boxprops=dict(facecolor=color, color=color),
                     whiskerprops=dict(color=color, lw=2),
                     capprops=dict(color=color, lw=2),
@@ -129,17 +126,17 @@ def distcomp(a: np.ndarray,
         zerolvl = (0 - ylim[0]) / (ylim[1] - ylim[0])
 
         # Plot means
-        axis.axvline(mean, ymin=zerolvl, color=color, lw=3, linestyle='--', zorder=j * 110)
+        axis.axvline(median, ymin=zerolvl, color=color, lw=3, linestyle='--', zorder=j * 110)
 
         # Plot confidence intervals' spans
         std_alpha = 0.2
-        axis.axvspan(mean - confint_n_std * std, mean + confint_n_std * std,
+        axis.axvspan(q025, q975,
                      ymin=zerolvl, color='lightgray', alpha=std_alpha, zorder=1)
 
         # Plot confidence intervals' borders
-        axis.axvline(mean - confint_n_std * std, ymin=zerolvl, color=color,
+        axis.axvline(q025, ymin=zerolvl, color=color,
                      alpha=1, linestyle='-', zorder=j * 101)
-        axis.axvline(mean + confint_n_std * std, ymin=zerolvl, color=color,
+        axis.axvline(q975, ymin=zerolvl, color=color,
                      alpha=1, linestyle='-', zorder=j * 101)
 
         # Plot `ticks` number of xticks
@@ -147,10 +144,9 @@ def distcomp(a: np.ndarray,
 
         legend_elements += [
             Line2D([0], [0], color=color, linestyle='--', lw=3,
-                   label=f'({names[i]}) mean = {mean:.3f}±{confint_n_std * std:.3f}'),
+                   label=f'({names[i]}) median = {median:.3f}'),
             Patch(facecolor='lightgray', alpha=1, edgecolor=color, lw=2,
-                  label=f'({names[i]}) std*{confint_n_std:.1f} = '
-                        f'({mean - confint_n_std * std:.3f}, {mean + confint_n_std * std:.3f})'),
+                  label=f'({names[i]}) q.025...q.975 = [{q025:.3f}, {q975:.3f}]')
         ]
 
     n_columns = len(arrays)
@@ -158,7 +154,7 @@ def distcomp(a: np.ndarray,
     axis.legend(handles=legend_elements, loc='upper center',
                 bbox_to_anchor=(0.5, 0.0),
                 borderaxespad=6,
-                fancybox=True, shadow=False, ncol=n_columns,
+                fancybox=False, shadow=False, ncol=n_columns,
                 prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
 
     if ax is None:
