@@ -17,6 +17,7 @@ def hist_partitioned(y: np.array,
                      thresholds: Tuple[float] = (),
                      bar_kwargs: Tuple[dict] = (),
                      orientation: str = 'v',
+                     plot_median: bool = True,
                      title: Optional[str] = None,
                      xlabel: Optional[str] = None,
                      ylabel: Optional[str] = None,
@@ -26,8 +27,8 @@ def hist_partitioned(y: np.array,
     ax_kwargs = {
         **style.ax_kwargs(
             tickrotation=45,
-            xlocator=ticker.MaxNLocator(ticks) if orientation == 'vertical' else None,
-            ylocator=ticker.MaxNLocator(ticks) if orientation == 'horizontal' else None,
+            xlocator=ticker.MaxNLocator(ticks) if orientation == 'v' else None,
+            ylocator=ticker.MaxNLocator(ticks) if orientation == 'h' else None,
         ),
         **(ax_kwargs or {})
     }
@@ -62,6 +63,13 @@ def hist_partitioned(y: np.array,
 
     fig, axis = out if ax is None else (plt.gcf(), ax)
 
+    median = np.median(y)
+    if plot_median:
+        if orientation == 'v':
+            axis.axvline(x=median, linewidth=3, linestyle='--', color='#cccccc')
+        elif orientation == 'h':
+            axis.axhline(y=median, linewidth=3, linestyle='--', color='#cccccc')
+
     partitions = []
     for i in range(len(thresholds)):
         if i == 0:
@@ -85,6 +93,12 @@ def hist_partitioned(y: np.array,
         legend_elements.append(
             Patch(facecolor=bar_kwargs[i]['color'], label=f'{f * 100:.2f}%')
         )
+
+    if plot_median:
+        legend_elements.append(
+            Line2D([0], [0], color='#cccccc', linestyle='--', lw=3, label=f'q.5 = {median:.2f}'),
+        )
+
     axis.legend(handles=legend_elements, loc='best', fancybox=False,
                 prop={'family': ax_kwargs['fontfamily'], 'size': ax_kwargs['labelsize']})
 
