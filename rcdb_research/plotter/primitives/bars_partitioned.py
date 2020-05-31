@@ -20,23 +20,18 @@ def bars_partitioned(lengths: np.array,
                      fig_kwargs: Optional[dict] = None,
                      ax_kwargs: Optional[dict] = None,
                      ax=None) -> Optional[tuple]:
-    supported_orientations = ['v', 'h', 'vertical', 'horizontal']
+    supported_orientations = ['v', 'h']
     if orientation not in supported_orientations:
         raise ValueError(
             f'{orientation} orientation is not supported. Should be one of the following: {supported_orientations}'
         )
 
-    if orientation == 'v':
-        orientation = 'vertical'
-    elif orientation == 'h':
-        orientation = 'horizontal'
-
     fig_kwargs = {**style.fig_kwargs(), **(fig_kwargs or {})}
     ax_kwargs = {
         **style.ax_kwargs(
             tickrotation=45,
-            xlocator=ticker.MaxNLocator(ticks) if orientation == 'vertical' else None,
-            ylocator=ticker.MaxNLocator(ticks) if orientation == 'horizontal' else None,
+            xlocator=ticker.MaxNLocator(ticks) if orientation == 'v' else None,
+            ylocator=ticker.MaxNLocator(ticks) if orientation == 'h' else None,
         ),
         **(ax_kwargs or {})
     }
@@ -89,13 +84,13 @@ def bars_partitioned(lengths: np.array,
         partitions.append({'position': positions, 'length': lengths})
 
     for p, kws in zip(partitions, bar_kwargs):
-        if orientation == 'vertical':
+        if orientation == 'v':
             axis.bar(x=p['position'], height=p['length'], width=width, **kws)
         else:
             axis.barh(y=p['position'], width=p['length'], height=width, **kws)
 
     for t in thresholds:
-        if orientation == 'vertical':
+        if orientation == 'v':
             axis.axvline(x=t, linewidth=1, linestyle='--', color='black')
         else:
             axis.axhline(y=t, linewidth=1, linestyle='--', color='black')
