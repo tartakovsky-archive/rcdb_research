@@ -9,13 +9,12 @@ import numpy as np
 import pandas as pd
 
 from mlfinlab.filters.filters import cusum_filter
-from mlfinlab.labeling.labeling import add_vertical_barrier, get_events, get_bins, drop_labels
+from mlfinlab.labeling.labeling import add_vertical_barrier, get_bins, drop_labels
 from mlfinlab.util.volatility import get_daily_vol
-from rcdb_research.labeling import get_events_hnt_proxy, get_events_rcdb
+from rcdb_research.labeling import get_events_hnt_proxy
 
 
 get_events = get_events_hnt_proxy
-
 
 
 class TestChapter3(unittest.TestCase):

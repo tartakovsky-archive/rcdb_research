@@ -2,7 +2,6 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from numba import jit
 
 BAR_CLOSE = 0
 BAR_TRGT = 1
@@ -15,7 +14,6 @@ BAR_ACTIVE_BARS_COUNTER = 7
 BAR_TIMESTAMP_BARRIER = 8
 
 
-# @jit
 def __build_triple_barrier_labels(
         close_arr: np.ndarray,
         timestamp_arr: np.ndarray,
@@ -214,9 +212,8 @@ def get_events_rcdb(df_data, pt_sl=(1, 1), n_jobs=1):
             trgt_arr=df_data.target.values[offset:],
             min_ret_arr=df_data.min_ret.values[offset:],
             t_events_arr=df_data.t_events.values[offset:],
-            vertical_barrier_time_arr=df_data.vertical_barrier_time.values[offset:] \
-                if is_vertical_barrier_time else None,
-
+            vertical_barrier_time_arr=df_data.vertical_barrier_time.values[offset:]
+            if is_vertical_barrier_time else None,
             pt_sl=pt_sl,
             offset=0,
             limit=batch_size,
@@ -227,8 +224,7 @@ def get_events_rcdb(df_data, pt_sl=(1, 1), n_jobs=1):
 
     df = result_to_pd(results[0])
     for i in range(1, len(results)):
-        df = df.append(
-                result_to_pd(results[i]))
+        df = df.append(result_to_pd(results[i]))
 
     if 'side_prediction' in list(df_data.columns):
         df['side'] = np.where(df_data['side_prediction'] == df['bin'], 1, 0)
