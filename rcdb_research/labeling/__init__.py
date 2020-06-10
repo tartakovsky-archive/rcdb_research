@@ -4,11 +4,16 @@ import pandas as pd
 from .utils import _n_consecutive, _cond_after_n_bars, \
     calculate_daily_volatility, triple_barrier
 
+from .tripple_barrier import get_events_rcdb, get_events_hnt_proxy
 
 __all__ = (
     "higher_after_n_bars", "lower_after_n_bars",
     "n_consecutive_up", "n_consecutive_down",
-    "triple_barrier_labeling"
+    "triple_barrier_labeling",
+
+    # triple barrier
+    "get_events_rcdb",
+    "get_events_hnt_proxy"
 )
 
 
