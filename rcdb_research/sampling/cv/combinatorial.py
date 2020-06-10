@@ -253,3 +253,4 @@ def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], k_tests: int, n_fol
                         break
 
     return [utils.merge_dicts_array_values(path_dicts) for path_dicts in paths]
+

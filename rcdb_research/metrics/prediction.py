@@ -60,3 +60,23 @@ def precision_score_for_activity(activity: float,
         )
 
     return precision_for_activity
+
+
+def calibration(y_true: np.ndarray,
+                y_proba: np.ndarray) -> tuple:
+    bins = np.linspace(0, 1, 25)
+    binids = np.digitize(y_proba, bins) - 1
+
+    true_probas = []
+    stds = []
+    pred_probas = []
+    for binid in np.unique(binids):
+        select = binids == binid
+        data = np.hstack(y_true[select])
+        true_probas.append(data.mean())
+        stds.append(data.std())
+        pred_probas.append(y_proba[select].mean())
+    true_probas = np.array(true_probas)
+    stds = np.array(stds)
+    pred_probas = np.array(pred_probas)
+    return true_probas, stds, pred_probas

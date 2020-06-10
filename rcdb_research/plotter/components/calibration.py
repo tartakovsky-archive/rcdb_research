@@ -3,10 +3,13 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
-from typing import Optional
+from typing import Optional, Callable
 
 from .. import style
 from ..utils import configure_axis
+from ...metrics import prediction as metrics
+
+from sklearn.metrics import mean_squared_error as mse
 
 
 def calibration(a_true: np.ndarray,
@@ -17,6 +20,8 @@ def calibration(a_true: np.ndarray,
                 b_name: str = 'B',
                 n_std: float = 3,
                 raw: bool = False,
+                score_fn: Callable = mse,
+                score_name: str = 'MSE',
                 title: Optional[str] = 'Probability calibration curve',
                 xlabel: Optional[str] = 'True probas',
                 ylabel: Optional[str] = 'Predicted probas',
@@ -60,29 +65,18 @@ def calibration(a_true: np.ndarray,
                        markersize=10, label=names[i])
             ]
         else:
-            bins = np.linspace(0, 1, 25)
-            binids = np.digitize(y_preds[i], bins) - 1
+            true_probas, stds, pred_probas = metrics.calibration(y_trues[i], y_preds[i])
+            score = score_fn(true_probas, pred_probas)
 
-            means = []
-            stds = []
-            preds = []
-            for binid in np.unique(binids):
-                select = binids == binid
-                data = np.hstack(y_trues[i][select])
-                means.append(data.mean())
-                stds.append(data.std())
-                preds.append(y_preds[i][select].mean())
-            means = np.array(means)
-            stds = np.array(stds)
-            preds = np.array(preds)
-
-            axis.plot(means, preds, **line_kwargs[i])
-            axis.fill_betweenx(preds, means - n_std * stds, means + n_std * stds,
+            axis.plot(true_probas, pred_probas, **line_kwargs[i])
+            axis.fill_betweenx(pred_probas, true_probas - n_std * stds, true_probas + n_std * stds,
                                color=line_kwargs[i]['color'], alpha=0.5)
 
             legend_elements += [
-                Patch(facecolor=line_kwargs[i]['color'], alpha=0.5,
-                      edgecolor=line_kwargs[i]['color'], label=names[i], lw=2)
+                Patch(facecolor=line_kwargs[i]['color'],
+                      edgecolor=line_kwargs[i]['color'],
+                      label=f'{names[i]}, {score_name} = {score:.4f}', lw=2,
+                      alpha=0.5)
             ]
 
     axis.plot([0, 1], [0, 1], "--", color='gray')
