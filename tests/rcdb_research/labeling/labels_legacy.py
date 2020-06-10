@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from rcdb_research.labeling import higher_after_n_bars, lower_after_n_bars, \
+from rcdb_research.labeling.legacy import higher_after_n_bars, lower_after_n_bars, \
     n_consecutive_up, n_consecutive_down
 
 
