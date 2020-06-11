@@ -177,7 +177,7 @@ def viz_decrease_matrix(groups, decreases, ax=None):
 import matplotlib.ticker as mtick
 
 
-def viz_decrease(decreases, groups=None, ax=None, show_std=True):
+def viz_decrease(decreases, groups=None,  show_std=True, ax=None):
     if ax is None:
         fig, ax = plt.subplots(figsize=(18, round(6 / 10 * len(decreases))))
 
@@ -376,7 +376,7 @@ from matplotlib.gridspec import GridSpec
 from natsort import natsorted
 
 
-def perform_mda(X, y, clf, agglomeration, score, other_params, score_path=False, threshold_pct=0, silent=False):
+def perform_mda(X, y, clf, agglomeration, score, other_params, score_path=False, show_std=True, threshold_pct=0, silent=False):
     X = X[natsorted(X.columns)]
     #     matrix, clusters, decreases, features = compute_MDA_evenbetter(X, y, clf, agglomeration, score, other_params)
     #     matrix, clusters, decreases, features = compute_MDA_eli5(X, y, clf, agglomeration, score, other_params)
@@ -405,7 +405,7 @@ def perform_mda(X, y, clf, agglomeration, score, other_params, score_path=False,
 
     viz_clusters(matrix, clusters, rearrange=True, labels=X.columns, ax=axes[0])
     viz_decrease_matrix(groups, decreases, ax=axes[1])
-    viz_decrease(decreases.sort_values('decrease'), groups, ax=axes[2])
+    viz_decrease(decreases.sort_values('decrease'), groups, show_std, ax=axes[2])
     viz_dendrogram(matrix, X.columns, agglomeration.distance_threshold, ax=axes[3])
 
     fig.suptitle('MDA report ({})'.format(score.__name__), fontsize=18, y=0.975)
