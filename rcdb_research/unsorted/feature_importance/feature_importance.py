@@ -177,7 +177,7 @@ def viz_decrease_matrix(groups, decreases, ax=None):
 import matplotlib.ticker as mtick
 
 
-def viz_decrease(decreases, groups=None, ax=None):
+def viz_decrease(decreases, groups=None, ax=None, show_std=True):
     if ax is None:
         fig, ax = plt.subplots(figsize=(18, round(6 / 10 * len(decreases))))
 
@@ -187,9 +187,14 @@ def viz_decrease(decreases, groups=None, ax=None):
     #     decreases = decreases.iloc[np.argsort((decreases['decrease'] - decreases['lower_bound']))]
     #     decreases = decreases.iloc[np.argsort((decreases['decrease']))]
 
-    colors = np.where(decreases['decrease'] - decreases['lower_bound'] > 0, 'C0', 'C3')
-    ax.barh(np.arange(decreases.shape[0]), decreases['decrease'],
-            xerr=decreases[['lower_bound', 'upper_bound']].T.values, color=colors)
+    if show_std:
+        colors = np.where(decreases['decrease'] - decreases['lower_bound'] > 0, 'C0', 'C3')
+        ax.barh(np.arange(decreases.shape[0]), decreases['decrease'],
+                xerr=decreases[['lower_bound', 'upper_bound']].T.values, color=colors)
+    else:
+        colors = np.where(decreases['decrease'] > 0, 'C0', 'C3')
+        ax.barh(np.arange(decreases.shape[0]), decreases['decrease'], color=colors)
+
     #     ax.xaxis.set_major_formatter(mtick.PercentFormatter())
     ax.set_yticks(np.arange(decreases.shape[0]))
     if groups is None:
