@@ -78,7 +78,7 @@ def __build_triple_barrier_labels(
         min_ret = abs(min_ret_arr[i])
         t_event = t_events_arr[i]
 
-        if target < min_ret:
+        if np.isnan(target) or target < min_ret:
             continue
 
         if use_vertical_barrier_time:
