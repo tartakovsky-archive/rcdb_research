@@ -25,13 +25,15 @@ def neg_log_loss(y_true: np.ndarray, y_proba: np.ndarray) -> float:
     return -1 * log_loss(y_true, y_proba)
 
 
-def pwa(y_true: np.ndarray, y_proba: np.ndarray, labels=(-1, 1)) -> float:
+def pwa(y_true: np.ndarray, y_proba: np.ndarray, labels=(-1, 1), sample_weight=None) -> float:
     """
     Calculates Probability-weighted accuracy.
     For more details see: Lopez, Machine Learning for Asset Managers, 6.4
 
     :param y_true: trues values
     :param y_proba: probabilities (n_sample, n_labels) or positive label (n_sample,)
+    :param labels
+    :param sample_weight
     :return:
     """
     if len(y_proba.shape) == 1:
