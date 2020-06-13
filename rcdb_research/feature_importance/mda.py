@@ -3,12 +3,10 @@ import numpy as np
 
 from sklearn.metrics import check_scoring
 from sklearn.utils import check_random_state
-from sklearn.pipeline import Pipeline
 from tqdm.auto import tqdm
-from sklearn.metrics import log_loss
 
 
-def mean_decrease_accuracy(estimator, X, y, cv, clustered_subsets=None,
+def mean_decrease_accuracy(estimator, X, y, cv, clusters=None,
                            n_permutations=10, pooling_fn=None,
                            fit_params=None, score_params=None,
                            scoring=None, random_state=1, raw=False, verbose=True):
@@ -30,12 +28,12 @@ def mean_decrease_accuracy(estimator, X, y, cv, clustered_subsets=None,
     _ = score_params.pop(sw_score_name, None)
 
     # If clusteres_subsets is set then the whole cluster would be mutated instead of a single feature
-    feature_sets = clustered_subsets if clustered_subsets else [[x] for x in X.columns]
-    feature_set_names = [f'{fts[0]}+{len(fts) - 1}' for fts in feature_sets]
+    feature_sets = clusters if clusters else [[x] for x in X.columns]
+    feature_set_names = [(f'{fts[0]}+{len(fts) - 1}' if clusters else f'{fts[0]}') for fts in feature_sets]
 
     # If both clustered_subset and poolin_fn is set then feature agglomeration would be performed
     # Clusters would be merged into single features usign the pooling_fn
-    if clustered_subsets is not None and pooling_fn is not None:
+    if clusters is not None and pooling_fn is not None:
         agg_X = pd.DataFrame(index=X.index)
         for i, fts in enumerate(feature_sets):
             agg_ft = pooling_fn(X[fts].values)
