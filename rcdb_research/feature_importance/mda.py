@@ -74,5 +74,3 @@ def mean_decrease_accuracy(estimator, X, y, cv, clusters=None,
         return importance
 
     return pd.concat({'mean': importance.mean(), 'std': importance.std()}, axis=1)
-
-
