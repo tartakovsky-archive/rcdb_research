@@ -1,52 +1,27 @@
 from typing import Callable
 
 import numpy as np
-from sklearn.metrics import log_loss, roc_auc_score, average_precision_score
+from sklearn.metrics import log_loss, make_scorer
 
 from ..simulation.probas import Probabilities
-from ..utils import probabilities_to_predictions
 
 
-def roc_auc(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-    return roc_auc_score(y_true, y_pred)
+def neg_log_loss(y_true: np.ndarray, y_proba: np.ndarray, sample_weight=None) -> float:
+    return -1 * log_loss(y_true, y_proba, sample_weight=sample_weight)
 
 
-def avg_prec(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-    return average_precision_score(y_true, y_pred)
+neg_log_loss_scorer = make_scorer(neg_log_loss, needs_proba=True)
 
 
-def neg_log_loss(y_true: np.ndarray, y_proba: np.ndarray) -> float:
-    """
-    Negative LogLoss
-    :param y_true: trues values
-    :param y_pred: predicted values
-    :return:
-    """
-    return -1 * log_loss(y_true, y_proba)
+def bounded_log_loss(y_true: np.ndarray,
+                     y_proba: np.ndarray,
+                     bounds=(0.692, 0.684),
+                     sample_weight=None) -> float:
+    logloss = log_loss(y_true, y_proba, sample_weight=sample_weight)
+    return (logloss - bounds[0]) / (bounds[1] - bounds[0])
 
 
-def pwa(y_true: np.ndarray, y_proba: np.ndarray, labels=(-1, 1), sample_weight=None) -> float:
-    """
-    Calculates Probability-weighted accuracy.
-    For more details see: Lopez, Machine Learning for Asset Managers, 6.4
-
-    :param y_true: trues values
-    :param y_proba: probabilities (n_sample, n_labels) or positive label (n_sample,)
-    :param labels
-    :param sample_weight
-    :return:
-    """
-    if len(y_proba.shape) == 1:
-        y_proba = np.vstack((1 - y_proba, y_proba)).T
-
-    y_pred = probabilities_to_predictions(y_proba, labels)
-
-    num_labels = y_proba.shape[1]
-    pn_minus_k = np.max(y_proba, axis=1) - num_labels ** -1
-
-    correct_predict = (y_true == y_pred) * 1
-
-    return np.sum(correct_predict * pn_minus_k) / np.sum(pn_minus_k)
+bounded_log_loss_scorer = make_scorer(bounded_log_loss, needs_proba=True)
 
 
 def precision_score_for_activity(activity: float,
