@@ -34,8 +34,11 @@ def configure_axis(ax, title='', xlabel='', ylabel='', ax_kwargs=None):
 
     ax.set_frame_on(False)
     ax.grid(color='lightgray', linestyle='-.', linewidth=0.5)
-    ax.xaxis.set_major_formatter(ax_kwargs['xformatter'])
-    ax.yaxis.set_major_formatter(ax_kwargs['yformatter'])
+
+    if ax_kwargs.get('xformatter', None) is not None:
+        ax.xaxis.set_major_formatter(ax_kwargs['xformatter'])
+    if ax_kwargs.get('yformatter', None) is not None:
+        ax.yaxis.set_major_formatter(ax_kwargs['yformatter'])
 
     if ax_kwargs.get('xlocator', None) is not None:
         ax.xaxis.set_major_locator(ax_kwargs['xlocator'])

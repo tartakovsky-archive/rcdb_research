@@ -12,7 +12,7 @@ def importance(means: np.ndarray,
                names: Optional[list] = None,
                threshold: float = 0,
                orientation: str = 'h',
-               title: Optional[str] = None,
+               title: Optional[str] = 'Feature importance',
                xlabel: Optional[str] = None,
                ylabel: Optional[str] = None,
                fig_kwargs: Optional[dict] = None,
@@ -66,4 +66,5 @@ def importance(means: np.ndarray,
         axis.set_xticks(x)
         axis.set_xticklabels(names)
 
-    return fig, axis
+    if ax is None:
+        return fig, axis
