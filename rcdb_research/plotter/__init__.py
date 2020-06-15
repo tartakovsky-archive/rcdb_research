@@ -15,4 +15,4 @@ from .utils import second_index, configure_axis  # noqa
 
 from .style import fig_kwargs, ax_kwargs, line_kwargs, hist_kwargs, suptitle_kwargs  # noqa
 
-from .components import calibration, monte_carlo, distcomp, histcomp  # noqa
+from .components import calibration, monte_carlo, distcomp, histcomp, importance  # noqa
