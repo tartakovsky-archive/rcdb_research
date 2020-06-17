@@ -136,12 +136,23 @@ def triple_barrier_barebones_threaded(
 def triple_barrier(
     close: pd.Series,
     unit_width: Union[float, np.ndarray],
-    pt_mul: Optional[Union[float, np.ndarray]] = None,
-    sl_mul: Optional[Union[float, np.ndarray]] = None,
+    pt_mul: Optional[Union[float, np.ndarray]] = 1,
+    sl_mul: Optional[Union[float, np.ndarray]] = 1,
     vertical_barrier: Optional[Union[int, np.ndarray]] = None,
     event: Optional[np.ndarray] = None,
-    n_jobs: int = 1
+    n_jobs: int = -1
 ):
+    """
+    Triple Barrier labeling method
+    :param close: close array
+    :param unit_width: trgt
+    :param pt_mul: miltiply the unit_width by this amount, needed for asymmetric labeling; if None, disable the barrier
+    :param sl_mul: see pt_mul
+    :param vertical_barrier: limit the time of each label being active
+    :param event: array of booleans, new label opens iff the corresponding event[i] is True
+    :param n_jobs: number of threads to employ, -1 for using all cores
+    :return: array of closing times for each label, the opening times is used as index
+    """
     if vertical_barrier is None:
         vertical_barrier = np.full(close.size, close.index.values.max())
     if np.isscalar(vertical_barrier):
