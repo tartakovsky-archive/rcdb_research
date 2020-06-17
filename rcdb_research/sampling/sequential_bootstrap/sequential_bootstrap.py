@@ -146,8 +146,7 @@ def sequential_bootstrap(t1, bars_idx, sample_size=None, seed=0):
         sample_size = int(np.ceil(t1.shape[0] * sample_size))
     elif sample_size is None:
         sample_size = spans.shape[0]
-    result = sequential_sample_prefixsum_barebones(spans, sample_size, seed=seed)
-    return result
+    return sequential_sample_prefixsum_barebones(spans, sample_size, seed=seed)
 
 
 def average_uniqueness(t1, bars_idx, sample):
