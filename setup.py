@@ -42,14 +42,19 @@ if prefix_dev:
 # install mc_sizing
 if 'egg_info' in sys.argv:
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    source_dir = os.path.join(base_dir, module_name, 'sizing', 'mc_sizing')
-    cmd(['make'], cwd=source_dir)
+    cmd(['make', '--always-make'], cwd=os.path.join(base_dir, module_name, 'sizing', 'mc_sizing'))
+    cmd(['make', '--always-make'], cwd=os.path.join(base_dir, module_name, 'sampling', 'sequential_bootstrap'))
+    cmd(['make', '--always-make'], cwd=os.path.join(base_dir, module_name, 'labeling', 'triple_barrier'))
 
 
 setup(
     name=module_name,
     packages=find_packages(include=[f"{module_name}*"]),
-    package_data={f'{module_name}.sizing.mc_sizing': ['*.so']},
+    package_data={
+        f'{module_name}.sizing.mc_sizing': ['*.so'],
+        f'{module_name}.sampling.sequential_bootstrap': ['*.so'],
+        f'{module_name}.labeling.triple_barrier': ['*.so']
+    },
     include_package_data=True,
     install_requires=INSTALL_REQUIREMENTS + SETUP_REQUIREMENTS,
     extras_require={
