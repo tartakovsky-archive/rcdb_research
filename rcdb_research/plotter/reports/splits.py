@@ -139,7 +139,7 @@ def splits(
                            x2=utils.datestring(X.index),
                            x1=x_index,
                            xlabel='Bar number / Date',
-                           ax_kwargs={**ax_kwargs, 'tickrotation': 15})
+                           ax_kwargs={**ax_kwargs, 'xtickrotation': 15})
 
 
 #########################################

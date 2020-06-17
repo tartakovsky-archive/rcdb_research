@@ -29,7 +29,7 @@ def bars_partitioned(lengths: np.array,
     fig_kwargs = {**style.fig_kwargs(), **(fig_kwargs or {})}
     ax_kwargs = {
         **style.ax_kwargs(
-            tickrotation=45,
+            xtickrotation=45,
             xlocator=ticker.MaxNLocator(ticks) if orientation == 'v' else None,
             ylocator=ticker.MaxNLocator(ticks) if orientation == 'h' else None,
         ),

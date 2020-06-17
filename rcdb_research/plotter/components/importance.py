@@ -9,7 +9,7 @@ from ..primitives import bars_pn
 def importance(means: np.ndarray,
                mins: Optional[np.ndarray] = None,
                maxes: Optional[np.ndarray] = None,
-               names: Optional[list] = None,
+               labels: Optional[list] = None,
                threshold: float = 0,
                orientation: str = 'h',
                title: Optional[str] = 'Feature importance',
@@ -29,7 +29,7 @@ def importance(means: np.ndarray,
 
     ax_kwargs = {
         **style.ax_kwargs(
-            tickrotation=90 if orientation == 'v' else 0,
+            xtickrotation=90 if orientation == 'v' else 0,
             xlocator=ticker.MaxNLocator(20) if orientation == 'h' else None,
             ylocator=ticker.MaxNLocator(20) if orientation == 'v' else None,
         ),
@@ -61,10 +61,10 @@ def importance(means: np.ndarray,
 
     if orientation == 'h':
         axis.set_yticks(x)
-        axis.set_yticklabels(names)
+        axis.set_yticklabels(labels)
     else:
         axis.set_xticks(x)
-        axis.set_xticklabels(names)
+        axis.set_xticklabels(labels)
 
     if ax is None:
         return fig, axis

@@ -26,7 +26,7 @@ def second_index(ax, x2: np.ndarray, x1: Optional[list] = None, xlabel: Optional
     ax2.set_xlabel(xlabel, fontsize=ax_kwargs['labelsize'], labelpad=ax_kwargs['labelpad'])
     ax2.tick_params(axis='both', which='major', labelsize=ax_kwargs['ticksize'])
 
-    [lbl.set_rotation(ax_kwargs['tickrotation']) for lbl in ax2.get_xticklabels()]
+    [lbl.set_rotation(ax_kwargs['xtickrotation']) for lbl in ax2.get_xticklabels()]
 
 
 def configure_axis(ax, title='', xlabel='', ylabel='', ax_kwargs=None):
@@ -62,7 +62,8 @@ def configure_axis(ax, title='', xlabel='', ylabel='', ax_kwargs=None):
     for tick in ax.get_yticklabels():
         tick.set_fontfamily(ax_kwargs['fontfamily'])
 
-    [lbl.set_rotation(ax_kwargs['tickrotation']) for lbl in ax.get_xticklabels()]
+    [lbl.set_rotation(ax_kwargs['xtickrotation']) for lbl in ax.get_xticklabels()]
+    [lbl.set_rotation(ax_kwargs['ytickrotation']) for lbl in ax.get_yticklabels()]
 
 
 def datestring(index_array: np.array):
