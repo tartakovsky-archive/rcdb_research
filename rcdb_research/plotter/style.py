@@ -21,12 +21,13 @@ def ax_kwargs(titlesize: int = 16,
               fontfamily: str = 'sans-serif',
               labelpad: int = 15,
               titlepad: int = 15,
-              tickrotation: int = 0,
+              xtickrotation: int = 0,
+              ytickrotation: int = 0,
               tick_params: Optional[dict] = None,
-              xformatter: Formatter = ticker.FormatStrFormatter('%.2f'),
-              yformatter: Formatter = ticker.FormatStrFormatter('%.2f'),
-              xlocator: Locator = None,
-              ylocator: Locator = None,
+              xformatter: Optional[Formatter] = ticker.FormatStrFormatter('%.2f'),
+              yformatter: Optional[Formatter] = ticker.FormatStrFormatter('%.2f'),
+              xlocator: Optional[Locator] = None,
+              ylocator: Optional[Locator] = None,
               **kwargs) -> dict:
     params = locals()
     del params['kwargs']

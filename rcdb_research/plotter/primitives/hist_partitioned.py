@@ -26,7 +26,7 @@ def hist_partitioned(y: np.array,
                      ax=None) -> Optional[tuple]:
     ax_kwargs = {
         **style.ax_kwargs(
-            tickrotation=45,
+            xtickrotation=45,
             xlocator=ticker.MaxNLocator(ticks) if orientation == 'v' else None,
             ylocator=ticker.MaxNLocator(ticks) if orientation == 'h' else None,
         ),
