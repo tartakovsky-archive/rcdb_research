@@ -11,10 +11,9 @@ import pandas as pd
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
 lib = cdll.LoadLibrary(os.path.join(dir_path, 'lib.so'))
-fun = lib.sequential_sample
-fun.argtypes = (POINTER(ARRAY(c_int, 2)), c_int, c_int, c_int, c_int, POINTER(c_int))
-fun.restype = None
 
+lib.sequential_sample.argtypes = (POINTER(ARRAY(c_int, 2)), c_int, c_int, c_int, c_int, POINTER(c_int))
+lib.sequential_sample.restype = None
 
 def sequential_sample_barebones(spans, sample_size, recalculate_every_n=1, seed=0):
     # spans = spans.astype(c_int)
@@ -32,9 +31,8 @@ def sequential_sample_barebones(spans, sample_size, recalculate_every_n=1, seed=
     return result
 
 
-fun = lib.sequential_sample_orig
-fun.argtypes = (POINTER(ARRAY(c_int, 2)), c_int, c_int, c_int, c_int, POINTER(c_int))
-fun.restype = None
+lib.sequential_sample_orig.argtypes = (POINTER(ARRAY(c_int, 2)), c_int, c_int, c_int, c_int, POINTER(c_int))
+lib.sequential_sample_orig.restype = None
 
 
 def sequential_sample_orig_barebones(spans, sample_size, recalculate_every_n=1, seed=0):
@@ -53,9 +51,8 @@ def sequential_sample_orig_barebones(spans, sample_size, recalculate_every_n=1, 
     return result
 
 
-fun = lib.sequential_sample_st
-fun.argtypes = (POINTER(ARRAY(c_int, 2)), c_int, c_int, c_int, c_int, POINTER(c_int))
-fun.restype = None
+lib.sequential_sample_st.argtypes = (POINTER(ARRAY(c_int, 2)), c_int, c_int, c_int, c_int, POINTER(c_int))
+lib.sequential_sample_st.restype = None
 
 
 def sequential_sample_st_barebones(spans, sample_size, recalculate_every_n=1, seed=0):
@@ -74,30 +71,29 @@ def sequential_sample_st_barebones(spans, sample_size, recalculate_every_n=1, se
     return result
 
 
-fun = lib.sequential_sample_prefixsum
-fun.argtypes = (POINTER(ARRAY(c_int, 2)), c_int, c_int, c_int, c_int, POINTER(c_int))
-fun.restype = None
+lib.sequential_sample_prefixsum.argtypes = (POINTER(ARRAY(c_int, 2)), c_int, c_int, c_int, c_int, POINTER(c_int))
+lib.sequential_sample_prefixsum.restype = None
 
 
 def sequential_sample_prefixsum_barebones(spans, sample_size, recalculate_every_n=1, seed=0):
     # spans = spans.astype(c_int)
     if spans.dtype != c_int:
         raise ValueError('spans must be of dtype `ctypes.c_int`, typically it is equal to np.int32')
-    result = np.zeros(sample_size, dtype=c_int)
+    # result = np.zeros(sample_size, dtype=c_int)
+    result = (c_int * sample_size)()
     lib.sequential_sample_prefixsum(
         spans.ctypes.data_as(POINTER(ARRAY(c_int, 2))),
         c_int(spans.shape[0]),
         c_int(sample_size),
         c_int(seed),
         c_int(recalculate_every_n),
-        result.ctypes.data_as(POINTER(c_int))
+        result
     )
-    return result
+    return np.ctypeslib.as_array(result)
 
 
-fun = lib.sequential_sample_prefixsum_optrng
-fun.argtypes = (POINTER(ARRAY(c_int, 2)), c_int, c_int, c_int, c_int, POINTER(c_int))
-fun.restype = None
+lib.sequential_sample_prefixsum_optrng.argtypes = (POINTER(ARRAY(c_int, 2)), c_int, c_int, c_int, c_int, POINTER(c_int))
+lib.sequential_sample_prefixsum_optrng.restype = None
 
 
 def sequential_sample_prefixsum_optrng_barebones(spans, sample_size, recalculate_every_n=1, seed=0):
