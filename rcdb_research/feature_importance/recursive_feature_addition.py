@@ -12,6 +12,7 @@ from ..sampling.cv.combinatorial import predict_splits, split_indexes_to_bars
 from ..scoring.predictions import score_path_2d
 from ..metrics.prediction import bounded_log_loss
 
+
 # TODO:
 # add support for fit and predict params
 # add support for sample weights
@@ -72,7 +73,6 @@ def rfa(estimator, X, y, cv, initial_clusters=None, clusters=None, pooling_fn=No
             break
 
         selected_features = X[flatten([c['columns'] for c in iteration['selected_clusters']])]
-        print(selected_features)
 
         if iteration['baseline_score'] is None:
             # For the first iteration calculate baseline score. For the rest last best_score will be reused
