@@ -6,14 +6,18 @@ from sklearn.utils import check_random_state
 from tqdm.auto import tqdm
 
 
-def mean_decrease_accuracy(estimator, X, y, cv, clusters=None,
-                           n_permutations=10, pooling_fn=None,
-                           fit_params=None, score_params=None,
-                           scoring=None, random_state=1, raw=False, verbose=True):
+def mda(estimator, X, y, cv, clusters=None,
+        n_permutations=10, pooling_fn=None,
+        fit_params=None, score_params=None,
+        scoring=None, random_state=1, raw=False, verbose=True):
+
     scoring = check_scoring(estimator, scoring)
     rs = check_random_state(random_state)
     fit_params = fit_params or {}
     score_params = score_params or {}
+
+    # Flag to decide whether clusters should be agglomerated before scoring
+    shouldAgglomerate = clusters is not None and pooling_fn is not None
 
     # Handle *_sample_weight in params to support sklearn.Pipelines
     sw_train_name, sw_train = next(
@@ -27,22 +31,24 @@ def mean_decrease_accuracy(estimator, X, y, cv, clusters=None,
     )
     _ = score_params.pop(sw_score_name, None)
 
-    # If clusteres_subsets is set then the whole cluster would be mutated instead of a single feature
-    feature_sets = clusters if clusters else [[x] for x in X.columns]
-    feature_set_names = [(f'{fts[0]}+{len(fts) - 1}' if clusters else f'{fts[0]}') for fts in feature_sets]
+    # If clusters is set then the whole cluster would be mutated instead of a single feature
+    # If clusters is None then each feature is put into separate cluster
+    clusters = clusters or [
+        dict(name=col, columns=[col])
+        for col in X.columns
+    ]
 
     # If both clustered_subset and poolin_fn is set then feature agglomeration would be performed
     # Clusters would be merged into single features usign the pooling_fn
-    if clusters is not None and pooling_fn is not None:
+    if shouldAgglomerate:
         agg_X = pd.DataFrame(index=X.index)
-        for i, fts in enumerate(feature_sets):
-            agg_ft = pooling_fn(X[fts].values)
-            agg_X[feature_set_names[i]] = agg_ft
+        for i, cluster in enumerate(clusters):
+            agg_X[cluster['name']] = pooling_fn(X[cluster['columns']].values)
+            cluster['columns'] = [cluster['name']]
         X = agg_X
-        feature_sets = [[x] for x in X.columns]
 
     baseline_scores = []  # [n_folds] of floats
-    feature_scores = [[] for _ in feature_sets]  # [n_folds] of [(n_features * n_permutations)]
+    feature_scores = [[] for _ in clusters]  # [n_folds] of [(n_features * n_permutations)]
 
     # Split data. Show progress bar if verbose
     splits = cv.split(X=X)
@@ -58,18 +64,18 @@ def mean_decrease_accuracy(estimator, X, y, cv, clusters=None,
         baseline_scores.append(scoring(model, X.values[test], y.values[test], **sw_score_dict, **score_params))
 
         # Get scores for permuted features
-        for j, ft_set in enumerate(feature_sets):
+        for j, cluster in enumerate(clusters):
             X_test = X.iloc[test, :].copy()
 
             for _ in range(n_permutations):
                 # Permute all features in the cluster
-                for ft in ft_set:
-                    rs.shuffle(X_test[ft].values)
+                for col in cluster['columns']:
+                    rs.shuffle(X_test[col].values)
 
                 ft_score = scoring(model, X_test, y.values[test], **sw_score_dict, **score_params)
                 feature_scores[j].append(baseline_scores[i] - ft_score)
 
-    importance = pd.DataFrame(np.array(feature_scores).T, columns=feature_set_names)
+    importance = pd.DataFrame(np.array(feature_scores).T, columns=[c['name'] for c in clusters])
     if raw:
         return importance
 
