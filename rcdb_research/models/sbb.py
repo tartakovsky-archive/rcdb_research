@@ -73,8 +73,6 @@ def _parallel_build_estimators(n_estimators, max_features, max_samples, bootstra
                                seeds, total_n_estimators, verbose):
     # Retrieve settings
     n_samples, n_features = X.shape
-    if clusters_int is not None:
-        n_features = len(clusters_int)
 
     if not support_sample_weight and sample_weight is not None:
         raise ValueError("The base estimator doesn't support sample weight")
@@ -212,9 +210,6 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
         self._n_samples = n_samples
         y = self._validate_y(y)
 
-        if clusters is not None:
-            self.n_features_ = len(clusters)
-
         # Check parameters
         self._validate_estimator()
 
@@ -232,7 +227,10 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
         if isinstance(self.max_features, (numbers.Integral, np.integer)):
             max_features = self.max_features
         elif isinstance(self.max_features, np.float):
-            max_features = self.max_features * self.n_features_
+            if clusters is not None:
+                max_features = self.max_features * len(clusters)
+            else:
+                max_features = self.max_features * self.n_features_
         else:
             raise ValueError("max_features must be int or float")
 
