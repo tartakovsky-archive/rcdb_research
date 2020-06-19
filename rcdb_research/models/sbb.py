@@ -56,7 +56,8 @@ def _generate_bagging_indices(random_state, bootstrap_features, n_features, max_
     else:
         if bootstrap_features is True:
             raise ValueError('case not supported: bootstrap_features=True and clusters_int is not None')
-        feature_indices = [random_state.choice(columns) for columns in clusters_int]
+        clusters_subsample = random_state.choice(clusters_int, size=max_features)
+        feature_indices = [random_state.choice(columns) for columns in clusters_subsample]
 
     #     sample_indices = seq_bootstrap(ind_mat, sample_length=max_samples, random_state=random_state)  # <- --- ---
     if t1 is not None:
@@ -72,6 +73,8 @@ def _parallel_build_estimators(n_estimators, max_features, max_samples, bootstra
                                seeds, total_n_estimators, verbose):
     # Retrieve settings
     n_samples, n_features = X.shape
+    if clusters_int is not None:
+        n_features = len(clusters_int)
 
     if not support_sample_weight and sample_weight is not None:
         raise ValueError("The base estimator doesn't support sample weight")
@@ -208,6 +211,9 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
         n_samples, self.n_features_ = X.shape
         self._n_samples = n_samples
         y = self._validate_y(y)
+
+        if clusters is not None:
+            self.n_features_ = len(clusters)
 
         # Check parameters
         self._validate_estimator()
