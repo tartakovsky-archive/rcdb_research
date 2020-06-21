@@ -4,13 +4,18 @@ from collections import namedtuple
 from copy import deepcopy
 import numpy as np
 
+from logging import warning
 from sklearn.metrics import check_scoring
 from sklearn.utils import check_random_state
+from sklearn.base import (clone, BaseEstimator, ClassifierMixin, MetaEstimatorMixin)
 from tqdm.auto import tqdm
 
 from ..sampling.cv.combinatorial import predict_splits, split_indexes_to_bars
 from ..scoring.predictions import score_path_2d
 from ..metrics.prediction import bounded_log_loss
+from .utils import cluster_labels_to_clusters
+
+import inspect
 
 
 # TODO:
@@ -18,11 +23,118 @@ from ..metrics.prediction import bounded_log_loss
 # add support for sample weights
 # format return in a way so it's integratable into sklearn pipelines, like CalibrationCV
 
-def rfa(estimator, X, y, cv, initial_clusters=None, clusters=None, pooling_fn=None,
-        max_clusters=5, min_gain=0.0,
-        fit_params=None, predict_proba=True,
-        score=bounded_log_loss, random_state=1, verbose=True, n_jobs=1):
-    rs = check_random_state(random_state)
+class RFAClassifierCV(BaseEstimator, ClassifierMixin, MetaEstimatorMixin):
+    def __init__(self,
+                 estimator,
+                 cv,
+                 initial_clusters=None,
+                 clusters=None,
+                 pooling_fn=None,
+                 agglomeration=None,
+                 max_clusters=5,
+                 min_gain=-np.inf,
+                 requires_proba=True,
+                 score=bounded_log_loss,
+                 verbose=True,
+                 n_jobs=1):
+        self.estimator = estimator
+        self.cv = cv
+
+        cluster_params_present = initial_clusters is not None or clusters is not None or pooling_fn is not None
+        agglomeration_param_present = agglomeration is not None
+        if agglomeration_param_present and cluster_params_present:
+            warning("Parameter 'agglomeration' is not None. Parameters 'initial_clusters', 'clusters', "
+                    "and 'pooling_fn' will be ignored")
+
+        self.initial_clusters = initial_clusters
+        self.clusters = clusters
+        self.pooling_fn = pooling_fn
+        self.agglomeration = agglomeration
+        self.max_clusters = max_clusters
+        self.min_gain = min_gain
+        self.requires_proba = requires_proba
+        self.score = score
+        self.verbose = verbose
+        self.n_jobs = n_jobs
+
+        self.selected_clusters = []
+        self.shouldAgglomerate = (self.clusters is not None and self.pooling_fn is not None) or (self.agglomeration is not None)
+
+    def fit(self, X, y, **fit_params):
+        if self.agglomeration is not None:
+            self.agglomeration.fit(X)
+            self.initial_clusters = []
+            self.clusters = cluster_labels_to_clusters(self.agglomeration.labels_, X.columns)
+            self.pooling_fn = self.agglomeration.pooling_fn
+
+        base, best, diff, report = rfa(estimator=self.estimator,
+                                       X=X,
+                                       y=y,
+                                       cv=self.cv,
+                                       initial_clusters=self.initial_clusters,
+                                       clusters=self.clusters,
+                                       pooling_fn=self.pooling_fn,
+                                       max_clusters=self.max_clusters,
+                                       min_gain=self.min_gain,
+                                       fit_params=fit_params,
+                                       requires_proba=self.requires_proba,
+                                       score=self.score,
+                                       verbose=self.verbose,
+                                       n_jobs=self.n_jobs)
+
+        self.selected_clusters = best['clusters']
+
+        clusters = deepcopy(self.selected_clusters)
+        if self.shouldAgglomerate:
+            agg_X = pd.DataFrame(index=X.index)
+            for i, cluster in enumerate(clusters):
+                agg_X[cluster['name']] = self.pooling_fn(X[cluster['columns']].values)
+                cluster['columns'] = [cluster['name']]
+            selected_features = agg_X
+        else:
+            selected_features = X[flatten([c['columns'] for c in clusters])]
+
+        estimator_supports_clusters = 'clusters' in inspect.getfullargspec(self.estimator.fit).args
+
+        if estimator_supports_clusters:
+            self.estimator.fit(selected_features, y, clusters=clusters, **fit_params)
+        else:
+            self.estimator.fit(selected_features, y, **fit_params)
+
+    def predict(self, X):
+        if self.shouldAgglomerate:
+            agg_X = pd.DataFrame(index=X.index)
+            for i, cluster in enumerate(self.selected_clusters):
+                agg_X[cluster['name']] = self.pooling_fn(X[cluster['columns']].values)
+            selected_features = agg_X
+        else:
+            selected_features = X[flatten([c['columns'] for c in self.selected_clusters])]
+
+        return self.estimator.predict(selected_features)
+
+    def predict_proba(self, X):
+        if self.shouldAgglomerate:
+            agg_X = pd.DataFrame(index=X.index)
+            for i, cluster in enumerate(self.selected_clusters):
+                agg_X[cluster['name']] = self.pooling_fn(X[cluster['columns']].values)
+            selected_features = agg_X
+        else:
+            selected_features = X[flatten([c['columns'] for c in self.selected_clusters])]
+
+        return self.estimator.predict_proba(selected_features)
+
+
+def rfa(estimator, X, y, cv,
+        initial_clusters=None,
+        clusters=None,
+        pooling_fn=None,
+        max_clusters=5,
+        min_gain=-np.inf,
+        fit_params=None,
+        requires_proba=True,
+        score=bounded_log_loss,
+        verbose=True,
+        n_jobs=1):
     fit_params = fit_params or {}
 
     # Flag to decide whether clusters should be agglomerated before scoring
@@ -78,7 +190,10 @@ def rfa(estimator, X, y, cv, initial_clusters=None, clusters=None, pooling_fn=No
             # For the first iteration calculate baseline score. For the rest last best_score will be reused
             indexes = cv.split(selected_features)
             splits = split_indexes_to_bars(selected_features, y, indexes)
-            preds = predict_splits(estimator, splits, predict_proba=predict_proba, n_jobs=n_jobs)
+            preds = predict_splits(estimator, splits,
+                                   predict_proba=requires_proba,
+                                   clusters=iteration['selected_clusters'],
+                                   n_jobs=n_jobs)
             scores = np.array(score_path_2d(preds, score)).ravel()
             iteration['baseline_score'] = np.median(scores)
             baseline_result = dict(
@@ -97,13 +212,15 @@ def rfa(estimator, X, y, cv, initial_clusters=None, clusters=None, pooling_fn=No
         for cluster in candidate_clusters:
             # For each candidate add it to the baseline feature set, train model on CV
             # Store median score between splits as candidate's score
-
-            candidate_features = X[cluster['columns']]
-            combined_features = pd.concat([selected_features, candidate_features], axis=1)
+            combined_clusters = iteration['selected_clusters'] + [cluster]
+            combined_features = X[flatten([c['columns'] for c in combined_clusters])]
 
             indexes = cv.split(combined_features)
             splits = split_indexes_to_bars(combined_features, y, indexes)
-            preds = predict_splits(estimator, splits, predict_proba=predict_proba, n_jobs=n_jobs)
+            preds = predict_splits(estimator, splits,
+                                   predict_proba=requires_proba,
+                                   clusters=combined_clusters,
+                                   n_jobs=n_jobs)
             scores = np.array(score_path_2d(preds, score)).ravel()
             iteration['candidate_scores'].append(np.median(scores))
 
