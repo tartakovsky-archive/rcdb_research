@@ -18,5 +18,6 @@ xgboost==0.90
 lightgbm==2.2.3
 backtrader==1.9.74.123
 natsort==7.0.1
+llvmlite==0.32.1
 
 tulipindicators
