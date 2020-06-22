@@ -1,5 +1,6 @@
+import copy
 from operator import itemgetter
-from itertools import combinations
+from itertools import combinations, takewhile
 from functools import reduce
 from typing import Union, List, Tuple, Iterable, Dict, Optional, Any
 
@@ -23,7 +24,8 @@ class CombinatorialCV(BaseCrossValidator):
     def __init__(
             self,
             n_folds: int,
-            embargo: Optional[int] = None,
+            embargo_bars: int = 0,
+            embargo_pct: float = 0.,
             tainted_up_to: Optional[Any] = None,
             k_tests: int = 1
     ):
@@ -37,7 +39,8 @@ class CombinatorialCV(BaseCrossValidator):
             raise ValueError('n_folds value must be higher then k_tests')
 
         self.n_folds = n_folds
-        self.embargo = embargo
+        self.embargo_bars = embargo_bars
+        self.embargo_pct = embargo_pct
         self.tainted_up_to = tainted_up_to
         self.k_tests = k_tests
 
@@ -88,7 +91,7 @@ class CombinatorialCV(BaseCrossValidator):
             raise self.SplitterException(f'Not enough data left to perform {self.n_folds} folds')
 
         groups = np.array_split(idxs, self.n_folds)
-        if self.embargo and not all(len(g) - self.embargo > 0 for g in groups[self.k_tests:]):
+        if self.embargo_bars and not all(len(g) - self.embargo_bars > 0 for g in groups[self.k_tests:]):
             raise self.SplitterException('Not enough train set data to embargo')
 
         groups_idxs = np.arange(self.n_folds)
@@ -97,22 +100,120 @@ class CombinatorialCV(BaseCrossValidator):
 
         for test_folds in combinations(range(self.n_folds), self.k_tests):
             train_folds = groups_idxs[~np.isin(groups_idxs, test_folds)]
+            train_groups = list(itemgetter(*train_folds)(groups))
 
-            train_groups = [
-                groups[i][self.embargo:] if self.embargo and any(i - ti == 1 for ti in test_folds) else groups[i]
-                for i in train_folds
-            ]
-            train_groups.insert(0, tainted_idxs)
+            if len(tainted_idxs):
+                train_groups.insert(0, tainted_idxs)
+
+            test_groups = list(itemgetter(*test_folds)(groups))
+
+            test_groups, train_groups = self.purge(test_groups, train_groups)
+            test_groups, train_groups = self.apply_embargo(
+                test_groups,
+                train_groups,
+                test_folds,
+                train_folds
+            )
+
+            test = np.hstack(test_groups)
             train = np.hstack(train_groups)
-
-            test = np.hstack((itemgetter(*test_folds)(groups)))
 
             splits.append((train, test))
 
         return splits
 
+    def purge(
+            self,
+            test_groups: List[np.ndarray],
+            train_groups: List[np.ndarray],
+    ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+        return test_groups, train_groups
+
+    def apply_embargo(
+            self,
+            test_groups: List[np.ndarray],
+            train_groups: List[np.ndarray],
+            test_folds: List[int],
+            train_folds: List[int]
+    ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+        tainted = None
+        if len(train_groups) != len(train_folds):  # tainted
+            tainted = train_groups[0]
+            train_groups = train_groups[1:]
+
+        new_train_groups = []
+        for i, (train_group_i, train_group) in enumerate(zip(train_folds, train_groups)):
+            for test_group_i, test_group in zip(test_folds, test_groups):
+                delta = train_group_i - test_group_i
+                if delta == 1:
+                    embargo_size = int(
+                        max((len(test_group) * self.embargo_pct, self.embargo_bars))
+                    )
+
+                    new_train_groups.append(
+                        train_group[embargo_size:]
+                    )
+                    break
+
+            if len(new_train_groups) != (i + 1):
+                new_train_groups.append(train_group)
+
+        if tainted is not None:
+            new_train_groups.insert(0, tainted)
+
+        return test_groups, new_train_groups
+
     def _iter_test_indices(self, X=None, y=None, groups=None):
         return map(lambda split: split[1], self.split(X, y, groups))
+
+
+class CombinatorialPurgedCV(CombinatorialCV):
+    def __init__(
+            self,
+            n_folds: int,
+            bars_timestamp_start: np.ndarray,
+            bars_timestamp_end: np.ndarray,
+            embargo_bars: int = 0,
+            embargo_pct: float = 0.,
+            tainted_up_to: Optional[Any] = None,
+            k_tests: int = 1,
+    ):
+        super().__init__(n_folds, embargo_bars, embargo_pct, tainted_up_to, k_tests)
+
+        if bars_timestamp_start.shape != bars_timestamp_end.shape:
+            raise ValueError('bars_timestamp_start and bars_timestamp_end has different shape')
+
+        self.bars_timestamp_start = bars_timestamp_start
+        self.bars_timestamp_end = bars_timestamp_end
+
+    def purge(
+            self,
+            test_groups: List[np.ndarray],
+            train_groups: List[np.ndarray],
+    ) -> Tuple[List[np.ndarray], List[np.array]]:
+
+        test_groups = copy.deepcopy(test_groups)
+        groups_lasts = sorted(
+            [[x[-1], False, i] for i, x in enumerate(test_groups)] + [[x[-1], True, i] for i, x in enumerate(train_groups)],
+            key=itemgetter(0)
+        )
+
+        grouped_groups_lasts = [groups_lasts[0]]
+        for idx, is_train, i in groups_lasts[1:]:
+            latest_idx, is_latest_is_train, _ = grouped_groups_lasts[-1]
+            if is_train and is_latest_is_train == is_train:
+                grouped_groups_lasts[-1][0] = idx
+                grouped_groups_lasts[-1][2] = i
+            else:
+                grouped_groups_lasts.append([idx, is_train, i])
+
+        for i, (train_idx, *_) in filter(lambda x: x[1][1], enumerate(grouped_groups_lasts)):
+            for *_, test_group_i in takewhile(lambda g: not g[1], grouped_groups_lasts[i + 1:]):
+                test_group = test_groups[test_group_i]
+                test_groups[test_group_i] = \
+                    test_group[self.bars_timestamp_start[test_group] >  self.bars_timestamp_end[train_idx]]
+
+        return test_groups, train_groups
 
 
 def split_indexes_to_bars(

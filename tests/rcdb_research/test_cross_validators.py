@@ -8,7 +8,7 @@ from rcdb_research.cross_validation import \
     WalkForwardCV, cross_val_predict_timeseries_splits
 
 from rcdb_research.sampling.cv.combinatorial import \
-    CombinatorialCV, split_indexes_to_bars, predict_splits, predicts_to_paths
+    CombinatorialCV, CombinatorialPurgedCV, split_indexes_to_bars, predict_splits, predicts_to_paths
 
 
 @pytest.fixture
@@ -363,7 +363,7 @@ def test_CombinatorialKFold_edge_cases(class_params, input, error_msg):
 
 def test_CombinatorialKFold_edge_cases_with_cross_val_score():
     estimator = DecisionTreeRegressor()
-    cv = CombinatorialCV(n_folds=2, embargo=2, tainted_up_to=1)
+    cv = CombinatorialCV(n_folds=2, embargo_bars=2, tainted_up_to=1)
     score = cross_val_score(estimator, TEST_SPLIT_INPUT['X'], TEST_SPLIT_INPUT['y'], cv=cv)
     assert len(score) == 2
 
@@ -446,3 +446,207 @@ def test_predicts_to_paths(params, x_size, ys_true):
         assert path.keys() == test_path.keys()
         for k in test_path:
             assert np.array_equal(path[k], test_path[k])
+
+
+@pytest.mark.parametrize(
+    'bars_timestamp_end, bars_timestamp_start, test_test_groups',
+    [
+        (
+            # bars_timestamp_end
+            np.array(
+                [
+                    0, 2, 4,
+                    6, 8, 10,
+                    12, 14, 16,
+                    18, 20, 22,
+                    24, 26, 28,
+                    30, 32, 34
+                ]
+            ),
+            # bars_timestamp_start
+            np.array(
+                [
+                    1, 3, 5,
+                    7, 9, 11,
+                    13, 15, 17,
+                    15, 21, 23,  # row[0]!
+                    25, 27, 29,
+                    27, 27, 35  # row[[0, 1]]!
+                ]
+            ),
+            # test_test_groups
+            [np.array([3, 4, 5]), np.array([10, 11]), np.array([17])]
+        ),
+        (
+            # bars_timestamp_end
+            np.array(
+                [
+                    0, 2, 4,
+                    6, 8, 10,
+                    12, 14, 16,
+                    18, 20, 22,
+                    24, 26, 28,
+                    30, 32, 34
+                ]
+            ),
+            # bars_timestamp_start
+            np.array(
+                [
+                    1, 3, 5,
+                    3, 3, 11,  # row[0, 1]!
+                    13, 15, 17,
+                    15, 15, 23,  # row[0, 1]!
+                    25, 27, 29,
+                    27, 27, 35  # row[[0, 1]]!
+                ]
+            ),
+            # test_test_groups
+            [np.array([5]), np.array([11]), np.array([17])]
+        ),
+        (
+            # bars_timestamp_end
+            np.array(
+                [
+                    0, 2, 4,
+                    6, 8, 10,
+                    12, 14, 16,
+                    18, 20, 22,
+                    24, 26, 28,
+                    30, 32, 34
+                ]
+            ),
+            # bars_timestamp_start
+            np.array(
+                [
+                    1, 3, 5,
+                    7, 9, 11,
+                    13, 15, 17,
+                    19, 21, 23,
+                    25, 27, 29,
+                    31, 33, 35
+                ]
+            ),
+            # test_test_groups
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])]
+        ),
+
+    ],
+    ids=['purge-case-1', 'purge-case-1', 'without-purge']
+)
+def test_purge(bars_timestamp_end, bars_timestamp_start, test_test_groups):
+    groups = np.array_split(np.arange(18), 6)
+    train_groups = groups[::2]
+    test_groups = groups[1::2]
+
+    cv = CombinatorialPurgedCV(
+        n_folds=6,
+        k_tests=3,
+        bars_timestamp_start=bars_timestamp_start,
+        bars_timestamp_end=bars_timestamp_end
+    )
+
+    res_test_groups, res_train_groups = cv.purge(test_groups, train_groups)
+
+    # check test groups
+    assert len(res_test_groups) == len(test_test_groups)
+    for res, test in zip(res_test_groups, test_test_groups):
+        assert np.array_equal(res, test)
+
+    # check train groups
+    assert len(res_train_groups) == len(train_groups)
+    for res, train in zip(res_train_groups, train_groups):
+        assert np.array_equal(res, train)
+
+
+@pytest.mark.parametrize(
+    'test_groups, train_groups, test_folds, train_folds, params, test_train_groups',
+    [
+        (
+            [np.array([0, 1, 2]), np.array([6, 7, 8]), np.array([12, 13, 14])],
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_bars=2),
+            [np.array([5]), np.array([11]), np.array([17])]
+        ),
+        (
+            [np.array([0, 1, 2]), np.array([6, 7, 8]), np.array([12, 13, 14])],
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_pct=0.9),
+            [np.array([5]), np.array([11]), np.array([17])]
+        ),
+        (
+            [np.array([0, 1, 2]), np.array([6, 7, 8]), np.array([12, 13, 14])],
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_pct=0.9, embargo_bars=1),
+            [np.array([5]), np.array([11]), np.array([17])]
+        ),
+        (
+            [np.array([0, 1, 2]), np.array([6, 7, 8]), np.array([12, 13, 14])],
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_pct=0.5),
+            [np.array([4, 5]), np.array([10, 11]), np.array([16, 17])]
+        ),
+        (
+            [np.array([2, 3]), np.array([8, 9, 10, 11]), np.array([19])],
+            [np.array([4, 5, 6, 7]), np.array([12, 13, 14, 15]), np.array([20, 21, 22, 23])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_pct=0.5, embargo_bars=1),
+            [np.array([5, 6, 7]), np.array([14, 15]), np.array([21, 22, 23])]
+        ),
+        (
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])],
+            [np.array([0, 1, 2]), np.array([6, 7, 8]), np.array([12, 13, 14])],
+            [1, 3, 5], [0, 2, 4], dict(embargo_pct=0.9),
+            [np.array([0, 1, 2]), np.array([8]), np.array([14])]
+        ),
+        (
+            [np.array([2, 3]), np.array([8, 9, 10, 11]), np.array([19])],
+            [np.array([0, 1]), np.array([4, 5, 6, 7]), np.array([12, 13, 14, 15]), np.array([20, 21, 22, 23])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_pct=0.5, embargo_bars=1),
+            [np.array([0, 1]), np.array([5, 6, 7]), np.array([14, 15]), np.array([21, 22, 23])]
+        ),
+
+    ]
+)
+def test_embargo(test_groups, train_groups, test_folds, train_folds, params, test_train_groups):
+    cv = CombinatorialCV(n_folds=6, k_tests=3, **params)
+    res_test_groups, res_train_groups = cv.apply_embargo(test_groups, train_groups, test_folds, train_folds)
+
+    # check test groups
+    assert len(res_test_groups) == len(test_groups)
+    for res, test in zip(res_test_groups, test_groups):
+        assert np.array_equal(res, test)
+
+    # check train groups
+    assert len(res_train_groups) == len(test_train_groups)
+    for res, train in zip(res_train_groups, test_train_groups):
+        assert np.array_equal(res, train)
+
+
+def test_base_flow_CombinatorialPurgedCV():
+    bars_timestamp_end = np.array(
+        [
+            0, 2, 4,
+            6, 8, 10,
+            12, 14, 16,
+            18, 20, 22,
+            24, 26, 28,
+            30, 32, 34
+        ]
+    )
+    bars_timestamp_start = np.array(
+        [
+            1, 3, 5,
+            7, 9, 11,
+            13, 15, 17,
+            15, 21, 23,  # row[0]!
+            25, 27, 29,
+            27, 27, 35  # row[[0, 1]]!
+        ]
+    )
+
+    cv = CombinatorialPurgedCV(
+        n_folds=6,
+        k_tests=3,
+        bars_timestamp_start=bars_timestamp_start,
+        bars_timestamp_end=bars_timestamp_end,
+        embargo_pct=0.5
+    )
