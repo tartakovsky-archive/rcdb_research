@@ -13,7 +13,7 @@ def get_trading_simulation(
         initial_cash: int = 1000000,
         use_worst_pnl=False,
         bt_strategy=BtRcdbStrategy,
-        risk_management_callbacks=None) -> (Trades, pd.DataFrame):
+        risk_management_pre_trade=None) -> (Trades, pd.DataFrame):
     """
     Do all the magic to configure backtrader, run simulation and get results.
 
@@ -43,7 +43,7 @@ def get_trading_simulation(
         bt_strategy,
         sizing=sizing,
         use_worst_pnl=use_worst_pnl,
-        risk_management_callbacks=risk_management_callbacks)
+        risk_management_pre_trade=risk_management_pre_trade)
 
     # Analyzer
     # cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='mysharpe')
@@ -86,7 +86,8 @@ def get_bt_data(df_predict, proba_arr, df_trade):
     ts_start = bidasks.index.values[0]
     ts_end = bidasks.index.values[-1]
 
-    df_bt = df_trade[(bidasks.index >= ts_start) & (bidasks.index <= ts_end)][['open', 'high', 'low', 'close', 'volume']]
+    df_bt = df_trade[
+        (bidasks.index >= ts_start) & (bidasks.index <= ts_end)][['open', 'high', 'low', 'close', 'volume']]
 
     df_signals = bidasks[['proba']].copy()
 
@@ -97,7 +98,9 @@ def get_bt_data(df_predict, proba_arr, df_trade):
     # print(df_signals)
 
     df_bt = df_bt.join(df_signals, how='outer')
-    df_bt[['open', 'high', 'low', 'close', 'volume']] = df_bt[['open', 'high', 'low', 'close', 'volume']].fillna(method="bfill")
+    df_bt[['open', 'high', 'low', 'close', 'volume']] = df_bt[
+        ['open', 'high', 'low', 'close', 'volume']].fillna(method="bfill")
+
     df_bt['signal'] = df_bt['signal'].shift(-1)
 
     df_bt['no_drop'] = df_bt['signal']
@@ -120,7 +123,7 @@ def get_trading_simulation_2nd_exchange(
         initial_cash: int = 1000000,
         use_worst_pnl=False,
         bt_strategy=BtRcdbStrategy,
-        risk_management_callbacks=None) -> (Trades, pd.DataFrame):
+        risk_management_pre_trade=None) -> (Trades, pd.DataFrame):
 
     df_data = get_bt_data(df_base, proba_arr, df_trade)
     return get_trading_simulation(
@@ -130,5 +133,5 @@ def get_trading_simulation_2nd_exchange(
         initial_cash=initial_cash,
         use_worst_pnl=use_worst_pnl,
         bt_strategy=bt_strategy,
-        risk_management_callbacks=risk_management_callbacks
+        risk_management_pre_trade=risk_management_pre_trade
     )

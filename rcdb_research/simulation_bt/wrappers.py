@@ -43,19 +43,19 @@ def bt_data_feed_factory(df):
 
 
 class BtRcdbStrategy(bt.Strategy):
-    def __init__(self, sizing, use_worst_pnl=False, verbose=False, risk_management_callbacks=None):
+    def __init__(self, sizing, use_worst_pnl=False, verbose=False, risk_management_pre_trade=None):
         self.story = []
         self.sizing = sizing
         self.use_worst_pnl = use_worst_pnl
         self.verbose = verbose
-        self.risk_management_callbacks = risk_management_callbacks if risk_management_callbacks else []
 
-    def run_risk_management(self):
-        for cb in self.risk_management_callbacks:
-            if not cb(self):
-                return False
+        self.risk_management_pre_trade = risk_management_pre_trade if risk_management_pre_trade else []
 
-        return True
+    def get_risk_adjusted_exposure(self, desired_exposure):
+        exposure_arr = [desired_exposure]
+        for cb in self.risk_management_pre_trade:
+            exposure_arr.append(cb(self, exposure_arr[-1]))
+        return exposure_arr[-1]
 
     def get_size(self):
         return self.sizing.size(self.data.signal[0])
@@ -65,10 +65,6 @@ class BtRcdbStrategy(bt.Strategy):
         return not math.isnan(signal)
 
     def next(self):
-        if not self.run_risk_management():
-            self.order_target_size(target=0)
-            return
-
         size_info = self.calc_size()
         self.story.append(size_info)
 
@@ -140,6 +136,8 @@ class BtRcdbStrategy(bt.Strategy):
         portfolio_value = self.broker.get_value()
         exposure_curr = (self.position.size * self.position.price) / portfolio_value
         exposure_desired = self.get_size()
+
+        exposure_desired = self.get_risk_adjusted_exposure(exposure_desired)
 
         size_desired = portfolio_value / self.close * exposure_desired
         size_to_execute = size_desired - self.position.size

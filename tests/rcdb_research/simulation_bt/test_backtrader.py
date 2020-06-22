@@ -136,6 +136,7 @@ def test_Backtrader_Simulation_run(data):  # noqa
 
     assert df_sim.balance.values[-1] == 737566.272018916
 
+
 @pytest.mark.parametrize(
     'data',
     (
@@ -202,18 +203,18 @@ def test_Backtrader_Simulation_risk_management(data):  # noqa
     expected_loss = 0.015 - bitfinex_fee * 2
 
     def max_dd_risk_manager(max_dd_allowed):
-        def wrapper(self):
+        def wrapper(self, desired_exposure):
             portfolio_value = self.broker.get_value()
             try:
                 if portfolio_value > self.max_portfolio_value:
                     self.max_portfolio_value = portfolio_value
 
                 elif 1 - portfolio_value / self.max_portfolio_value > max_dd_allowed:
-                    return False
+                    return 0
             except AttributeError:
                 self.max_portfolio_value = portfolio_value
 
-            return True
+            return desired_exposure
         return wrapper
 
     trades, df_sim = get_trading_simulation(
@@ -221,10 +222,12 @@ def test_Backtrader_Simulation_risk_management(data):  # noqa
         sizing=KellySizing(win_size=expected_profit, loss_size=expected_loss, divider=10, direction='both'),
         exchange=exchange,
         bt_strategy=BtRcdbStrategy,
-        risk_management_callbacks=[max_dd_risk_manager(max_dd_allowed=0.3)]
+        risk_management_pre_trade=[max_dd_risk_manager(max_dd_allowed=0.3)]
     )
 
-    assert df_sim.balance.values[-1] == 671708.8127265358
+    print(df_sim)
+
+    assert df_sim.balance.values[-1] == 737100.2237928074
 
 
 def test_Data_Feed_Factory():  # noqa
