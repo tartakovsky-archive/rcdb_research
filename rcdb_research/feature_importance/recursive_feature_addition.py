@@ -1,10 +1,8 @@
 import pandas as pd
 from pandas.core.common import flatten
-from collections import namedtuple
 from copy import deepcopy
 import numpy as np
 
-from sklearn.metrics import check_scoring
 from sklearn.utils import check_random_state
 from tqdm.auto import tqdm
 
@@ -22,7 +20,7 @@ def rfa(estimator, X, y, cv, initial_clusters=None, clusters=None, pooling_fn=No
         max_clusters=5, min_gain=0.0,
         fit_params=None, predict_proba=True,
         score=bounded_log_loss, random_state=1, verbose=True, n_jobs=1):
-    rs = check_random_state(random_state)
+    _ = check_random_state(random_state)
     fit_params = fit_params or {}
 
     # Flag to decide whether clusters should be agglomerated before scoring

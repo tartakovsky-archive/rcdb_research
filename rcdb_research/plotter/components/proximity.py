@@ -1,12 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import ticker
-from matplotlib.patches import Patch
-from matplotlib.lines import Line2D
 
 import seaborn as sns
 
-from typing import Optional, Callable, List
+from typing import Optional, List
 
 from .. import style
 from ..utils import configure_axis

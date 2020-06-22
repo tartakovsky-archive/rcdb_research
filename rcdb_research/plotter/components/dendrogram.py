@@ -60,7 +60,14 @@ def dendrogram(model,
     linkage_matrix = np.column_stack([children, distance, no_of_observations]).astype(float)
 
     # Plot the corresponding dendrogram
-    plot_dendrogram(linkage_matrix, labels=labels, color_threshold=model.distance_threshold, orientation=orientation, ax=axis, **dendrogram_kwargs)
+    plot_dendrogram(
+        linkage_matrix,
+        labels=labels,
+        color_threshold=model.distance_threshold,
+        orientation=orientation,
+        ax=axis,
+        **dendrogram_kwargs
+    )
 
     if h_or_v == 'h':
         if model.distance_threshold is not None:
