@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import backtrader as bt
 
@@ -11,7 +12,8 @@ def get_trading_simulation(
         exchange,
         initial_cash: int = 1000000,
         use_worst_pnl=False,
-        bt_strategy=BtRcdbStrategy) -> (Trades, pd.DataFrame):
+        bt_strategy=BtRcdbStrategy,
+        risk_management_callbacks=None) -> (Trades, pd.DataFrame):
     """
     Do all the magic to configure backtrader, run simulation and get results.
 
@@ -24,6 +26,8 @@ def get_trading_simulation(
     :param bt_strategy: backtrader strategy class
     :return:
     """
+    print(df_data)
+
     cerebro = bt.Cerebro()
     cerebro.broker.addcommissioninfo(CommInfoFractional())
     cerebro.broker.setcommission(
@@ -35,7 +39,11 @@ def get_trading_simulation(
     cerebro.adddata(data)
 
     # Add the strategy to cerebro
-    cerebro.addstrategy(bt_strategy, sizing=sizing, use_worst_pnl=use_worst_pnl)
+    cerebro.addstrategy(
+        bt_strategy,
+        sizing=sizing,
+        use_worst_pnl=use_worst_pnl,
+        risk_management_callbacks=risk_management_callbacks)
 
     # Analyzer
     # cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='mysharpe')
@@ -54,3 +62,73 @@ def get_trading_simulation(
     )
 
     return trades_bt, df
+
+
+#
+# 2nd Dataset
+#
+
+def get_bt_data(df_predict, proba_arr, df_trade):
+    """
+    :param df_predict: dataset to predict
+    :param proba: predicted proba
+    :param df_trade: dataset to trade
+    :return:
+    """
+    bidasks = df_predict[['open', 'high', 'low', 'close', 'volume']].copy().tail(proba_arr.size)
+
+    # CHANGE 2:
+    # Don't modify bid/ask if you can increase fee or impact
+
+    bidasks['signal'] = proba_arr[1:]
+    bidasks['proba'] = bidasks['signal']
+
+    ts_start = bidasks.index.values[0]
+    ts_end = bidasks.index.values[-1]
+
+    df_bt = df_trade[(bidasks.index >= ts_start) & (bidasks.index <= ts_end)][['open', 'high', 'low', 'close', 'volume']]
+
+    df_signals = bidasks[['proba']].copy()
+
+    df_signals.columns = ['signal']
+    df_signals = df_signals.shift(1)
+
+    # print("signal")
+    # print(df_signals)
+
+    df_bt = df_bt.join(df_signals, how='outer')
+    df_bt[['open', 'high', 'low', 'close', 'volume']] = df_bt[['open', 'high', 'low', 'close', 'volume']].fillna(method="bfill")
+    df_bt['signal'] = df_bt['signal'].shift(-1)
+
+    df_bt['no_drop'] = df_bt['signal']
+    df_bt['no_drop'] = np.where(df_bt['no_drop'].isna(), df_bt['signal'].shift(1), df_bt['no_drop'])
+
+    df_bt = df_bt.loc[df_bt['no_drop'].notna()]
+
+    print("\n>>bt data")
+    print(df_bt)
+
+    return df_bt
+
+
+def get_trading_simulation_2nd_exchange(
+        df_base: pd.DataFrame,
+        proba_arr: np.ndarray,
+        df_trade: pd.DataFrame,
+        sizing,
+        exchange,
+        initial_cash: int = 1000000,
+        use_worst_pnl=False,
+        bt_strategy=BtRcdbStrategy,
+        risk_management_callbacks=None) -> (Trades, pd.DataFrame):
+
+    df_data = get_bt_data(df_base, proba_arr, df_trade)
+    return get_trading_simulation(
+        df_data=df_data,
+        sizing=sizing,
+        exchange=exchange,
+        initial_cash=initial_cash,
+        use_worst_pnl=use_worst_pnl,
+        bt_strategy=bt_strategy,
+        risk_management_callbacks=risk_management_callbacks
+    )

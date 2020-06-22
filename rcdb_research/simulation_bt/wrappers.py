@@ -43,11 +43,19 @@ def bt_data_feed_factory(df):
 
 
 class BtRcdbStrategy(bt.Strategy):
-    def __init__(self, sizing, use_worst_pnl=False, verbose=False):
+    def __init__(self, sizing, use_worst_pnl=False, verbose=False, risk_management_callbacks=None):
         self.story = []
         self.sizing = sizing
         self.use_worst_pnl = use_worst_pnl
         self.verbose = verbose
+        self.risk_management_callbacks = risk_management_callbacks if risk_management_callbacks else []
+
+    def run_risk_management(self):
+        for cb in self.risk_management_callbacks:
+            if not cb(self):
+                return False
+
+        return True
 
     def get_size(self):
         return self.sizing.size(self.data.signal[0])
@@ -57,11 +65,15 @@ class BtRcdbStrategy(bt.Strategy):
         return not math.isnan(signal)
 
     def next(self):
-        if not self.has_signal():
+        if not self.run_risk_management():
+            self.order_target_size(target=0)
             return
 
         size_info = self.calc_size()
         self.story.append(size_info)
+
+        if not self.has_signal():
+            return
 
         size_to_execute = size_info['size_to_execute']
 
@@ -70,6 +82,14 @@ class BtRcdbStrategy(bt.Strategy):
                 self.buy(size=size_to_execute)
             else:
                 self.sell(size=size_to_execute)
+
+    @property
+    def max_long_lev(self):
+        return self.data.max_long_lev[0]
+
+    @property
+    def max_short_lev(self):
+        return self.data.max_short_lev[0]
 
     @property
     def close(self):
