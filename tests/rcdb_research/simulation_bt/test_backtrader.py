@@ -134,7 +134,42 @@ def test_Backtrader_Simulation_run(data):  # noqa
         use_worst_pnl=False
     )
 
-    assert df_sim.balance.values[-1] == 737566.272018916
+    assert df_sim.balance.values[-1] == 737566.2720189162
+
+
+@pytest.mark.parametrize(
+    'data',
+    (
+        BARS_DATA,
+    )
+)
+def test_Backtrader_Simulation_run_limit(data):  # noqa
+    df_data = data_to_df(data)
+
+    exchange = Bitfinex(costs=Costs(
+        taker_fee=-0.155 / 100,
+        maker_fee=-0.2 / 100,
+        drift=-0.0 / 100,
+        impact=-0.1 / 100,
+    ))
+
+    bitfinex_fee = 0.155 / 100
+
+    expected_profit = 0.015 - bitfinex_fee * 2
+    expected_loss = 0.015 - bitfinex_fee * 2
+
+    trades, df_sim = get_trading_simulation(
+        df_data=df_data,
+        sizing=KellySizing(expected_profit, expected_loss, 10, direction='both'),
+        exchange=exchange,
+        use_worst_pnl=False,
+        entry_limit=True
+    )
+
+    print("df_sim")
+    print(df_sim)
+
+    assert df_sim.balance.values[-1] == 1067713.1110564289
 
 
 @pytest.mark.parametrize(
@@ -225,9 +260,10 @@ def test_Backtrader_Simulation_risk_management(data):  # noqa
         risk_management_pre_trade=[max_dd_risk_manager(max_dd_allowed=0.3)]
     )
 
+    print("df_sim")
     print(df_sim)
 
-    assert df_sim.balance.values[-1] == 737100.2237928074
+    assert df_sim.balance.values[-1] == 737100.2237928077
 
 
 def test_Data_Feed_Factory():  # noqa
@@ -277,4 +313,4 @@ def test_Backtrader_Simulation_run_2nd_exchange_sanity_check(data):  # noqa
         use_worst_pnl=False
     )
 
-    assert df_sim.balance.values[-1] == 737566.272018916
+    assert df_sim.balance.values[-1] == 737566.2720189162
