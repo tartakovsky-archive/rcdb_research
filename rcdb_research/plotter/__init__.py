@@ -1,6 +1,7 @@
 from .primitives import line  # noqa
 from .primitives import line_pn  # noqa
 from .primitives import area  # noqa
+from .primitives import bars  # noqa
 from .primitives import bars_pn  # noqa
 from .primitives import hist  # noqa
 from .primitives import hist_pn  # noqa
