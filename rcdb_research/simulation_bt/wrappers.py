@@ -203,13 +203,13 @@ class BtRcdbStrategy(bt.Strategy):
             size_to_execute=size_to_execute
         )
 
-    def notify_trade(self, trade):
-        print(trade)
-        return
-
-    def notify_order(self, order):
-        print(order)
-        return
+    # def notify_trade(self, trade):
+    #     print(trade)
+    #     return
+    #
+    # def notify_order(self, order):
+    #     print(order)
+    #     return
 
 
 class CommInfoFractional(bt.CommissionInfo):

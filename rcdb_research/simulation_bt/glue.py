@@ -29,8 +29,6 @@ def get_trading_simulation(
     :param entry_limit: increase position with limit orders
     :return:
     """
-    print(df_data)
-
     cerebro = bt.Cerebro()
     cerebro.broker.addcommissioninfo(CommInfoFractional())
     cerebro.broker.setcommission(
@@ -99,9 +97,6 @@ def get_bt_data(df_predict, proba_arr, df_trade):
     df_signals.columns = ['signal']
     df_signals = df_signals.shift(1)
 
-    # print("signal")
-    # print(df_signals)
-
     df_bt = df_bt.join(df_signals, how='outer')
     df_bt[['open', 'high', 'low', 'close', 'volume']] = df_bt[
         ['open', 'high', 'low', 'close', 'volume']].fillna(method="bfill")
@@ -112,9 +107,6 @@ def get_bt_data(df_predict, proba_arr, df_trade):
     df_bt['no_drop'] = np.where(df_bt['no_drop'].isna(), df_bt['signal'].shift(1), df_bt['no_drop'])
 
     df_bt = df_bt.loc[df_bt['no_drop'].notna()]
-
-    print("\n>>bt data")
-    print(df_bt)
 
     return df_bt
 
