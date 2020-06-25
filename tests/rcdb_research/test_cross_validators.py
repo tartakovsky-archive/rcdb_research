@@ -169,7 +169,7 @@ TEST_SPLIT_INPUT = dict(
     'class_params, test_res',
     [
         (
-            dict(n_folds=2, embargo=None, tainted_up_to=None),
+            dict(n_folds=2, embargo_bars=0, tainted_up_to=None),
             [
                 dict(
                     X_train=pd.DataFrame([6, 7, 8, 9], index=[4, 5, 6, 7]),
@@ -186,7 +186,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=2, embargo=2, tainted_up_to=None),
+            dict(n_folds=2, embargo_bars=2, tainted_up_to=None),
             [
                 dict(
                     X_train=pd.DataFrame([8, 9], index=[6, 7]),
@@ -203,7 +203,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=2, embargo=None, tainted_up_to=1),
+            dict(n_folds=2, embargo_bars=0, tainted_up_to=1),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 7, 8, 9], index=[0, 1, 5, 6, 7]),
@@ -220,7 +220,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=2, embargo=2, tainted_up_to=1),
+            dict(n_folds=2, embargo_bars=2, tainted_up_to=1),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 9], index=[0, 1, 7]),
@@ -237,7 +237,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=2, embargo=None, tainted_up_to=5),
+            dict(n_folds=2, embargo_bars=0, tainted_up_to=5),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 4, 5, 6, 7, 9], index=[0, 1, 2, 3, 4, 5, 7]),
@@ -254,7 +254,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=1, embargo=2, tainted_up_to=4),
+            dict(n_folds=1, embargo_bars=2, tainted_up_to=4),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 4, 5, 6], index=[0, 1, 2, 3, 4]),
@@ -265,7 +265,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=1, embargo=None, tainted_up_to=4),
+            dict(n_folds=1, embargo_bars=0, tainted_up_to=4),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 4, 5, 6], index=[0, 1, 2, 3, 4]),
@@ -320,34 +320,34 @@ def print_splits(splits):
     'class_params, input, error_msg',
     [
         (
-            dict(n_folds=1, embargo=None, tainted_up_to=None),
+            dict(n_folds=1, embargo_bars=0, tainted_up_to=None),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for training set. '
             'Either set n_folds to > 1 or mark some data as tainted by setting tainted_up_to to not None'
         ),
         (
-            dict(n_folds=0, embargo=None, tainted_up_to=None),
+            dict(n_folds=0, embargo_bars=0, tainted_up_to=None),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for training set. '
             'Either set n_folds to > 1 or mark some data as tainted by setting tainted_up_to to not None'
         ),
         (
-            dict(n_folds=1, embargo=None, tainted_up_to=7),
+            dict(n_folds=1, embargo_bars=0, tainted_up_to=7),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for test set after separating tainted observations'
         ),
         (
-            dict(n_folds=1, embargo=None, tainted_up_to=8),
+            dict(n_folds=1, embargo_bars=0, tainted_up_to=8),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for test set after separating tainted observations'
         ),
         (
-            dict(n_folds=2, embargo=None, tainted_up_to=6),
+            dict(n_folds=2, embargo_bars=0, tainted_up_to=6),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'Not enough data left to perform 2 folds'
         ),
         (
-            dict(n_folds=2, embargo=4, tainted_up_to=None),
+            dict(n_folds=2, embargo_bars=4, tainted_up_to=None),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'Not enough train set data to embargo'
         ),
@@ -376,7 +376,9 @@ def test_predict_splits(ohlcv_df):
 
     n = 5
 
-    splits = split_indexes_to_bars(X, y, CombinatorialCV(n, 10).split(X))
+    cv = CombinatorialCV(n, embargo_bars=10)
+    s = cv.split(X)
+    splits = split_indexes_to_bars(X, y, s)
 
     res = predict_splits(DecisionTreeClassifier(), splits)
 
@@ -650,3 +652,37 @@ def test_base_flow_CombinatorialPurgedCV():
         bars_timestamp_end=bars_timestamp_end,
         embargo_pct=0.5
     )
+
+
+@pytest.mark.parametrize(
+    'to_i, res',
+    [
+        (
+            0,
+            np.array([0, 1])
+        ),
+        (
+            1,
+            np.array([4, 5])
+        ),
+        (
+            2,
+            np.array([4, 5, 6, 7])
+        ),
+        (
+            3,
+            np.array([4, 5, 6, 7, 8, 9])
+        ),
+        (
+            4,
+            np.array([12, 13])
+        ),
+    ]
+)
+def test_find_consecutive_groups(to_i, res):
+    groups = [[0, 1], [4, 5], [6, 7], [8, 9], [12, 13]]
+    groups = [np.array(g) for g in groups]
+    folds = [0, 2, 3, 4, 6]
+
+    series = CombinatorialCV.find_consecutive_groups(groups, folds, to_i)
+    assert np.array_equal(series, res)

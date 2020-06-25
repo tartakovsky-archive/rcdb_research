@@ -17,6 +17,18 @@ Split = Tuple[np.ndarray, np.ndarray]
 Splits = List[Split]
 
 
+def consistent_itemgetter(*items):
+    if len(items) == 1:
+        item = items[0]
+
+        def g(obj):
+            return (obj[item],)
+    else:
+        def g(obj):
+            return tuple(obj[item] for item in items)
+    return g
+
+
 class CombinatorialCV(BaseCrossValidator):
     class SplitterException(Exception):
         pass
@@ -43,6 +55,9 @@ class CombinatorialCV(BaseCrossValidator):
         self.embargo_pct = embargo_pct
         self.tainted_up_to = tainted_up_to
         self.k_tests = k_tests
+
+        self._embargo_sizes = []
+        self._embargo_starts = []
 
     @staticmethod
     def get_n_paths(k_tests, n_folds):
@@ -98,22 +113,25 @@ class CombinatorialCV(BaseCrossValidator):
 
         splits = []
 
+
         for test_folds in combinations(range(self.n_folds), self.k_tests):
             train_folds = groups_idxs[~np.isin(groups_idxs, test_folds)]
-            train_groups = list(itemgetter(*train_folds)(groups))
+            train_groups = list(consistent_itemgetter(*train_folds)(groups))
+
+            test_groups = list(consistent_itemgetter(*test_folds)(groups))
 
             if len(tainted_idxs):
                 train_groups.insert(0, tainted_idxs)
 
-            test_groups = list(itemgetter(*test_folds)(groups))
-
             test_groups, train_groups = self.purge(test_groups, train_groups)
-            test_groups, train_groups = self.apply_embargo(
-                test_groups,
-                train_groups,
-                test_folds,
-                train_folds
-            )
+
+            if self.embargo_bars != 0 or self.embargo_pct != 0:
+                test_groups, train_groups = self.apply_embargo(
+                    test_groups,
+                    train_groups,
+                    test_folds,
+                    train_folds
+                )
 
             test = np.hstack(test_groups)
             train = np.hstack(train_groups)
@@ -129,7 +147,159 @@ class CombinatorialCV(BaseCrossValidator):
     ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         return test_groups, train_groups
 
+
+    @staticmethod
+    def find_consecutive_groups(groups: List[np.ndarray], folds: List[int], to_i: int) -> np.ndarray:
+        """
+        Example:
+
+        groups = [[0, 1], [4, 5], [6, 7], [8, 9]]
+                                     ^i == 2
+        folds = [0, 2, 3, 4]
+        to_i = 2
+
+        res = [4, 5, 6, 7]
+
+        :param groups:
+        :param folds:
+        :param to_i:
+        :return:
+        """
+        res = []
+        prev_fold = None
+        for group, fold in reversed(list(zip(groups[:to_i + 1], folds[:to_i + 1]))):
+            if prev_fold is None or prev_fold - fold == 1:
+                res.append(group)
+                prev_fold = fold
+            else:
+                break
+
+        res = res[::-1]
+        return np.hstack(res)
+
+    @staticmethod
+    def cut_embargo(train_folds, train_groups, train_i, embargo_size):
+        embargo_size_rest = embargo_size - len(train_groups[train_i])
+        last_fold_idx = train_folds[train_i]
+        if len(train_groups) > train_i + 1:
+            for i in range(train_i + 1, len(train_groups)):
+                if train_folds[i] - last_fold_idx != 1:
+                    break
+
+                train_group = train_groups[i]
+                train_groups[i] = train_group[embargo_size_rest:]
+                if len(train_group) > embargo_size_rest:
+                    embargo_size_rest = 0
+                    break
+
+                embargo_size_rest -= len(train_group)
+                last_fold_idx = train_folds[i]
+
+        return embargo_size - embargo_size_rest
+
+    @staticmethod
+    def _gen_test_train_series(split):
+        pos = 0
+        while pos < len(split):
+            # take test groups series
+            test_groups = []
+            for is_train, fold, group in split[pos:]:
+                if is_train:
+                    break
+                test_groups.append(group)
+                pos += 1
+
+            train_groups = []
+            for is_train, fold, group in split[pos:]:
+                if not is_train:
+                    break
+                train_groups.append(group)
+                pos += 1
+
+            yield test_groups, train_groups
+
     def apply_embargo(
+            self,
+            test_groups: List[np.ndarray],
+            train_groups: List[np.ndarray],
+            test_folds: List[int],
+            train_folds: List[int]
+    ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+        _test_groups = test_groups
+        print('test_groups', test_groups)
+        print('train_groups', train_groups)
+        tainted = None
+        if len(train_groups) != len(train_folds):  # tainted
+            tainted = train_groups[0]
+            train_groups = train_groups[1:]
+
+        embargo_starts = []
+        embargo_sizes = []
+        print('=====================================================')
+        new_train_groups = []
+
+        # list with tuples [([test_fold0, test_fold1], [train_fold2, train_fold3]), ...]
+
+        is_train = True
+        _trains = [(is_train, fold, group) for fold, group in zip(train_folds, train_groups)]
+        is_train = False
+        _tests = [(is_train, fold, group) for fold, group in zip(test_folds, test_groups)]
+
+        split = sorted(_trains + _tests, key=itemgetter(1))
+
+        # cut leading trains
+
+        cut = 0
+        for is_train, fold, group in split:
+            if not is_train:
+                break
+            new_train_groups.append(group)
+            cut += 1
+
+        if cut != len(train_groups):
+            split = split[cut:]
+
+            for test_groups, train_groups in self._gen_test_train_series(split):
+                if not train_groups:
+                    continue
+
+                embargo_size = max(
+                    (
+                        int(sum(len(g) for g in test_groups) * self.embargo_pct),
+                        self.embargo_bars
+                    )
+                )
+                if not embargo_size:
+                    continue
+
+                embargo_size_initial = embargo_size
+
+                embargo_starts.append(train_groups[0][0])
+                for train_group in train_groups:
+                    train_group_len = len(train_group)
+                    new_train_groups.append(
+                        train_group[embargo_size:]
+                    )
+
+                    if embargo_size >= train_group_len:
+                        embargo_size -= train_group_len
+                    else:
+                        embargo_size = 0
+
+                embargo_sizes.append(embargo_size_initial - embargo_size)
+
+        print('EMBARGO SIZE', embargo_sizes)
+        print('EMBARGO STAR', embargo_starts)
+
+        if tainted is not None:
+            new_train_groups.insert(0, tainted)
+
+        self._embargo_sizes.append(embargo_sizes)
+        self._embargo_starts.append(embargo_starts)
+
+        return _test_groups, new_train_groups
+
+    def _apply_embargo(
             self,
             test_groups: List[np.ndarray],
             train_groups: List[np.ndarray],
@@ -141,14 +311,25 @@ class CombinatorialCV(BaseCrossValidator):
             tainted = train_groups[0]
             train_groups = train_groups[1:]
 
+        embargo_starts = []
+        embargo_sizes = []
+        print('=====================================================')
         new_train_groups = []
+
         for i, (train_group_i, train_group) in enumerate(zip(train_folds, train_groups)):
-            for test_group_i, test_group in zip(test_folds, test_groups):
+
+            for test_i, (test_group_i, test_group) in enumerate(zip(test_folds, test_groups)):
                 delta = train_group_i - test_group_i
                 if delta == 1:
-                    embargo_size = int(
-                        max((len(test_group) * self.embargo_pct, self.embargo_bars))
+                    test_series = self.find_consecutive_groups(
+                        groups=test_groups, folds=test_folds, to_i=test_i
                     )
+                    embargo_size = int(
+                        max((len(np.hstack(test_series)) * self.embargo_pct, self.embargo_bars))
+                    )
+
+                    embargo_starts.append(train_group[0])
+                    embargo_sizes.append(embargo_size)
 
                     new_train_groups.append(
                         train_group[embargo_size:]
@@ -161,6 +342,10 @@ class CombinatorialCV(BaseCrossValidator):
         if tainted is not None:
             new_train_groups.insert(0, tainted)
 
+        print('EMBARGO SIZE', embargo_sizes)
+        print('EMBARGO STAR', embargo_starts)
+        self._embargo_sizes.append(embargo_sizes)
+        self._embargo_starts.append(embargo_starts)
         return test_groups, new_train_groups
 
     def _iter_test_indices(self, X=None, y=None, groups=None):
@@ -211,7 +396,7 @@ class CombinatorialPurgedCV(CombinatorialCV):
             for *_, test_group_i in takewhile(lambda g: not g[1], grouped_groups_lasts[i + 1:]):
                 test_group = test_groups[test_group_i]
                 test_groups[test_group_i] = \
-                    test_group[self.bars_timestamp_start[test_group] >  self.bars_timestamp_end[train_idx]]
+                    test_group[self.bars_timestamp_start[test_group] > self.bars_timestamp_end[train_idx]]
 
         return test_groups, train_groups
 
@@ -230,6 +415,8 @@ def split_indexes_to_bars(
             return data.iloc[idxs].values
     else:
         def iloc(data, idxs):
+            print(data)
+            print(idxs)
             return data.iloc[idxs]
 
     return [
@@ -327,6 +514,7 @@ def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], k_tests: int, n_fol
     for split_i, (predict, test_ids) in enumerate(zip(predicts, combinations(range(n_folds), k_tests))):
         splitted_predicts = utils.split_dict_array_values(predict, k_tests)
         for fold_i, i in zip(test_ids, range(k_tests)):
+            
             preds_splits[split_i][fold_i] = splitted_predicts[i]
 
     # calculate paths
