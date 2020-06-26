@@ -226,8 +226,6 @@ class CombinatorialCV(BaseCrossValidator):
             train_folds: List[int]
     ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         _test_groups = test_groups
-        print('test_groups', test_groups)
-        print('train_groups', train_groups)
         tainted = None
         if len(train_groups) != len(train_folds):  # tainted
             tainted = train_groups[0]
@@ -235,11 +233,9 @@ class CombinatorialCV(BaseCrossValidator):
 
         embargo_starts = []
         embargo_sizes = []
-        print('=====================================================')
         new_train_groups = []
 
         # list with tuples [([test_fold0, test_fold1], [train_fold2, train_fold3]), ...]
-
         is_train = True
         _trains = [(is_train, fold, group) for fold, group in zip(train_folds, train_groups)]
         is_train = False
@@ -288,9 +284,6 @@ class CombinatorialCV(BaseCrossValidator):
 
                 embargo_sizes.append(embargo_size_initial - embargo_size)
 
-        print('EMBARGO SIZE', embargo_sizes)
-        print('EMBARGO STAR', embargo_starts)
-
         if tainted is not None:
             new_train_groups.insert(0, tainted)
 
@@ -298,55 +291,6 @@ class CombinatorialCV(BaseCrossValidator):
         self._embargo_starts.append(embargo_starts)
 
         return _test_groups, new_train_groups
-
-    def _apply_embargo(
-            self,
-            test_groups: List[np.ndarray],
-            train_groups: List[np.ndarray],
-            test_folds: List[int],
-            train_folds: List[int]
-    ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
-        tainted = None
-        if len(train_groups) != len(train_folds):  # tainted
-            tainted = train_groups[0]
-            train_groups = train_groups[1:]
-
-        embargo_starts = []
-        embargo_sizes = []
-        print('=====================================================')
-        new_train_groups = []
-
-        for i, (train_group_i, train_group) in enumerate(zip(train_folds, train_groups)):
-
-            for test_i, (test_group_i, test_group) in enumerate(zip(test_folds, test_groups)):
-                delta = train_group_i - test_group_i
-                if delta == 1:
-                    test_series = self.find_consecutive_groups(
-                        groups=test_groups, folds=test_folds, to_i=test_i
-                    )
-                    embargo_size = int(
-                        max((len(np.hstack(test_series)) * self.embargo_pct, self.embargo_bars))
-                    )
-
-                    embargo_starts.append(train_group[0])
-                    embargo_sizes.append(embargo_size)
-
-                    new_train_groups.append(
-                        train_group[embargo_size:]
-                    )
-                    break
-
-            if len(new_train_groups) != (i + 1):
-                new_train_groups.append(train_group)
-
-        if tainted is not None:
-            new_train_groups.insert(0, tainted)
-
-        print('EMBARGO SIZE', embargo_sizes)
-        print('EMBARGO STAR', embargo_starts)
-        self._embargo_sizes.append(embargo_sizes)
-        self._embargo_starts.append(embargo_starts)
-        return test_groups, new_train_groups
 
     def _iter_test_indices(self, X=None, y=None, groups=None):
         return map(lambda split: split[1], self.split(X, y, groups))
@@ -370,6 +314,12 @@ class CombinatorialPurgedCV(CombinatorialCV):
 
         self.bars_timestamp_start = bars_timestamp_start
         self.bars_timestamp_end = bars_timestamp_end
+
+        self.test_folds_sizes = []
+
+    def split(self, X: Union[PandasLike, np.ndarray], *args, **kwargs) -> List[Split]:
+        self.test_folds_sizes.clear()
+        return super().split(X, *args, **kwargs)
 
     def purge(
             self,
@@ -398,6 +348,10 @@ class CombinatorialPurgedCV(CombinatorialCV):
                 test_groups[test_group_i] = \
                     test_group[self.bars_timestamp_start[test_group] > self.bars_timestamp_end[train_idx]]
 
+        self.test_folds_sizes.append(
+            [len(g) for g in test_groups]
+        )
+
         return test_groups, train_groups
 
 
@@ -415,8 +369,6 @@ def split_indexes_to_bars(
             return data.iloc[idxs].values
     else:
         def iloc(data, idxs):
-            print(data)
-            print(idxs)
             return data.iloc[idxs]
 
     return [
@@ -498,7 +450,13 @@ def predict_splits(
     )
 
 
-def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], k_tests: int, n_folds: int) -> List[Dict[str, np.ndarray]]:
+def predicts_to_paths(
+        predicts: List[Dict[str, np.ndarray]],
+        k_tests: int,
+        n_folds: int,
+        test_folds_sizes: List[List[int]] = None
+) -> List[Dict[str, np.ndarray]]:
+
     if k_tests > 1:
         n_paths = CombinatorialCV.get_n_paths(k_tests, n_folds)
     elif k_tests == 1:
@@ -511,10 +469,19 @@ def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], k_tests: int, n_fol
         [None for _ in range(n_folds)]
         for _ in predicts
     ]
+    if test_folds_sizes:
+        def split_dict_array_values(predict, k_tests, split_i, test_folds_sizes):
+            return utils.split_dict_array_values(predict, split_sizes=test_folds_sizes[split_i])
+
+    else:
+        def split_dict_array_values(predict, k_tests, split_i, test_folds_sizes):
+            return utils.split_dict_array_values(predict, splits=k_tests)
+
+
     for split_i, (predict, test_ids) in enumerate(zip(predicts, combinations(range(n_folds), k_tests))):
-        splitted_predicts = utils.split_dict_array_values(predict, k_tests)
+        splitted_predicts = split_dict_array_values(predict, k_tests, split_i, test_folds_sizes)
+
         for fold_i, i in zip(test_ids, range(k_tests)):
-            
             preds_splits[split_i][fold_i] = splitted_predicts[i]
 
     # calculate paths

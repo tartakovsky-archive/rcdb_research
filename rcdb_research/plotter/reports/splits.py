@@ -214,7 +214,12 @@ def get_paths(X: pd.DataFrame, cv: CombinatorialCV) -> List[List[Tuple[int, int,
     ]
 
     paths: List[List[Tuple[int, int, int]]] = []  # [[(y, start, width)..]..]
-    for p in predicts_to_paths(predicts_like, k_tests=cv.k_tests, n_folds=cv.n_folds):
+    for p in predicts_to_paths(
+            predicts_like,
+            k_tests=cv.k_tests,
+            n_folds=cv.n_folds,
+            test_folds_sizes=cv.test_folds_sizes if hasattr(cv, 'test_folds_sizes') and cv.test_folds_sizes else None
+    ):
         path = []
         idxs = p['idxs']
         split = p['split']
