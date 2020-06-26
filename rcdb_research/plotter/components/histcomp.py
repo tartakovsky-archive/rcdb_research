@@ -28,7 +28,7 @@ def histcomp(a: np.ndarray,
     fig_kwargs = {**style.fig_kwargs(figsize=(16, 7)), **(fig_kwargs or {})}
     ax_kwargs = {
         **style.ax_kwargs(
-            tickrotation=45,
+            xtickrotation=45,
             xformatter=ticker.FormatStrFormatter('%.3f'),
             yformatter=ticker.FormatStrFormatter('%.2f'),
         ),

@@ -1,14 +1,16 @@
 import numpy as np
 import pandas as pd
 
+from .triple_barrier import triple_barrier
+
 from .utils import _n_consecutive, _cond_after_n_bars, \
-    calculate_daily_volatility, triple_barrier
+    calculate_daily_volatility, triple_barrier as _triple_barrier
 
 
 __all__ = (
     "higher_after_n_bars", "lower_after_n_bars",
     "n_consecutive_up", "n_consecutive_down",
-    "triple_barrier_labeling"
+    "triple_barrier_labeling", "triple_barrier"
 )
 
 
@@ -73,7 +75,7 @@ def triple_barrier_labeling(
     df["daily_vol"] = calculate_daily_volatility(close, daily_volatility_span)
     df = df.dropna()
 
-    res = triple_barrier(
+    res = _triple_barrier(
         close=df.close.values,
         daily_volatility=df.daily_vol.values,
         pt_coef=pt_coef,

@@ -17,7 +17,7 @@ def bars(y: np.array,
          ax=None) -> Optional[tuple]:
     fig_kwargs = {**style.fig_kwargs(), **(fig_kwargs or {})}
     ax_kwargs = {**style.ax_kwargs(), **(ax_kwargs or {})}
-    bar_kwargs = {**style.line_kwargs(color='#49b4f2'), **(bar_kwargs or {})}
+    bar_kwargs = {**dict(color='#49b4f2'), **(bar_kwargs or {})}
 
     x = np.arange(y.size) if x is None else x
 

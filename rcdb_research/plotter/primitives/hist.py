@@ -20,7 +20,7 @@ def hist(array: np.array,
     fig_kwargs = {**style.fig_kwargs(), **(fig_kwargs or {})}
     ax_kwargs = {
         **style.ax_kwargs(
-            tickrotation=45,
+            xtickrotation=45,
             xlocator=ticker.MaxNLocator(ticks)
         ),
         **(ax_kwargs or {})
