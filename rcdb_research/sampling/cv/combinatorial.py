@@ -113,7 +113,6 @@ class CombinatorialCV(BaseCrossValidator):
 
         splits = []
 
-
         for test_folds in combinations(range(self.n_folds), self.k_tests):
             train_folds = groups_idxs[~np.isin(groups_idxs, test_folds)]
             train_groups = list(consistent_itemgetter(*train_folds)(groups))
@@ -146,7 +145,6 @@ class CombinatorialCV(BaseCrossValidator):
             train_groups: List[np.ndarray],
     ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         return test_groups, train_groups
-
 
     @staticmethod
     def find_consecutive_groups(groups: List[np.ndarray], folds: List[int], to_i: int) -> np.ndarray:
@@ -329,7 +327,11 @@ class CombinatorialPurgedCV(CombinatorialCV):
 
         test_groups = copy.deepcopy(test_groups)
         groups_lasts = sorted(
-            [[x[-1], False, i] for i, x in enumerate(test_groups)] + [[x[-1], True, i] for i, x in enumerate(train_groups)],
+            [
+                [x[-1], False, i] for i, x in enumerate(test_groups)
+            ] + [
+                [x[-1], True, i] for i, x in enumerate(train_groups)
+            ],
             key=itemgetter(0)
         )
 
@@ -476,7 +478,6 @@ def predicts_to_paths(
     else:
         def split_dict_array_values(predict, k_tests, split_i, test_folds_sizes):
             return utils.split_dict_array_values(predict, splits=k_tests)
-
 
     for split_i, (predict, test_ids) in enumerate(zip(predicts, combinations(range(n_folds), k_tests))):
         splitted_predicts = split_dict_array_values(predict, k_tests, split_i, test_folds_sizes)

@@ -631,7 +631,7 @@ def test_base_flow_CombinatorialPurgedCV():
             12, 14, 16,
             18, 20, 22,
             24, 26, 28,
-            30, 32, 34
+            30, 32, 34,
         ]
     )
     bars_timestamp_start = np.array(
@@ -639,19 +639,93 @@ def test_base_flow_CombinatorialPurgedCV():
             1, 3, 5,
             7, 9, 11,
             13, 15, 17,
-            15, 21, 23,  # row[0]!
+            15, 15, 23,  # row[[0, 1]]!
             25, 27, 29,
-            27, 27, 35  # row[[0, 1]]!
+            27, 33, 35,  # row[[0]]!
         ]
     )
 
+    X = pd.DataFrame(np.arange(18))
+    y = pd.Series(-np.arange(18), index=X.index)
+
     cv = CombinatorialPurgedCV(
-        n_folds=6,
-        k_tests=3,
+        n_folds=5,
+        k_tests=2,
         bars_timestamp_start=bars_timestamp_start,
         bars_timestamp_end=bars_timestamp_end,
-        embargo_pct=0.5
+        embargo_pct=0.5,
+        embargo_bars=1
     )
+
+    splits = cv.split(X)
+    test_splits = [
+        (
+            np.arange(12, 18),
+            np.arange(8)
+        ),
+        (
+            np.array([6, 7, 14, 15, 16, 17]),
+            np.array([0, 1, 2, 3, 8, 9, 10, 11])
+        ),
+        (
+            np.array([6, 7, 8, 9, 10, 11, 16, 17]),
+            np.array([0, 1, 2, 3, 12, 13, 14]),
+        ),
+        (
+            np.array([6, 7, 8, 9, 10, 11, 12, 13, 14]),
+            np.array([0, 1, 2, 3, 16, 17]),
+        ),
+        (
+            np.array([0, 1, 2, 3, 16, 17]),
+            np.array([4, 5, 6, 7, 8, 9, 10, 11])
+        ),
+        # 6
+        (
+            np.array([0, 1, 2, 3, 10, 11, 16, 17]),
+            np.array([4, 5, 6, 7, 12, 13, 14]),
+        ),
+        (
+            np.array([0, 1, 2, 3, 10, 11, 12, 13, 14]),
+            np.array([4, 5, 6, 7, 16, 17]),
+        ),
+        (
+            np.array([0, 1, 2, 3, 4, 5, 6, 7]),
+            np.array([8, 9, 10, 11, 12, 13, 14])
+        ),
+        (
+            np.array([0, 1, 2, 3, 4, 5, 6, 7, 14]),
+            np.array([8, 9, 10, 11, 16, 17]),
+        ),
+        (
+            np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
+            np.array([12, 13, 14, 15, 16, 17])
+        )
+    ]
+
+    assert len(splits) == len(test_splits)
+
+    for i, (split, t_split) in enumerate(zip(splits, test_splits)):
+        assert np.array_equal(split[0], t_split[0])
+        assert np.array_equal(split[1], t_split[1])
+
+    bars = split_indexes_to_bars(X, y, splits)
+    predicted_splits = predict_splits(DecisionTreeRegressor(), bars, n_jobs=2)
+    paths = predicts_to_paths(
+        predicted_splits,
+        k_tests=cv.k_tests,
+        n_folds=cv.n_folds,
+        test_folds_sizes=cv.test_folds_sizes
+    )
+    path_indexes = [
+        np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17]),
+        np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17]),
+        np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17]),
+        np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]),
+    ]
+    assert len(path_indexes) == len(paths)
+    for path, p_idx in zip(paths, path_indexes):
+        assert np.array_equal(path['index'], p_idx)
+        assert all(len(p_idx) == len(v) for v in path.values())
 
 
 @pytest.mark.parametrize(
