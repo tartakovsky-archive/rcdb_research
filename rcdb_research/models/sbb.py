@@ -56,7 +56,8 @@ def _generate_bagging_indices(random_state, bootstrap_features, n_features, max_
     else:
         if bootstrap_features is True:
             raise ValueError('case not supported: bootstrap_features=True and clusters_int is not None')
-        clusters_subsample = random_state.choice(clusters_int, size=max_features, replace=False)
+        cluster_indices = random_state.choice(len(clusters_int), size=max_features)
+        clusters_subsample = [clusters_int[i] for i in cluster_indices]
         feature_indices = [random_state.choice(columns) for columns in clusters_subsample]
 
     #     sample_indices = seq_bootstrap(ind_mat, sample_length=max_samples, random_state=random_state)  # <- --- ---
