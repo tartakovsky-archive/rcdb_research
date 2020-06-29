@@ -53,6 +53,8 @@ def importance(means: np.ndarray,
                         neg_bar_kwargs=neg_bar_kwargs,
                         ax=ax)
 
+    axis.invert_yaxis()
+
     if mins is not None and maxes is not None:
         if orientation == 'h':
             axis.hlines(y=x, xmin=mins, xmax=maxes)
@@ -61,10 +63,12 @@ def importance(means: np.ndarray,
 
     if orientation == 'h':
         axis.set_yticks(x)
-        axis.set_yticklabels(labels)
+        if labels is not None:
+            axis.set_yticklabels(labels)
     else:
         axis.set_xticks(x)
-        axis.set_xticklabels(labels)
+        if labels is not None:
+            axis.set_xticklabels(labels)
 
     if ax is None:
         return fig, axis
