@@ -78,7 +78,46 @@ def get_bt_data(df_predict, proba_arr, df_trade):
     :param df_trade: dataset to trade
     :return:
     """
-    bidasks = df_predict[['open', 'high', 'low', 'close', 'volume']].copy().tail(proba_arr.size)
+    bidasks = df_predict.copy().tail(proba_arr.size - 1)
+
+    # CHANGE 2:
+    # Don't modify bid/ask if you can increase fee or impact
+
+    bidasks['signal'] = proba_arr[1:]
+    bidasks['proba'] = bidasks['signal']
+
+    ts_start = bidasks.index.values[0]
+    ts_end = bidasks.index.values[-1]
+
+    df_bt = df_trade[
+        (df_trade.index >= ts_start) & (df_trade.index <= ts_end)]
+
+#     df_signals = bidasks[['proba']].copy()
+#     df_signals.columns = ['signal']
+#     df_signals = df_signals.shift(1)
+    ohlc_cols = ['open', 'high', 'low', 'close', 'volume']
+    merge_cols = [col for col in list(bidasks.columns) if col not in ohlc_cols]
+    df_bt = df_bt.join(bidasks[merge_cols], how='outer')
+    df_bt[ohlc_cols] = df_bt[ohlc_cols].fillna(method="bfill")
+
+#     df_bt[merge_cols] = df_bt[merge_cols].shift(-1)
+
+    df_bt['no_drop'] = df_bt['signal']
+    df_bt['no_drop'] = np.where(df_bt['no_drop'].isna(), df_bt['signal'].shift(1), df_bt['no_drop'])
+
+    df_bt = df_bt.loc[df_bt['no_drop'].notna()]
+
+    return df_bt
+
+
+def get_bt_data(df_predict, proba_arr, df_trade):
+    """
+    :param df_predict: dataset to predict
+    :param proba: predicted proba
+    :param df_trade: dataset to trade
+    :return:
+    """
+    bidasks = df_predict.copy().tail(proba_arr.size)
 
     # CHANGE 2:
     # Don't modify bid/ask if you can increase fee or impact
@@ -132,5 +171,67 @@ def get_trading_simulation_2nd_exchange(
         use_worst_pnl=use_worst_pnl,
         bt_strategy=bt_strategy,
         risk_management_pre_trade=risk_management_pre_trade,
-        entry_limit=False
+        entry_limit=entry_limit
+    )
+
+
+def consolidate(ts_base, ts_trade, open_arr, high_arr, low_arr, close_arr, volume_arr):
+    open_res = np.ones(ts_base.size) * np.nan
+    high_res = np.ones(ts_base.size) * np.nan
+    low_res = np.ones(ts_base.size) * np.nan
+    close_res = np.ones(ts_base.size) * np.nan
+    volume_res = np.ones(ts_base.size) * np.nan
+
+    j = 0
+    for i in range(ts_base.size - 1):
+        ts_start = ts_base[i]
+        ts_end = ts_base[i + 1]
+
+        while ts_trade[j] < ts_start:
+            j += 1
+            continue
+
+        while ts_trade[j] <= ts_end:
+            if not np.isnan(open_arr[j]):
+                break
+            j += 1
+
+        open_res[i] = open_arr[j]
+        high_res[i] = high_arr[j]
+        low_res[i] = low_arr[j]
+        volume_res[i] = volume_arr[j]
+
+        while ts_trade[j] < ts_end:
+            j += 1
+            if high_arr[j] > high_res[i]:
+                high_res[i] = high_arr[j]
+            if low_arr[j] > low_res[i]:
+                low_res[i] = low_arr[j]
+            volume_res[i] += volume_arr[j]
+
+        if high_arr[j] > high_res[i]:
+            high_res[i] = high_arr[j]
+        if low_arr[j] > low_res[i]:
+            low_res[i] = low_arr[j]
+        volume_res[i] += volume_arr[j]
+
+        close_res[i] = close_arr[j - 1]
+
+    return open_res, high_res, low_res, close_res, volume_res
+
+
+def consolidate_2nd_dataset(df_base, df_trade):
+    open_arr, high_arr, low_arr, close_arr, volume_arr = consolidate(
+        ts_base=df_base.index.values,
+        ts_trade=df_trade.index.values,
+        open_arr=df_trade.open.values,
+        high_arr=df_trade.high.values,
+        low_arr=df_trade.low.values,
+        close_arr=df_trade.close.values,
+        volume_arr=df_trade.volume.values)
+
+    return pd.DataFrame(
+        np.column_stack((open_arr, high_arr, low_arr, close_arr, volume_arr)),
+        columns=['open', 'high', 'low', 'close', 'volume'],
+        index=df_base.index
     )

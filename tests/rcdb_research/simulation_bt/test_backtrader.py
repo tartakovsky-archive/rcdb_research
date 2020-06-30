@@ -5,6 +5,7 @@ import pandas as pd
 from rcdb_research.simulation_bt import BtRcdbStrategy, get_trading_simulation, get_trading_simulation_2nd_exchange
 from rcdb_research.simulation_bt.wrappers import bt_data_feed_factory, DataFeedMissingFieldsException
 from rcdb_research.simulation import KellySizing, Bitfinex, Costs
+from rcdb_research.datasets.config import consolidate_datasets, add_basic_features
 
 
 def data_to_df(data):
@@ -14,106 +15,167 @@ def data_to_df(data):
     return df_data
 
 
-BARS_DATA = [
-    {
-        "datetime": "2020-01-01 00:00",
-        "open": 100,
-        "high": 100,
-        "low": 100,
-        "close": 110,
-        "volume": 1000,
-        "signal": 0.65,
-        "exp_win": 2,
-        "exp_loss": 2,
-    },
-    {
-        "datetime": "2020-01-01 00:01",
-        "open": 115,
-        "high": 125,
-        "low": 105,
-        "close": 120,
-        "volume": 2000,
-        "signal": 0.7,
-        "exp_win": 2,
-        "exp_loss": 2,
-    },
-    {
-        "datetime": "2020-01-01 00:02",
-        "open": 115,
-        "high": 140,
-        "low": 115,
-        "close": 115,
-        "volume": 12244,
-        "signal": 0.4,
-        "exp_win": 2,
-        "exp_loss": 2,
-    },
-    {
-        "datetime": "2020-01-01 00:03",
-        "open": 105,
-        "high": 105,
-        "low": 80,
-        "close": 90,
-        "volume": 1000,
-        "signal": 0.5,
-        "exp_win": 2,
-        "exp_loss": 2,
-    },
-    {
-        "datetime": "2020-01-01 00:04",
-        "open": 100,
-        "high": 105,
-        "low": 95,
-        "close": 95,
-        "volume": 1000,
-        "signal": 0.5,
-        "exp_win": 2,
-        "exp_loss": 2,
-    },
-    {
-        "datetime": "2020-01-01 00:05",
-        "open": 100,
-        "high": 105,
-        "low": 95,
-        "close": 95,
-        "volume": 1000,
-        "signal": 0.7,
-        "exp_win": 2,
-        "exp_loss": 2,
-    },
-    {
-        "datetime": "2020-01-01 00:06",
-        "open": 102,
-        "high": 105,
-        "low": 95,
-        "close": 115,
-        "volume": 1000,
-        "signal": 0.7,
-        "exp_win": 2,
-        "exp_loss": 2,
-    },
-    {
-        "datetime": "2020-01-01 00:07",
-        "open": 115,
-        "high": 105,
-        "low": 125,
-        "close": 110,
-        "volume": 1000,
-        "signal": 0.5,
-        "exp_win": 2,
-        "exp_loss": 2,
-    },
-]
+def datasets():
+    df = add_basic_features(pd.read_hdf("../../datasets/bitfinex__BTC_USD.hdf", "table"))
+    df['volume'] = df['volume_buy'] + df['volume_sell']
+
+    datasets = [
+        {
+            'name': 'BTCUSD',
+            'exchange': 'bitfinex',
+            'bars': df,
+            'addtitonal_datasets': {
+                "self": dict(bars=df)
+            },
+            'consolidators': [
+                dict(type='percent', kwargs=dict(threshold=0.005)),
+            ],
+            'date_range': {
+                'start': '2010-01-01',
+                'end': '2022-01-01',  # not including
+            }
+        },
+    ]
+
+    resp = consolidate_datasets(datasets)
+
+    # resp[0]['bars']['signal'] = np.random.random(resp[0]['bars'].shape[0])
+    resp[0]['bars']['signal'] = np.array(
+        [0.302481352895025, 0.7609441758030615, 0.8955795700602514, 0.0570384878850736, 0.3321521768872242,
+         0.2787970970751995, 0.0650503479618545, 0.08804615224891654, 0.7995282393375976, 0.6181353728382173,
+         0.5350322960334062, 0.36929813938367695, 0.15046026161803538, 0.24673171130737404, 0.8166587500127691,
+         0.11732518420562976, 0.8533731512325953, 0.9215320359385151, 0.08520434469624494, 0.005383298862784547,
+         0.5204950528746524, 0.016428689272717012, 0.18016366491424984])
+
+    resp[0]['bars']['exp_win'] = 0.005
+    resp[0]['bars']['exp_loss'] = -0.006
+
+    return resp
+
+
+DATASETS = datasets()
+
+
+#     data_to_df([
+#     {
+#         "datetime": "2020-01-01 00:00",
+#         "open": 100,
+#         "high": 100,
+#         "low": 100,
+#         "close": 110,
+#         "volume": 1000,
+#         "signal": 0.65,
+#         "exp_win": 2,
+#         "exp_loss": 2,
+#     },
+#     {
+#         "datetime": "2020-01-01 00:01",
+#         "open": 115,
+#         "high": 125,
+#         "low": 105,
+#         "close": 120,
+#         "volume": 2000,
+#         "signal": 0.7,
+#         "exp_win": 2,
+#         "exp_loss": 2,
+#     },
+#     {
+#         "datetime": "2020-01-01 00:02",
+#         "open": 115,
+#         "high": 140,
+#         "low": 115,
+#         "close": 115,
+#         "volume": 12244,
+#         "signal": 0.4,
+#         "exp_win": 2,
+#         "exp_loss": 2,
+#     },
+#     {
+#         "datetime": "2020-01-01 00:03",
+#         "open": 105,
+#         "high": 105,
+#         "low": 80,
+#         "close": 90,
+#         "volume": 1000,
+#         "signal": 0.5,
+#         "exp_win": 2,
+#         "exp_loss": 2,
+#     },
+#     {
+#         "datetime": "2020-01-01 00:04",
+#         "open": 100,
+#         "high": 105,
+#         "low": 95,
+#         "close": 95,
+#         "volume": 1000,
+#         "signal": 0.5,
+#         "exp_win": 2,
+#         "exp_loss": 2,
+#     },
+#     {
+#         "datetime": "2020-01-01 00:05",
+#         "open": 100,
+#         "high": 105,
+#         "low": 95,
+#         "close": 95,
+#         "volume": 1000,
+#         "signal": 0.7,
+#         "exp_win": 2,
+#         "exp_loss": 2,
+#     },
+#     {
+#         "datetime": "2020-01-01 00:06",
+#         "open": 102,
+#         "high": 105,
+#         "low": 95,
+#         "close": 115,
+#         "volume": 1000,
+#         "signal": 0.7,
+#         "exp_win": 2,
+#         "exp_loss": 2,
+#     },
+#     {
+#         "datetime": "2020-01-01 00:07",
+#         "open": 115,
+#         "high": 105,
+#         "low": 125,
+#         "close": 110,
+#         "volume": 1000,
+#         "signal": 0.5,
+#         "exp_win": 2,
+#         "exp_loss": 2,
+#     },
+# ])
 
 
 @pytest.mark.parametrize(
-    'data',
+    'datasets',
     (
-        BARS_DATA,
+            DATASETS,
     )
 )
-def test_Backtrader_Simulation_run(data):  # noqa
-    df_data = data_to_df(data)
+def test_Backtrader_consolidation_2nd_dataset(datasets):  # noqa
+    df_data = datasets[0]['bars']
+    df_res = datasets[0]['addtitonal_datasets']['self']['bars']
+
+    print("ASDSDASDASDSADSDAS")
+    print(list(df_data['signal'].values))
+
+    assert (df_data.open.values == df_res.open.values).all()
+    assert (df_data.high.values == df_res.high.values).all()
+    assert (df_data.low.values == df_res.low.values).all()
+    assert (df_data.close.values == df_res.close.values).all()
+    assert (df_data.volume.values == df_res.volume.values).all()
+
+
+@pytest.mark.parametrize(
+    'datasets',
+    (
+            DATASETS,
+    )
+)
+def test_Backtrader_Simulation_run(datasets):  # noqa
+    df_data = datasets[0]['bars']
 
     exchange = Bitfinex(costs=Costs(
         taker_fee=-0.155 / 100,
@@ -134,17 +196,17 @@ def test_Backtrader_Simulation_run(data):  # noqa
         use_worst_pnl=False
     )
 
-    assert df_sim.balance.values[-1] == 737566.2720189162
+    assert df_sim.balance.values[-1] == 740793.2485289685
 
 
 @pytest.mark.parametrize(
-    'data',
+    'datasets',
     (
-        BARS_DATA,
+            DATASETS,
     )
 )
-def test_Backtrader_Simulation_run_limit(data):  # noqa
-    df_data = data_to_df(data)
+def test_Backtrader_Simulation_run_limit(datasets):  # noqa
+    df_data = datasets[0]['bars']
 
     exchange = Bitfinex(costs=Costs(
         taker_fee=-0.155 / 100,
@@ -166,19 +228,18 @@ def test_Backtrader_Simulation_run_limit(data):  # noqa
         entry_limit=True
     )
 
-    print("df_sim")
-    print(df_sim)
-
-    assert df_sim.balance.values[-1] == 1067713.1110564289
+    assert df_sim.balance.values[-1] == 745700.9576640638
 
 
 @pytest.mark.parametrize(
-    'data',
+    'datasets',
     (
-        BARS_DATA,
+            DATASETS,
     )
 )
-def test_Backtrader_Simulation_custom_sizing(data):  # noqa
+def test_Backtrader_Simulation_custom_sizing(datasets):  # noqa
+    df_data = datasets[0]['bars']
+
     class StrangeSizer(KellySizing):
         def size(self, proba, exp_win, exp_loss):
             print(proba, exp_win, exp_loss)
@@ -191,8 +252,6 @@ def test_Backtrader_Simulation_custom_sizing(data):  # noqa
                 exp_win=self.data0.exp_win[0],
                 exp_loss=self.data0.exp_loss[0]
             )
-
-    df_data = data_to_df(data)
 
     exchange = Bitfinex(costs=Costs(
         taker_fee=-0.155 / 100,
@@ -213,17 +272,17 @@ def test_Backtrader_Simulation_custom_sizing(data):  # noqa
         bt_strategy=BtCustom
     )
 
-    assert df_sim.balance.values[-1] == 693663.1791642394
+    assert df_sim.balance.values[-1] == 801287.4259508352
 
 
 @pytest.mark.parametrize(
-    'data',
+    'datasets',
     (
-        BARS_DATA,
+            DATASETS,
     )
 )
-def test_Backtrader_Simulation_risk_management(data):  # noqa
-    df_data = data_to_df(data)
+def test_Backtrader_Simulation_risk_management(datasets):  # noqa
+    df_data = datasets[0]['bars']
 
     exchange = Bitfinex(costs=Costs(
         taker_fee=-0.155 / 100,
@@ -250,6 +309,7 @@ def test_Backtrader_Simulation_risk_management(data):  # noqa
                 self.max_portfolio_value = portfolio_value
 
             return desired_exposure
+
         return wrapper
 
     trades, df_sim = get_trading_simulation(
@@ -260,14 +320,17 @@ def test_Backtrader_Simulation_risk_management(data):  # noqa
         risk_management_pre_trade=[max_dd_risk_manager(max_dd_allowed=0.3)]
     )
 
-    print("df_sim")
-    print(df_sim)
-
-    assert df_sim.balance.values[-1] == 737100.2237928077
+    assert df_sim.balance.values[-1] == 740793.2485289685
 
 
-def test_Data_Feed_Factory():  # noqa
-    df_data = data_to_df(BARS_DATA)
+@pytest.mark.parametrize(
+    'datasets',
+    (
+            DATASETS,
+    )
+)
+def test_Data_Feed_Factory(datasets):  # noqa
+    df_data = datasets[0]['bars']
 
     with pytest.raises(DataFeedMissingFieldsException):
         bt_data_feed_factory(df_data[['close', 'open']])
@@ -278,19 +341,20 @@ def test_Data_Feed_Factory():  # noqa
 
 
 @pytest.mark.parametrize(
-    'data',
+    'datasets',
     (
-        BARS_DATA,
+            DATASETS,
     )
 )
-def test_Backtrader_Simulation_run_2nd_exchange_sanity_check(data):  # noqa
+def test_Backtrader_Simulation_run_2nd_exchange_sanity_check(datasets):  # noqa
     """
     Base equity (e.g. predict and trade same exchange) should be the same as
     predict and trade same exchange but with wnd exchange interface
     :param data:
     :return:
     """
-    df_data = data_to_df(data)
+    df_data = datasets[0]['bars']
+    df_data_2nd = datasets[0]['addtitonal_datasets']['self']['bars']
 
     exchange = Bitfinex(costs=Costs(
         taker_fee=-0.155 / 100,
@@ -304,13 +368,13 @@ def test_Backtrader_Simulation_run_2nd_exchange_sanity_check(data):  # noqa
     expected_profit = 0.015 - bitfinex_fee * 2
     expected_loss = 0.015 - bitfinex_fee * 2
 
-    trades, df_sim = get_trading_simulation_2nd_exchange(
-        df_base=df_data,
-        proba_arr=np.array([0.5] + list(df_data.signal.values)),
-        df_trade=df_data,
+    df_data_2nd['signal'] = df_data['signal']
+
+    trades, df_sim = get_trading_simulation(
+        df_data=df_data_2nd,
         sizing=KellySizing(expected_profit, expected_loss, 10, direction='both'),
         exchange=exchange,
         use_worst_pnl=False
     )
 
-    assert df_sim.balance.values[-1] == 737566.2720189162
+    assert df_sim.balance.values[-1] == 740793.2485289685
