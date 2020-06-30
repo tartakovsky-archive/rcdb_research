@@ -30,7 +30,6 @@ def extract_subset(df, start=None, end=None):
 def consolidate_datasets(datasets: List[dict], n_jobs=1) -> List[dict]:
     def config_to_bars(config: dict) -> pd.DataFrame:
         PREFIX_PATTERN = '__pref$'
-        name = config['name']
         date_range = config.get('date_range', None)
 
         bars = config['bars']

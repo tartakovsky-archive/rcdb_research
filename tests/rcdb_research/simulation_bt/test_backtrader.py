@@ -56,102 +56,10 @@ def datasets():
 DATASETS = datasets()
 
 
-#     data_to_df([
-#     {
-#         "datetime": "2020-01-01 00:00",
-#         "open": 100,
-#         "high": 100,
-#         "low": 100,
-#         "close": 110,
-#         "volume": 1000,
-#         "signal": 0.65,
-#         "exp_win": 2,
-#         "exp_loss": 2,
-#     },
-#     {
-#         "datetime": "2020-01-01 00:01",
-#         "open": 115,
-#         "high": 125,
-#         "low": 105,
-#         "close": 120,
-#         "volume": 2000,
-#         "signal": 0.7,
-#         "exp_win": 2,
-#         "exp_loss": 2,
-#     },
-#     {
-#         "datetime": "2020-01-01 00:02",
-#         "open": 115,
-#         "high": 140,
-#         "low": 115,
-#         "close": 115,
-#         "volume": 12244,
-#         "signal": 0.4,
-#         "exp_win": 2,
-#         "exp_loss": 2,
-#     },
-#     {
-#         "datetime": "2020-01-01 00:03",
-#         "open": 105,
-#         "high": 105,
-#         "low": 80,
-#         "close": 90,
-#         "volume": 1000,
-#         "signal": 0.5,
-#         "exp_win": 2,
-#         "exp_loss": 2,
-#     },
-#     {
-#         "datetime": "2020-01-01 00:04",
-#         "open": 100,
-#         "high": 105,
-#         "low": 95,
-#         "close": 95,
-#         "volume": 1000,
-#         "signal": 0.5,
-#         "exp_win": 2,
-#         "exp_loss": 2,
-#     },
-#     {
-#         "datetime": "2020-01-01 00:05",
-#         "open": 100,
-#         "high": 105,
-#         "low": 95,
-#         "close": 95,
-#         "volume": 1000,
-#         "signal": 0.7,
-#         "exp_win": 2,
-#         "exp_loss": 2,
-#     },
-#     {
-#         "datetime": "2020-01-01 00:06",
-#         "open": 102,
-#         "high": 105,
-#         "low": 95,
-#         "close": 115,
-#         "volume": 1000,
-#         "signal": 0.7,
-#         "exp_win": 2,
-#         "exp_loss": 2,
-#     },
-#     {
-#         "datetime": "2020-01-01 00:07",
-#         "open": 115,
-#         "high": 105,
-#         "low": 125,
-#         "close": 110,
-#         "volume": 1000,
-#         "signal": 0.5,
-#         "exp_win": 2,
-#         "exp_loss": 2,
-#     },
-# ])
-
-
 @pytest.mark.parametrize(
     'datasets',
     (
-            DATASETS,
+        DATASETS,
     )
 )
 def test_Backtrader_consolidation_2nd_dataset(datasets):  # noqa
@@ -171,7 +79,7 @@ def test_Backtrader_consolidation_2nd_dataset(datasets):  # noqa
 @pytest.mark.parametrize(
     'datasets',
     (
-            DATASETS,
+        DATASETS,
     )
 )
 def test_Backtrader_Simulation_run(datasets):  # noqa
@@ -202,7 +110,7 @@ def test_Backtrader_Simulation_run(datasets):  # noqa
 @pytest.mark.parametrize(
     'datasets',
     (
-            DATASETS,
+        DATASETS,
     )
 )
 def test_Backtrader_Simulation_run_limit(datasets):  # noqa
@@ -234,7 +142,7 @@ def test_Backtrader_Simulation_run_limit(datasets):  # noqa
 @pytest.mark.parametrize(
     'datasets',
     (
-            DATASETS,
+        DATASETS,
     )
 )
 def test_Backtrader_Simulation_custom_sizing(datasets):  # noqa
@@ -278,7 +186,7 @@ def test_Backtrader_Simulation_custom_sizing(datasets):  # noqa
 @pytest.mark.parametrize(
     'datasets',
     (
-            DATASETS,
+        DATASETS,
     )
 )
 def test_Backtrader_Simulation_risk_management(datasets):  # noqa
@@ -326,7 +234,7 @@ def test_Backtrader_Simulation_risk_management(datasets):  # noqa
 @pytest.mark.parametrize(
     'datasets',
     (
-            DATASETS,
+        DATASETS,
     )
 )
 def test_Data_Feed_Factory(datasets):  # noqa
@@ -343,7 +251,7 @@ def test_Data_Feed_Factory(datasets):  # noqa
 @pytest.mark.parametrize(
     'datasets',
     (
-            DATASETS,
+        DATASETS,
     )
 )
 def test_Backtrader_Simulation_run_2nd_exchange_sanity_check(datasets):  # noqa
