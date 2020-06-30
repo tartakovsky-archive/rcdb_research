@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from rcdb_research.simulation_bt import BtRcdbStrategy, get_trading_simulation, get_trading_simulation_2nd_exchange
+from rcdb_research.simulation_bt import BtRcdbStrategy, get_trading_simulation
 from rcdb_research.simulation_bt.wrappers import bt_data_feed_factory, DataFeedMissingFieldsException
 from rcdb_research.simulation import KellySizing, Bitfinex, Costs
 from rcdb_research.datasets.config import consolidate_datasets, add_basic_features
