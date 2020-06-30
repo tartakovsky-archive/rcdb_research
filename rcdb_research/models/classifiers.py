@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.base import ClassifierMixin, BaseEstimator
 from lightgbm import LGBMClassifier
-# from xgboost import XGBClassifier
+from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import VotingClassifier
