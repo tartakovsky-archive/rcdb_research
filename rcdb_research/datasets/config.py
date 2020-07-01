@@ -2,9 +2,9 @@ from typing import List
 
 import pandas as pd
 from joblib import Parallel, delayed
-from rcdb_libs import features as ft
-from rcdb_libs import bars as consolidators
-from rcdb_libs.bars.functions import DEFAULT_AGGREGATE_MAPPING
+from rcdb_research import features as ft
+from rcdb_research import bars as consolidators
+from rcdb_research.bars.functions import DEFAULT_AGGREGATE_MAPPING
 
 
 def add_basic_features(df):
