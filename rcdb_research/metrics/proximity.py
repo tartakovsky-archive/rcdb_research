@@ -2,7 +2,6 @@ import numpy as np
 import scipy.stats as ss
 from sklearn.metrics import mutual_info_score
 import logging
-from typing import Optional
 
 
 def nid(x, y) -> float:
@@ -23,44 +22,29 @@ def nid(x, y) -> float:
     return variation_of_information(x, y, None, True, 'max')
 
 
-def variation_of_information(x: np.ndarray, y: np.ndarray, bins: Optional[int] = None,
-                             normalized: bool = True, method: str = 'max') -> float:
+def nmi(x, y) -> float:
     """
-    Sources:
-        1. MACHINE LEARNING FOR ASSET MANAGERS, Marcos M. López de Prado, ISBN 978-1-108-79289-9, p. 44
-        2. MACHINE LEARNING FOR ASSET MANAGERS, Marcos M. López de Prado, ISBN 978-1-108-79289-9, p. 46
-        3. Information Theoretic Measures for Clusterings Comparison, Vinh et al, doi: 10.1145/1553374.1553511
+    Source:
+    Information Theoretic Measures for Clusterings Comparison, Vinh et al, doi: 10.1145/1553374.1553511
 
-    Parameters
-    ----------
-    x: np.ndarray
-    y: np.ndarray
-    bins: Optional[int]
-    normalized: bool
-    method: one of ['joint', 'max'], default = 'max'
-
-    Returns
-    -------
-    float
-
+    :param x: np.ndarray
+    :param y: np.ndarray
+    :return: Normalized Mutual Information (method: max)
     """
-    supported_methods = ['max', 'joint']
-    if method not in supported_methods:
-        raise ValueError(f'method {method} not in supported: {supported_methods}')
+    return mutual_info(x, y, normalized=True, method='max')
 
-    # short-circuiting
-    if (x == y).all():
-        return 0
 
-    def optimal_bins(x: np.ndarray, y: np.ndarray) -> int:
-        corr = np.corrcoef(x, y)[0, 1]
-        nObs = (x.shape[0] + y.shape[0]) // 2
-        b = round(2 ** -.5 * (1 + (1 + 24 * nObs / (1. - corr ** 2)) ** .5) ** .5)
-        if np.isnan(b) or not np.isfinite(b):
-            logging.warning(f'optimal bins size not computed (b={b}), defaulting to b=20')
-            b = 20
-        return int(b)
+def optimal_bins(x: np.ndarray, y: np.ndarray) -> int:
+    corr = np.corrcoef(x, y)[0, 1]
+    nObs = (x.shape[0] + y.shape[0]) // 2
+    b = round(2 ** -.5 * (1 + (1 + 24 * nObs / (1. - corr ** 2)) ** .5) ** .5)
+    if np.isnan(b) or not np.isfinite(b):
+        logging.warning(f'optimal bins size not computed (b={b}), defaulting to b=20')
+        b = 20
+    return int(b)
 
+
+def variation_of_information(x, y, bins=None, normalized=True, method='max'):
     if bins is None:
         bins = optimal_bins(x, y)
 
@@ -68,17 +52,44 @@ def variation_of_information(x: np.ndarray, y: np.ndarray, bins: Optional[int] =
     iXY = mutual_info_score(None, None, contingency=cXY)
     hX = ss.entropy(np.histogram(x, bins)[0])  # marginal
     hY = ss.entropy(np.histogram(y, bins)[0])  # marginal
+    hXY = hX + hY - iXY
 
     numerator = {
         'max': max(hX, hY) - iXY,
-        'joint': hX + hY - 2 * iXY
+        'joint': hXY - iXY
     }.get(method)
 
     denominator = {
         'max': max(hX, hY),
-        'joint': hX + hY - iXY
+        'joint': hXY
     }.get(method)
 
     if normalized:
         return numerator / denominator
+    return numerator
+
+
+def mutual_info(x, y, bins=None, normalized=False, method='joint'):
+    if bins is None:
+        bins = optimal_bins(x, y)
+
+    cXY = np.histogram2d(x, y, bins)[0]
+    iXY = mutual_info_score(None, None, contingency=cXY)
+    hX = ss.entropy(np.histogram(x, bins)[0])  # marginal
+    hY = ss.entropy(np.histogram(y, bins)[0])  # marginal
+    hXY = hX + hY - iXY
+
+    numerator = {
+        'max': iXY,
+        'joint': iXY
+    }.get(method)
+
+    denominator = {
+        'max': max(hX, hY),
+        'joint': hXY
+    }.get(method)
+
+    if normalized:
+        return numerator / denominator
+
     return numerator
