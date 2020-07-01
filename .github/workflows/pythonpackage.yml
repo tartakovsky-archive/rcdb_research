@@ -4,11 +4,12 @@ on: [push]
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.7]
+        python-version: [3.7, 3.8]
 
     steps:
     - uses: actions/checkout@master
@@ -18,11 +19,14 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip==20.1
         pip install -U --extra-index-url $(cat extra-index-url) -e .[dev]
     - name: Code flake8 check
       run: |
         flake8
+#    - name: Doctests
+#      run: |
+#        pytest --doctest-modules $(find rcdb_research/bars rcdb_research/features -type f ! -name '*.pyc' ! -name 'tulip.py' ! -name 'alphas101.py' ! -name '__init__.py' -printf './%p ')
     - name: Test with pytest
       run: |
         pytest --log-cli-level INFO
