@@ -1,12 +1,5 @@
 # rcdb_research
 
-## Dependencies
-
-Install numpy:
-```bash
-$ pip install numpy==1.16.4
-```  
-
 ## Installation/upgrade from inside of Jupyter
 
 Run the following in the terminal, you'll be prompted for github credentials:
