@@ -16,7 +16,7 @@ def data_to_df(data):
 
 
 def datasets():
-    df = add_basic_features(pd.read_hdf("../../datasets/bitfinex__BTC_USD.hdf", "table"))
+    df = add_basic_features(pd.read_hdf("../datasets/bitfinex__BTC_USD.hdf", "table"))
     df['volume'] = df['volume_buy'] + df['volume_sell']
 
     datasets = [
