@@ -45,6 +45,9 @@ def optimal_bins(x: np.ndarray, y: np.ndarray) -> int:
 
 
 def variation_of_information(x, y, bins=None, normalized=True, method='max'):
+    if (np.array(x) == np.array(y)).all():
+        return 0
+
     if bins is None:
         bins = optimal_bins(x, y)
 
