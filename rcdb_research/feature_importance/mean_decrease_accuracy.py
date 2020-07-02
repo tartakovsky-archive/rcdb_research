@@ -1,23 +1,40 @@
 import pandas as pd
 import numpy as np
+import logging
+
+from typing import List, Callable, Optional
 
 from sklearn.metrics import check_scoring
 from sklearn.utils import check_random_state
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.model_selection import BaseCrossValidator
 from tqdm.auto import tqdm
 
+from .utils import cluster_labels_to_clusters
 
-def mda(estimator, X, y, cv, clusters=None,
-        n_permutations=10, pooling_fn=None,
-        fit_params=None, score_params=None,
-        scoring=None, random_state=1, raw=False, verbose=True):
 
-    scoring = check_scoring(estimator, scoring)
+def mda(estimator,
+        X: pd.DataFrame,
+        y: pd.Series,
+        cv: BaseCrossValidator,
+        clusters: Optional[List[dict]] = None,
+        clusterer: Optional[AgglomerativeClustering] = None,
+        pooling_fn: Optional[Callable] = None,
+        n_permutations: int = 10,
+        fit_params: dict = None,
+        score_params: dict = None,
+        scorer=None,
+        random_state=1,
+        sort: bool = True,
+        raw: bool = False,
+        verbose: bool = True):
+    scorer = check_scoring(estimator, scorer)
     rs = check_random_state(random_state)
     fit_params = fit_params or {}
     score_params = score_params or {}
 
     # Flag to decide whether clusters should be agglomerated before scoring
-    shouldAgglomerate = clusters is not None and pooling_fn is not None
+    shouldAgglomerate = (clusters is not None or clusterer is not None) and pooling_fn is not None
 
     # Handle *_sample_weight in params to support sklearn.Pipelines
     sw_train_name, sw_train = next(
@@ -31,12 +48,19 @@ def mda(estimator, X, y, cv, clusters=None,
     )
     _ = score_params.pop(sw_score_name, None)
 
+    # If clusterer is set, ignore clusters param and generate new clusters using clusterer
     # If clusters is set then the whole cluster would be mutated instead of a single feature
     # If clusters is None then each feature is put into separate cluster
-    clusters = clusters or [
-        dict(name=col, columns=[col])
-        for col in X.columns
-    ]
+    if clusterer is not None:
+        if clusters is not None:
+            logging.warning(f'`clusterer` param is set, ignoring `clusters` param')
+        clusterer.fit(X.T)
+        clusters = cluster_labels_to_clusters(clusterer.labels_, X.columns)
+    else:
+        clusters = clusters or [
+            dict(name=col, columns=[col])
+            for col in X.columns
+        ]
 
     # If both clustered_subset and poolin_fn is set then feature agglomeration would be performed
     # Clusters would be merged into single features usign the pooling_fn
@@ -61,7 +85,7 @@ def mda(estimator, X, y, cv, clusters=None,
 
         # Get baseline score for split's test set
         sw_score_dict = {sw_score_name: sw_score[test]} if sw_score_name is not None else {}
-        baseline_scores.append(scoring(model, X.values[test], y.values[test], **sw_score_dict, **score_params))
+        baseline_scores.append(scorer(model, X.values[test], y.values[test], **sw_score_dict, **score_params))
 
         # Get scores for permuted features
         for j, cluster in enumerate(clusters):
@@ -72,11 +96,16 @@ def mda(estimator, X, y, cv, clusters=None,
                 for col in cluster['columns']:
                     rs.shuffle(X_test[col].values)
 
-                ft_score = scoring(model, X_test, y.values[test], **sw_score_dict, **score_params)
+                ft_score = scorer(model, X_test, y.values[test], **sw_score_dict, **score_params)
                 feature_scores[j].append(baseline_scores[i] - ft_score)
 
     importance = pd.DataFrame(np.array(feature_scores).T, columns=[c['name'] for c in clusters])
     if raw:
         return importance
 
-    return pd.concat({'mean': importance.mean(), 'std': importance.std()}, axis=1)
+    df = pd.concat({'mean': importance.mean(), 'std': importance.std()}, axis=1)
+    df['rank'] = df['mean'].rank(method='first', ascending=False).astype(int)
+    if sort:
+        df = df.sort_values(by='mean', ascending=False)
+
+    return df
