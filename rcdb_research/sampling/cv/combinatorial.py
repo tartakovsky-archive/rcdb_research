@@ -212,6 +212,7 @@ def predict_splits(
         for split in splits
     )
 
+
 def predicts_to_paths(predicts: List[Dict[str, np.ndarray]], k_tests: int, n_folds: int) -> List[Dict[str, np.ndarray]]:
     if k_tests > 1:
         n_paths = CombinatorialCV.get_n_paths(k_tests, n_folds)
