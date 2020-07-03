@@ -11,6 +11,8 @@ from sklearn.model_selection import BaseCrossValidator
 from tqdm.auto import tqdm
 
 from .utils import cluster_labels_to_clusters
+from ..sampling import optimal_block_size
+from ..sampling import bootstrap as run_bootstrap
 
 
 def mda(estimator,
@@ -20,6 +22,9 @@ def mda(estimator,
         clusters: Optional[List[dict]] = None,
         clusterer: Optional[AgglomerativeClustering] = None,
         pooling_fn: Optional[Callable] = None,
+        bootstrap: Optional[str] = 'sbb',
+        n_bootstraps: int = 10,
+        subsample_size: Optional[int] = None,
         n_permutations: int = 10,
         fit_params: dict = None,
         score_params: dict = None,
@@ -79,25 +84,43 @@ def mda(estimator,
     enumerate_splits = enumerate(tqdm(splits, desc='Splits processed: ')) if verbose else enumerate(splits)
 
     for i, (train, test) in enumerate_splits:  # for split
-        # Train the model on split's train set
-        sw_train_dict = {sw_train_name: sw_train[train]} if sw_train_name is not None else {}
-        model = estimator.fit(X=X.iloc[train], y=y.iloc[train], **sw_train_dict, **fit_params)
+        if bootstrap is not None:
+            block_size_train = optimal_block_size(data=y[train].values, method=bootstrap)
+            block_size_test = optimal_block_size(data=y[test].values, method=bootstrap)
+            subsamples_train = run_bootstrap(
+                data=np.arange(y[train].size), method=bootstrap, block_size=block_size_train,
+                subsample_size=subsample_size, repeats=n_bootstraps, seed=rs.randint(2 ** 32 - 1), verbose=False
+            )
+            subsamples_test = run_bootstrap(
+                data=np.arange(y[test].size), method=bootstrap, block_size=block_size_test,
+                subsample_size=subsample_size, repeats=n_bootstraps, seed=rs.randint(2 ** 32 - 1), verbose=False
+            )
+        else:
+            subsamples_train = [np.arange(y[train].size)]
+            subsamples_test = [np.arange(y[test].size)]
 
-        # Get baseline score for split's test set
-        sw_score_dict = {sw_score_name: sw_score[test]} if sw_score_name is not None else {}
-        baseline_scores.append(scorer(model, X.iloc[test], y.iloc[test], **sw_score_dict, **score_params))
+        for subs_train, subs_test in zip(subsamples_train, subsamples_test):
+            # Train the model on split's train set
+            sw_train_dict = {sw_train_name: sw_train[train]} if sw_train_name is not None else {}
+            model = estimator.fit(X=X.iloc[train].iloc[subs_train], y=y.iloc[train].iloc[subs_train],
+                                  **sw_train_dict, **fit_params)
 
-        # Get scores for permuted features
-        for j, cluster in enumerate(clusters):
-            X_test = X.iloc[test, :].copy()
+            # Get baseline score for split's test set
+            sw_score_dict = {sw_score_name: sw_score[test]} if sw_score_name is not None else {}
+            baseline_scores.append(scorer(model, X.iloc[test].iloc[subs_test], y.iloc[test].iloc[subs_test],
+                                          **sw_score_dict, **score_params))
 
-            for _ in range(n_permutations):
-                # Permute all features in the cluster
-                for col in cluster['columns']:
-                    rs.shuffle(X_test[col].values)
+            # Get scores for permuted features
+            for j, cluster in enumerate(clusters):
+                X_test = X.iloc[test, :].iloc[subs_test].copy()
 
-                ft_score = scorer(model, X_test, y.values[test], **sw_score_dict, **score_params)
-                feature_scores[j].append(baseline_scores[i] - ft_score)
+                for _ in range(n_permutations):
+                    # Permute all features in the cluster
+                    for col in cluster['columns']:
+                        rs.shuffle(X_test[col].values)
+
+                    ft_score = scorer(model, X_test, y.values[test][subs_test], **sw_score_dict, **score_params)
+                    feature_scores[j].append(baseline_scores[i] - ft_score)
 
     importance = pd.DataFrame(np.array(feature_scores).T, columns=[c['name'] for c in clusters])
     if raw:
