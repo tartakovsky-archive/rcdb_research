@@ -20,6 +20,7 @@ def proximity(matrix: np.ndarray,
               fig_kwargs: Optional[dict] = None,
               ax_kwargs: Optional[dict] = None,
               annotate_kwargs: Optional[dict] = None,
+              heatmap_kwargs: Optional[dict] = None,
               ax=None) -> Optional[tuple]:
     fig_kwargs = {
         **style.fig_kwargs(),
@@ -34,6 +35,7 @@ def proximity(matrix: np.ndarray,
         **(ax_kwargs or {})
     }
     annotate_kwargs = {**dict(), **(annotate_kwargs or {})}
+    heatmap_kwargs = {**dict(vmin=0, vmax=1), **(heatmap_kwargs or {})}
 
     labels = labels if labels is not None else np.arange(matrix.shape[0])
 
@@ -52,7 +54,7 @@ def proximity(matrix: np.ndarray,
     #     axis.yaxis.set_ticks_position('right')
     cmap = sns.cm.rocket if distance else sns.cm.rocket_r
     sns.heatmap(matrix, mask=mask, ax=ax, yticklabels=labels, annot=annotate, cmap=cmap, square=True,
-                cbar_kws={"shrink": .75, 'location': 'bottom'}, annot_kws=annotate_kwargs)
+                cbar_kws={"shrink": .75, 'location': 'bottom'}, annot_kws=annotate_kwargs, **heatmap_kwargs)
 
     if ax is None:
         return fig, axis
