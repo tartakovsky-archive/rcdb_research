@@ -81,11 +81,11 @@ def mda(estimator,
     for i, (train, test) in enumerate_splits:  # for split
         # Train the model on split's train set
         sw_train_dict = {sw_train_name: sw_train[train]} if sw_train_name is not None else {}
-        model = estimator.fit(X=X.values[train], y=y.values[train], **sw_train_dict, **fit_params)
+        model = estimator.fit(X=X.iloc[train], y=y.iloc[train], **sw_train_dict, **fit_params)
 
         # Get baseline score for split's test set
         sw_score_dict = {sw_score_name: sw_score[test]} if sw_score_name is not None else {}
-        baseline_scores.append(scorer(model, X.values[test], y.values[test], **sw_score_dict, **score_params))
+        baseline_scores.append(scorer(model, X.iloc[test], y.iloc[test], **sw_score_dict, **score_params))
 
         # Get scores for permuted features
         for j, cluster in enumerate(clusters):
