@@ -2,13 +2,12 @@ import pandas as pd
 import numpy as np
 import logging
 
-from typing import List, Set, Callable, Optional
+from typing import List, Set, Callable, Optional, Union
 
 from sklearn.metrics import check_scoring
 from sklearn.utils import check_random_state
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.model_selection import BaseCrossValidator
-from tqdm.auto import tqdm
 
 from .mean_decrease_accuracy import mda
 from .mutual_information import nmi
@@ -17,7 +16,7 @@ from .utils import cluster_labels_to_clusters
 from ..sampling.cv import CombinatorialCV
 
 
-def efs(estimator,
+def efi(estimator,
         X: pd.DataFrame,
         y: pd.Series,
         clusters: Optional[List[dict]] = None,
@@ -37,7 +36,8 @@ def efs(estimator,
         scorer=None,
         random_state=1,
         sort: bool = True,
-        verbose: bool = True):
+        full_report: bool = False,
+        verbose: bool = True) -> Union[dict, pd.DataFrame]:
     if not isinstance(X, pd.DataFrame):
         raise ValueError('`X` must be a pd.DataFrame')
     if not isinstance(y, pd.Series):
@@ -52,7 +52,6 @@ def efs(estimator,
         )
 
     scorer = check_scoring(estimator, scorer)
-    rs = check_random_state(random_state)
 
     if clusterer is not None:
         if clusters is not None:
@@ -67,7 +66,7 @@ def efs(estimator,
 
     results = dict()
     if verbose:
-        print('EFS: Scoring feature importances')
+        print('EFI: Scoring feature importances')
     for method in methods:
         if method == 'mda':
             mda_scores = mda(estimator=estimator, X=X, y=y, cv=mda_cv, clusters=clusters, clusterer=None,
@@ -93,16 +92,14 @@ def efs(estimator,
         else:
             raise ValueError(f'{method} method is not supported. Supported methods: {supported_methods}')
 
-    efs_scores = pd.DataFrame()
+    efi_scores = pd.DataFrame()
 
-    efs_scores['mean'] = np.mean([res['1/rank'] for res in results.values()], axis=0)
-    efs_scores['rank'] = efs_scores['mean'].rank(method='first', ascending=False).astype(int)
-    efs_scores.index = [c['name'] for c in clusters]
+    efi_scores['mean'] = np.mean([res['1/rank'] for res in results.values()], axis=0)
+    efi_scores['rank'] = efi_scores['mean'].rank(method='first', ascending=False).astype(int)
+    efi_scores.index = [c['name'] for c in clusters]
 
-    results['efs'] = efs_scores
+    results['efi'] = efi_scores
     if sort:
         results = {k: v.sort_values(by='rank') for k, v in results.items()}
 
-    results['clusters'] = clusters
-
-    return results
+    return results if full_report else results['efi']
