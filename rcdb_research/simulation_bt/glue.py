@@ -11,7 +11,9 @@ def get_trading_simulation(
         exchange,
         initial_cash: int = 1000000,
         use_worst_pnl=False,
-        bt_strategy=BtRcdbStrategy) -> (Trades, pd.DataFrame):
+        bt_strategy=BtRcdbStrategy,
+        risk_management_pre_trade=None,
+        entry_limit=False) -> (Trades, pd.DataFrame):
     """
     Do all the magic to configure backtrader, run simulation and get results.
 
@@ -22,6 +24,8 @@ def get_trading_simulation(
     :param use_worst_pnl: default=False, if True will use worst intra bar price to evaluate equity
                          (low for longs and high for shorts)
     :param bt_strategy: backtrader strategy class
+    :param risk_management_pre_trade: pre trader callback (modifies desired exposure before execution)
+    :param entry_limit: increase position with limit orders
     :return:
     """
     cerebro = bt.Cerebro()
@@ -35,7 +39,13 @@ def get_trading_simulation(
     cerebro.adddata(data)
 
     # Add the strategy to cerebro
-    cerebro.addstrategy(bt_strategy, sizing=sizing, use_worst_pnl=use_worst_pnl)
+    cerebro.addstrategy(
+        bt_strategy,
+        sizing=sizing,
+        use_worst_pnl=use_worst_pnl,
+        risk_management_pre_trade=risk_management_pre_trade,
+        entry_limit=entry_limit
+    )
 
     # Analyzer
     # cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='mysharpe')
@@ -49,7 +59,7 @@ def get_trading_simulation(
         index=pd.DatetimeIndex(df.datetime),
         balance=df.balance.values,
         unrealized_pnl=df.unrealized_pnl.values,
-        exposure=df.exposure_curr.values,
+        exposure=df.exposure_current.values,
         context=None
     )
 
