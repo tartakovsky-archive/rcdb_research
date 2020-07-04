@@ -65,34 +65,43 @@ def efs(estimator,
             for col in X.columns
         ]
 
-    results = {}
+    results = dict()
     if verbose:
-        print('Scoring feature importances:')
+        print('EFS: Scoring feature importances')
     for method in methods:
         if method == 'mda':
-            if verbose:
-                print('Running MDA:')
             mda_scores = mda(estimator=estimator, X=X, y=y, cv=mda_cv, clusters=clusters, clusterer=None,
                              pooling_fn=pooling_fn, fit_params=fit_params, score_params=score_params,
                              n_permutations=mda_n_permutations, scorer=scorer, random_state=random_state,
-                             sort=sort, verbose=verbose, raw=False)
+                             sort=False, verbose=verbose, raw=False)
+            mda_scores['1/rank'] = 1 / mda_scores['rank']
             results['mda'] = mda_scores
         elif method == 'mdi':
             mdi_scores = mdi(estimator=estimator, X=X, y=y, clusters=clusters, clusterer=None,
                              pooling_fn=pooling_fn, bootstrap=mdi_bootstrap_method,
                              n_bootstraps=mdi_n_boostraps, fit_params=fit_params,
                              reg_alphas=mdi_reg_alphas, reg_lambdas=mdi_reg_lambdas,
-                             random_state=random_state, sort=sort, verbose=verbose, raw=False)
+                             random_state=random_state, sort=False, verbose=verbose, raw=False)
+            mdi_scores['1/rank'] = 1 / mdi_scores['rank']
             results['mdi'] = mdi_scores
         elif method == 'nmi':
-            if verbose:
-                print('Running NMI:')
             nmi_scores = nmi(X=X, y=y, clusters=clusters, clusterer=None, pooling_fn=pooling_fn,
                              bootstrap=nmi_bootstrap_method, n_bootstraps=nmi_n_boostraps, random_state=random_state,
-                             sort=sort, verbose=verbose, raw=False)
+                             sort=False, verbose=verbose, raw=False)
+            nmi_scores['1/rank'] = 1 / nmi_scores['rank']
             results['nmi'] = nmi_scores
         else:
             raise ValueError(f'{method} method is not supported. Supported methods: {supported_methods}')
+
+    efs_scores = pd.DataFrame()
+
+    efs_scores['mean'] = np.mean([res['1/rank'] for res in results.values()], axis=0)
+    efs_scores['rank'] = efs_scores['mean'].rank(method='first', ascending=False).astype(int)
+    efs_scores.index = [c['name'] for c in clusters]
+
+    results['efs'] = efs_scores
+    if sort:
+        results = {k: v.sort_values(by='rank') for k, v in results.items()}
 
     results['clusters'] = clusters
 

@@ -76,7 +76,7 @@ def mda(estimator,
 
     # Split data. Show progress bar if verbose
     splits = cv.split(X=X)
-    enumerate_splits = enumerate(tqdm(splits, desc='Splits processed: ')) if verbose else enumerate(splits)
+    enumerate_splits = enumerate(tqdm(splits, desc='MDA: processing splits')) if verbose else enumerate(splits)
 
     for i, (train, test) in enumerate_splits:  # for split
         # Train the model on split's train set
