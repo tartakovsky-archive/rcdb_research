@@ -19,6 +19,7 @@ def importance(means: np.ndarray,
                ax_kwargs: Optional[dict] = None,
                pos_bar_kwargs: Optional[dict] = None,
                neg_bar_kwargs: Optional[dict] = None,
+               sort: bool = False,
                ax=None):
     fig_kwargs = {
         **style.fig_kwargs(
@@ -37,6 +38,22 @@ def importance(means: np.ndarray,
     }
 
     x = np.arange(means.shape[0])
+
+    if sort:
+        # --- Refactor?
+        lists = [means, labels if labels is not None else list(range(len(labels)))]
+        if mins is not None and maxes is not None:
+            lists.append(mins)
+            lists.append(maxes)
+
+        sorted_lists = list((list(t) for t in zip(*sorted(zip(*lists), reverse=True))))
+
+        means, labels = np.array(sorted_lists[0]), sorted_lists[1]
+
+        if mins is not None and maxes is not None:
+            mins = np.array(sorted_lists[2])
+            maxes = np.array(sorted_lists[3])
+        # ---
 
     fig, axis = bars_pn(y=means,
                         x=x,
