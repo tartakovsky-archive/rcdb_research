@@ -95,7 +95,7 @@ def splits(
             show_folds = False
             print('Warning: CV doesn`t support parameter `show_folds`')
 
-    stats = get_stats(cv, X, tainted_size, len(paths))
+    stats = get_stats(cv, X, tainted_size, len(paths), splits_count=len(splits))
 
     fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     utils.configure_axis(axis, title, None if show_dates else xlabel, ylabel, ax_kwargs=ax_kwargs)
@@ -273,7 +273,7 @@ def get_train_test(splits):
     return train_start, test_start, train_size, test_size
 
 
-def get_stats(cv, X, tainted_size, num_paths):
+def get_stats(cv, X, tainted_size, num_paths, **kwargs):
     if hasattr(cv, 'embargo_bars'):
         embargo_pct = cv.embargo_pct
         embargo_bars = cv.embargo_bars
@@ -286,7 +286,6 @@ def get_stats(cv, X, tainted_size, num_paths):
 
     else:
         embargo_size = 0
-
     tainting_size = tainted_size[0] if len(tainted_size) else 0
 
     if hasattr(cv, 'n_folds') or isinstance(cv, KFold):
@@ -317,6 +316,7 @@ def get_stats(cv, X, tainted_size, num_paths):
         'tests folds': tests,
         'embargo size': embargo_size,
         'tainting size': tainting_size,
+        'splits': kwargs['splits_count']
     }
 
 
@@ -357,7 +357,7 @@ def draw_folds(groups: List[int], index: List, axis):
 
 def draw_stats(stats, axis, ax_kwargs):
     labels_order = [
-        'paths', 'fold size', 'folds', 'embargo size', 'trains folds', 'tainting size', 'tests folds'
+        'paths', 'fold size', 'folds', 'embargo size', 'trains folds', 'tainting size', 'tests folds', 'splits'
     ]
     labels = [
         f'{k} = {v}'

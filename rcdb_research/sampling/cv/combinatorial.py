@@ -1,4 +1,5 @@
 import copy
+import inspect
 from operator import itemgetter
 from itertools import combinations, takewhile
 from functools import reduce
@@ -389,8 +390,9 @@ def predict_splits(
         splits: List[Dict[str, PandasLike]],
         predict_proba: bool = False,
         predict_train: bool = False,
-        fit_args: Optional[dict] = None,
-        predict_args: Optional[dict] = None,
+        clusters: Optional[List[dict]] = None,
+        fit_params: Optional[dict] = None,
+        predict_params: Optional[dict] = None,
         n_jobs: int = -1
 ) -> List[Dict[str, np.ndarray]]:
     """
@@ -399,29 +401,33 @@ def predict_splits(
     :param splits: aggregated splits
     :param predict_proba: if True returns probabilities of 1 instead of binary output
     :param predict_train: if True returns predictions for train set in addition to y_true, y_pred
-    :param fit_args: params for clf.fit
-    :param predict_args: params for clf.predict
+    :param clusters:
+    :param fit_params: params for clf.fit
+    :param predict_params: params for clf.predict
     :param n_jobs: count of jobs for joblib.Parallel
     :return: (y_true, y_pred, y_train_pred) if predict_train else (y_true, y_pred)
     """
 
-    fit_args = fit_args or {}
-    predict_args = predict_args or {}
+    fit_params = fit_params or {}
+    predict_params = predict_params or {}
 
-    def predict_split(clf, split, predict_proba, predict_train, fit_args, predict_args):
+    def predict_split(clf, split, predict_proba, predict_train, fit_params, predict_params, clusters):
         X_train, y_train, X_test, y_test = itemgetter('X_train', 'y_train', 'X_test', 'y_test')(split)
 
-        clf.fit(X_train, y_train, **fit_args)
+        if 'clusters' in inspect.getfullargspec(clf.fit).args:
+            clf.fit(X_train, y_train, clusters=clusters, **fit_params)
+        else:
+            clf.fit(X_train, y_train, **fit_params)
 
         y_train_pred = None
         if predict_proba:
-            y_pred = clf.predict_proba(X_test, **predict_args)[:, 1]
+            y_pred = clf.predict_proba(X_test, **predict_params)[:, 1]
             if predict_train:
-                y_train_pred = clf.predict_proba(X_train, **predict_args)[:, 1]
+                y_train_pred = clf.predict_proba(X_train, **predict_params)[:, 1]
         else:
-            y_pred = clf.predict(X_test, **predict_args)
+            y_pred = clf.predict(X_test, **predict_params)
             if predict_train:
-                y_train_pred = clf.predict(X_train, **predict_args)
+                y_train_pred = clf.predict(X_train, **predict_params)
 
         res = {
             'y_true': np.array(y_test.values),
@@ -439,15 +445,12 @@ def predict_splits(
         return res
 
     if n_jobs == 1:
-        return [
-            predict_split(clf, split, predict_proba, predict_train, fit_args, predict_args)
-            for split in splits
-        ]
+        parallel, fn = list, predict_split
+    else:
+        parallel, fn = Parallel(n_jobs=n_jobs), delayed(predict_split)
 
-    parallel = Parallel(n_jobs=n_jobs)
     return parallel(
-        delayed(predict_split)(clone(clf), split, predict_proba,
-                               predict_train, fit_args, predict_args)
+        fn(clone(clf), split, predict_proba, predict_train, fit_params, predict_params, clusters)
         for split in splits
     )
 
