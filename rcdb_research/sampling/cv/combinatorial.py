@@ -391,6 +391,7 @@ def predict_splits(
         predict_proba: bool = False,
         predict_train: bool = False,
         clusters: Optional[List[dict]] = None,
+        labels: Optional[List[str]] = None,
         fit_params: Optional[dict] = None,
         predict_params: Optional[dict] = None,
         n_jobs: int = -1
@@ -402,6 +403,7 @@ def predict_splits(
     :param predict_proba: if True returns probabilities of 1 instead of binary output
     :param predict_train: if True returns predictions for train set in addition to y_true, y_pred
     :param clusters:
+    :param labels:
     :param fit_params: params for clf.fit
     :param predict_params: params for clf.predict
     :param n_jobs: count of jobs for joblib.Parallel
@@ -411,13 +413,17 @@ def predict_splits(
     fit_params = fit_params or {}
     predict_params = predict_params or {}
 
-    def predict_split(clf, split, predict_proba, predict_train, fit_params, predict_params, clusters):
+    def predict_split(clf, split, predict_proba, predict_train, fit_params, predict_params, clusters, labels):
         X_train, y_train, X_test, y_test = itemgetter('X_train', 'y_train', 'X_test', 'y_test')(split)
 
-        if 'clusters' in inspect.getfullargspec(clf.fit).args:
-            clf.fit(X_train, y_train, clusters=clusters, **fit_params)
-        else:
-            clf.fit(X_train, y_train, **fit_params)
+        clf.fit(
+            X_train, y_train,
+            **{
+                **({'clusters': clusters} if 'clusters' in inspect.getfullargspec(clf.fit).args else {}),
+                **({'labels': labels} if 'labels' in inspect.getfullargspec(clf.fit).args else {}),
+                **fit_params
+            }
+        )
 
         y_train_pred = None
         if predict_proba:
@@ -450,7 +456,7 @@ def predict_splits(
         parallel, fn = Parallel(n_jobs=n_jobs), delayed(predict_split)
 
     return parallel(
-        fn(clone(clf), split, predict_proba, predict_train, fit_params, predict_params, clusters)
+        fn(clone(clf), split, predict_proba, predict_train, fit_params, predict_params, clusters, labels)
         for split in splits
     )
 
