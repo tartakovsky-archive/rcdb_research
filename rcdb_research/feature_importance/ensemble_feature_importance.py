@@ -5,7 +5,6 @@ import logging
 from typing import List, Set, Callable, Optional, Union
 
 from sklearn.metrics import check_scoring
-from sklearn.utils import check_random_state
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.model_selection import BaseCrossValidator
 
