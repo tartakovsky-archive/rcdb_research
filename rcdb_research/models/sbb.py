@@ -8,8 +8,10 @@ from warnings import warn
 from abc import ABCMeta, abstractmethod
 import pandas as pd
 import numpy as np
+import logging
 
 from rcdb_research.sampling import sequential_bootstrap
+from rcdb_research.feature_importance.utils import cluster_labels_to_clusters
 
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 import warnings
@@ -167,7 +169,7 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
 
         # self.X_time_index = None  # Timestamp index of X_train
 
-    def fit(self, X, y, sample_weight=None, t1=None, bars_idx=None, clusters=None, labels=None):
+    def fit(self, X, y, sample_weight=None, t1=None, bars_idx=None, clusters=None, labels=None, clusterer=None):
         if (t1 is not None) ^ (bars_idx is not None):
             raise ValueError('both t1 and bars_idx must be specified')
         if clusters is not None:
@@ -185,11 +187,12 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
                     raise ValueError('labels content doesn\'t match X.shape[1]')
         return self._fit(
             X, y,
-            self.max_samples, sample_weight=sample_weight, t1=t1, bars_idx=bars_idx, clusters=clusters, labels=labels
+            self.max_samples, sample_weight=sample_weight, t1=t1, bars_idx=bars_idx, clusters=clusters, labels=labels,
+            clusterer=clusterer
         )
 
     def _fit(self, X, y, max_samples=None, max_depth=None, sample_weight=None, t1=None, bars_idx=None, clusters=None,
-             labels=None):
+             labels=None, clusterer=None):
         #         spans = encode(X[['t0', 't1']].values, self.bars_idx)
         #         X = X.drop(['t0', 't1'], axis=1)
         column_names = deepcopy(X.columns) if isinstance(X, pd.DataFrame) else labels
@@ -211,6 +214,19 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
         if sample_weight is not None:
             sample_weight = check_array(sample_weight, ensure_2d=False)
             check_consistent_length(y, sample_weight)
+
+        if clusterer is not None:
+            if clusters is not None:
+                logging.warning(f'`clusterer` param is set, ignoring `clusters` param')
+            X_ = pd.DataFrame(X, columns=labels)
+            clusterer.fit(X_.T)
+            clusters = cluster_labels_to_clusters(clusterer.labels_, X_.columns)
+        else:
+            X_ = pd.DataFrame(X, columns=labels)
+            clusters = clusters or [
+                dict(name=col, columns=[col])
+                for col in X_.columns
+            ]
 
         # Remap output
         n_samples, self.n_features_ = X.shape
