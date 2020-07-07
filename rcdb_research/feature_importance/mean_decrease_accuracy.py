@@ -8,7 +8,6 @@ from typing import List, Callable, Optional
 # Checks
 from sklearn.metrics import check_scoring
 from sklearn.utils import check_random_state, check_X_y
-from sklearn.utils.estimator_checks import check_estimator
 from sklearn.model_selection import check_cv
 # ---
 from scipy.stats import rankdata
@@ -89,17 +88,20 @@ class MDA(MetaEstimatorMixin, BaseEstimator):
         enumerate_splits = enumerate(tqdm(splits, desc='MDA: processing splits')) if self.verbose else enumerate(splits)
 
         for i, (train, test) in enumerate_splits:  # for split
+            sw_train_dict = {'sample_weight': fit_sample_weight[train]} if fit_sample_weight is not None else {}
+            sw_test_dict = {'sample_weight': score_sample_weight[test]} if score_sample_weight is not None else {}
+
             # Train the model on split's train set
             if 'clusters' in inspect.getfullargspec(self.estimator.fit).args:
                 self.estimator.fit(X=X.iloc[train], y=y.iloc[train],
-                                   clusters=self.clusters, sample_weight=fit_sample_weight, **fit_params)
+                                   clusters=self.clusters, **sw_train_dict, **fit_params)
             else:
                 self.estimator.fit(X=X.iloc[train], y=y.iloc[train],
-                                   sample_weight=fit_sample_weight, **fit_params)
+                                   **sw_train_dict, **fit_params)
 
             # Get baseline score for split's test set
             baseline_score = self.scorer(self.estimator, X.iloc[test], y.iloc[test],
-                                         sample_weight=score_sample_weight, **score_params)
+                                         **sw_test_dict, **score_params)
             baseline_scores.append(baseline_score)
 
             # Get scores for permuted features
@@ -112,11 +114,11 @@ class MDA(MetaEstimatorMixin, BaseEstimator):
                         self.random_state.shuffle(X_test[col].values)
 
                     ft_score = self.scorer(self.estimator, X_test, y.values[test],
-                                           sample_weight=score_sample_weight, **score_params)
+                                           **sw_test_dict, **score_params)
                     feature_scores[j].append(baseline_scores[i] - ft_score)
 
         self.feature_importances_ = np.mean(feature_scores, axis=1)
-        self.feature_importances_std_ = np.std(feature_scores, axis=1)
+        self.feature_importances_std_ = np.std(feature_scores, axis=1, ddof=1)
         self.feature_importances_rank_ = rankdata(-self.feature_importances_, method='dense').astype(int)
         self.feature_importances_labels_ = [c['name'] for c in self.clusters]
         self.feature_importances_df_ = pd.DataFrame.from_records(
