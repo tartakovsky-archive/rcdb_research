@@ -104,8 +104,8 @@ class MDI(MetaEstimatorMixin, BaseEstimator):
 
         importance = pd.DataFrame.from_dict(results)
 
-        self.feature_importances_ = importance.mean()
-        self.feature_importances_std_ = importance.std()
+        self.feature_importances_ = importance.mean().values
+        self.feature_importances_std_ = importance.std().values
         self.feature_importances_rank_ = rankdata(-self.feature_importances_, method='dense').astype(int)
         self.feature_importances_labels_ = [c['name'] for c in self.clusters]
         self.feature_importances_df_ = pd.DataFrame.from_records(
