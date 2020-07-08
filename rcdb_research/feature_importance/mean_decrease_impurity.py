@@ -104,6 +104,7 @@ class MDI(MetaEstimatorMixin, BaseEstimator):
             index=self.feature_importances_labels_,
             columns=['mean', 'std', 'rank']
         )
+        return self
 
 
 def mdi(estimator,

@@ -61,6 +61,7 @@ class EFI(BaseEstimator):
             index=self.feature_importances_labels_,
             columns=['mean', 'std', 'rank']
         )
+        return self
 
 
 def efi(estimator,

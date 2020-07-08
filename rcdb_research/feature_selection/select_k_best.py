@@ -28,6 +28,7 @@ class SelectKBest(MetaEstimatorMixin, SelectorMixin, BaseEstimator):
         self.clusters = check_clusters(X, self.clusterer, clusters, self.labels)
 
         self.estimator.fit(X, y, self.clusters, self.labels, **fit_params)
+        return self
 
     def _get_support_mask(self):
         scores = feature_importances(self.estimator)

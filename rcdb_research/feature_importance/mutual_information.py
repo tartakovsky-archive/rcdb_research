@@ -95,6 +95,7 @@ class NMI(MetaEstimatorMixin, BaseEstimator):
             index=self.feature_importances_labels_,
             columns=['mean', 'std', 'rank']
         )
+        return self
 
 
 def nmi(X: pd.DataFrame,
