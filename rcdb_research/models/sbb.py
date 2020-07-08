@@ -140,6 +140,7 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
                  max_samples=1.0,
                  max_features=1.0,
                  bootstrap_features=False,
+                 clusterer=None,
                  oob_score=False,
                  warm_start=False,
                  n_jobs=None,
@@ -157,6 +158,7 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
             n_jobs=n_jobs,
             random_state=random_state,
             verbose=verbose)
+        self.clusterer = clusterer
 
         # pylint: disable=invalid-name
         #         self.samples_info_sets = samples_info_sets
@@ -169,7 +171,7 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
 
         # self.X_time_index = None  # Timestamp index of X_train
 
-    def fit(self, X, y, sample_weight=None, t1=None, bars_idx=None, clusters=None, labels=None, clusterer=None):
+    def fit(self, X, y, sample_weight=None, t1=None, bars_idx=None, clusters=None, labels=None):
         if (t1 is not None) ^ (bars_idx is not None):
             raise ValueError('both t1 and bars_idx must be specified')
         if clusters is not None:
@@ -187,12 +189,11 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
                     raise ValueError('labels content doesn\'t match X.shape[1]')
         return self._fit(
             X, y,
-            self.max_samples, sample_weight=sample_weight, t1=t1, bars_idx=bars_idx, clusters=clusters, labels=labels,
-            clusterer=clusterer
+            self.max_samples, sample_weight=sample_weight, t1=t1, bars_idx=bars_idx, clusters=clusters, labels=labels
         )
 
     def _fit(self, X, y, max_samples=None, max_depth=None, sample_weight=None, t1=None, bars_idx=None, clusters=None,
-             labels=None, clusterer=None):
+             labels=None):
         #         spans = encode(X[['t0', 't1']].values, self.bars_idx)
         #         X = X.drop(['t0', 't1'], axis=1)
         column_names = deepcopy(X.columns) if isinstance(X, pd.DataFrame) else labels
@@ -215,12 +216,12 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
             sample_weight = check_array(sample_weight, ensure_2d=False)
             check_consistent_length(y, sample_weight)
 
-        if clusterer is not None:
+        if self.clusterer is not None:
             if clusters is not None:
                 logging.warning(f'`clusterer` param is set, ignoring `clusters` param')
             X_ = pd.DataFrame(X, columns=labels)
-            clusterer.fit(X_.T)
-            clusters = cluster_labels_to_clusters(clusterer.labels_, X_.columns)
+            self.clusterer.fit(X_.T)
+            clusters = cluster_labels_to_clusters(self.clusterer.labels_, X_.columns)
         else:
             X_ = pd.DataFrame(X, columns=labels)
             clusters = clusters or [
@@ -396,6 +397,7 @@ class CSBBClassifier(CSBBBase, BaggingClassifier, ClassifierMixin):
                  max_samples=1.0,
                  max_features=1.0,
                  bootstrap_features=False,
+                 clusterer=None,
                  oob_score=False,
                  warm_start=False,
                  n_jobs=None,
@@ -408,6 +410,7 @@ class CSBBClassifier(CSBBBase, BaggingClassifier, ClassifierMixin):
             max_samples=max_samples,
             max_features=max_features,
             bootstrap_features=bootstrap_features,
+            clusterer=clusterer,
             oob_score=oob_score,
             warm_start=warm_start,
             n_jobs=n_jobs,
