@@ -42,4 +42,3 @@ class SelectKBest(MetaEstimatorMixin, SelectorMixin, BaseEstimator):
         feature_mask = np.isin(self.labels, selected_features)
 
         return feature_mask
-
