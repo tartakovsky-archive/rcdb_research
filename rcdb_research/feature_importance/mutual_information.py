@@ -61,8 +61,9 @@ class NMI(MetaEstimatorMixin, BaseEstimator):
         if self.bootstrap is not None:
             block_size = optimal_block_size(data=y.values, method=self.bootstrap)
             subsamples = run_bootstrap(
-                data=np.arange(y.size), method=self.bootstrap, block_size=block_size, subsample_size=self.subsample_size,
-                repeats=self.n_bootstraps, seed=self.random_state.randint(2 ** 32 - 1), verbose=False
+                data=np.arange(y.size), method=self.bootstrap, block_size=block_size,
+                subsample_size=self.subsample_size, repeats=self.n_bootstraps,
+                seed=self.random_state.randint(2 ** 32 - 1), verbose=False
             )
         else:
             subsamples = [np.arange(y.size)]

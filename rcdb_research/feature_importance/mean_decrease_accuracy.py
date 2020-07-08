@@ -7,7 +7,7 @@ from typing import List, Callable, Optional
 
 # Checks
 from sklearn.metrics import check_scoring
-from sklearn.utils import check_random_state, check_X_y
+from sklearn.utils import check_random_state
 from sklearn.model_selection import check_cv
 # ---
 from scipy.stats import rankdata

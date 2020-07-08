@@ -5,8 +5,7 @@ from operator import itemgetter
 from itertools import groupby
 from typing import List
 
-from lightgbm import LGBMClassifier
-from sklearn.ensemble import BaggingClassifier, RandomForestClassifier
+from sklearn.ensemble import BaggingClassifier
 from ..models import CSBBClassifier
 
 
