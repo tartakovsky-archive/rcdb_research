@@ -378,15 +378,11 @@ from natsort import natsorted
 
 def perform_mda(X, y, clf, agglomeration, score, other_params, score_path=False, show_std=True, threshold_pct=0, silent=False):
     X = X[natsorted(X.columns)]
-    #     matrix, clusters, decreases, features = compute_MDA_evenbetter(X, y, clf, agglomeration, score, other_params)
-    #     matrix, clusters, decreases, features = compute_MDA_eli5(X, y, clf, agglomeration, score, other_params)
-    #     matrix, clusters, decreases, features = compute_MDA_mlfinlab(X, y, clf, agglomeration, score, other_params)
+
     matrix, clusters, decreases, features = compute_MDA_refactored(X, y, clf, agglomeration, score, other_params,
                                                                    score_path, raw=False)
     groups = _labels2groups(clusters, names=X.columns)
-    # retval = extract_above_threshold(features, decreases, threshold_pct)
     retval = build_transformer(clusters, groups, decreases)
-    # retval = build_transformer2(agglomeration, clusters, decreases)
 
     if silent:
         return retval
@@ -394,19 +390,18 @@ def perform_mda(X, y, clf, agglomeration, score, other_params, score_path=False,
     square_side = max(16, round(18 / 30 * X.shape[1]))
     bars_height = round(6 / 10 * len(decreases))
 
-    fig = plt.figure(constrained_layout=True, figsize=(square_side * 2, square_side + bars_height + square_side))
-    gs = GridSpec(3, 4, height_ratios=[square_side, bars_height, square_side], figure=fig)
+    fig = plt.figure(constrained_layout=True, figsize=(square_side * 2, square_side + bars_height))
+    gs = GridSpec(2, 4, height_ratios=[square_side, bars_height], figure=fig)
     axes = [
         fig.add_subplot(gs[0, :2]),
         fig.add_subplot(gs[0, 2:]),
         fig.add_subplot(gs[1, 1:3]),
-        fig.add_subplot(gs[2, 1:3]),
     ]
 
     viz_clusters(matrix, clusters, rearrange=True, labels=X.columns, ax=axes[0])
     viz_decrease_matrix(groups, decreases, ax=axes[1])
     viz_decrease(decreases.sort_values('decrease'), groups, show_std, ax=axes[2])
-    viz_dendrogram(matrix, X.columns, agglomeration.distance_threshold, ax=axes[3])
+    # viz_dendrogram(matrix, X.columns, agglomeration.distance_threshold, ax=axes[3])
 
     fig.suptitle('MDA report ({})'.format(score.__name__), fontsize=18, y=0.975)
     display(fig)
