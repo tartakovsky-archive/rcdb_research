@@ -47,9 +47,9 @@ class EFI(BaseEstimator):
         for estimator in self.estimators:
             estimator.fit(X, y, self.clusters, labels, **fit_params)
 
-        importances = [1 / e.feature_importances_rank_ for e in self.estimators]
-        self.feature_importances_ = np.mean(importances, axis=0)
-        self.feature_importances_std_ = np.std(importances, axis=0, ddof=1)
+        importances = pd.DataFrame([1 / e.feature_importances_rank_ for e in self.estimators])
+        self.feature_importances_ = importances.mean().values
+        self.feature_importances_std_ = importances.std().fillna(0).values
         self.feature_importances_rank_ = rankdata(-self.feature_importances_, method='dense').astype(int)
         self.feature_importances_labels_ = [c['name'] for c in self.clusters]
         self.feature_importances_df_ = pd.DataFrame.from_records(
