@@ -8,7 +8,7 @@ from rcdb_research.cross_validation import \
     WalkForwardCV, cross_val_predict_timeseries_splits
 
 from rcdb_research.sampling.cv.combinatorial import \
-    CombinatorialCV, split_indexes_to_bars, predict_splits, predicts_to_paths
+    CombinatorialCV, CombinatorialPurgedCV, split_indexes_to_bars, predict_splits, predicts_to_paths
 
 
 @pytest.fixture
@@ -169,7 +169,7 @@ TEST_SPLIT_INPUT = dict(
     'class_params, test_res',
     [
         (
-            dict(n_folds=2, embargo=None, tainted_up_to=None),
+            dict(n_folds=2, embargo_bars=0, tainted_up_to=None),
             [
                 dict(
                     X_train=pd.DataFrame([6, 7, 8, 9], index=[4, 5, 6, 7]),
@@ -186,7 +186,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=2, embargo=2, tainted_up_to=None),
+            dict(n_folds=2, embargo_bars=2, tainted_up_to=None),
             [
                 dict(
                     X_train=pd.DataFrame([8, 9], index=[6, 7]),
@@ -203,7 +203,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=2, embargo=None, tainted_up_to=1),
+            dict(n_folds=2, embargo_bars=0, tainted_up_to=1),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 7, 8, 9], index=[0, 1, 5, 6, 7]),
@@ -220,7 +220,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=2, embargo=2, tainted_up_to=1),
+            dict(n_folds=2, embargo_bars=2, tainted_up_to=1),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 9], index=[0, 1, 7]),
@@ -237,7 +237,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=2, embargo=None, tainted_up_to=5),
+            dict(n_folds=2, embargo_bars=0, tainted_up_to=5),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 4, 5, 6, 7, 9], index=[0, 1, 2, 3, 4, 5, 7]),
@@ -254,7 +254,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=1, embargo=2, tainted_up_to=4),
+            dict(n_folds=1, embargo_bars=2, tainted_up_to=4),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 4, 5, 6], index=[0, 1, 2, 3, 4]),
@@ -265,7 +265,7 @@ TEST_SPLIT_INPUT = dict(
             ]
         ),
         (
-            dict(n_folds=1, embargo=None, tainted_up_to=4),
+            dict(n_folds=1, embargo_bars=0, tainted_up_to=4),
             [
                 dict(
                     X_train=pd.DataFrame([2, 3, 4, 5, 6], index=[0, 1, 2, 3, 4]),
@@ -320,34 +320,34 @@ def print_splits(splits):
     'class_params, input, error_msg',
     [
         (
-            dict(n_folds=1, embargo=None, tainted_up_to=None),
+            dict(n_folds=1, embargo_bars=0, tainted_up_to=None),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for training set. '
             'Either set n_folds to > 1 or mark some data as tainted by setting tainted_up_to to not None'
         ),
         (
-            dict(n_folds=0, embargo=None, tainted_up_to=None),
+            dict(n_folds=0, embargo_bars=0, tainted_up_to=None),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for training set. '
             'Either set n_folds to > 1 or mark some data as tainted by setting tainted_up_to to not None'
         ),
         (
-            dict(n_folds=1, embargo=None, tainted_up_to=7),
+            dict(n_folds=1, embargo_bars=0, tainted_up_to=7),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for test set after separating tainted observations'
         ),
         (
-            dict(n_folds=1, embargo=None, tainted_up_to=8),
+            dict(n_folds=1, embargo_bars=0, tainted_up_to=8),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'No data left for test set after separating tainted observations'
         ),
         (
-            dict(n_folds=2, embargo=None, tainted_up_to=6),
+            dict(n_folds=2, embargo_bars=0, tainted_up_to=6),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'Not enough data left to perform 2 folds'
         ),
         (
-            dict(n_folds=2, embargo=4, tainted_up_to=None),
+            dict(n_folds=2, embargo_bars=4, tainted_up_to=None),
             dict(X=pd.DataFrame([2, 3, 4, 5, 6, 7, 8, 9])),
             'Not enough train set data to embargo'
         ),
@@ -363,7 +363,7 @@ def test_CombinatorialKFold_edge_cases(class_params, input, error_msg):
 
 def test_CombinatorialKFold_edge_cases_with_cross_val_score():
     estimator = DecisionTreeRegressor()
-    cv = CombinatorialCV(n_folds=2, embargo=2, tainted_up_to=1)
+    cv = CombinatorialCV(n_folds=2, embargo_bars=2, tainted_up_to=1)
     score = cross_val_score(estimator, TEST_SPLIT_INPUT['X'], TEST_SPLIT_INPUT['y'], cv=cv)
     assert len(score) == 2
 
@@ -376,7 +376,9 @@ def test_predict_splits(ohlcv_df):
 
     n = 5
 
-    splits = split_indexes_to_bars(X, y, CombinatorialCV(n, 10).split(X))
+    cv = CombinatorialCV(n, embargo_bars=10)
+    s = cv.split(X)
+    splits = split_indexes_to_bars(X, y, s)
 
     res = predict_splits(DecisionTreeClassifier(), splits)
 
@@ -446,3 +448,315 @@ def test_predicts_to_paths(params, x_size, ys_true):
         assert path.keys() == test_path.keys()
         for k in test_path:
             assert np.array_equal(path[k], test_path[k])
+
+
+@pytest.mark.parametrize(
+    'bars_timestamp_end, bars_timestamp_start, test_test_groups',
+    [
+        (
+            # bars_timestamp_end
+            np.array(
+                [
+                    0, 2, 4,
+                    6, 8, 10,
+                    12, 14, 16,
+                    18, 20, 22,
+                    24, 26, 28,
+                    30, 32, 34
+                ]
+            ),
+            # bars_timestamp_start
+            np.array(
+                [
+                    1, 3, 5,
+                    7, 9, 11,
+                    13, 15, 17,
+                    15, 21, 23,  # row[0]!
+                    25, 27, 29,
+                    27, 27, 35  # row[[0, 1]]!
+                ]
+            ),
+            # test_test_groups
+            [np.array([3, 4, 5]), np.array([10, 11]), np.array([17])]
+        ),
+        (
+            # bars_timestamp_end
+            np.array(
+                [
+                    0, 2, 4,
+                    6, 8, 10,
+                    12, 14, 16,
+                    18, 20, 22,
+                    24, 26, 28,
+                    30, 32, 34
+                ]
+            ),
+            # bars_timestamp_start
+            np.array(
+                [
+                    1, 3, 5,
+                    3, 3, 11,  # row[0, 1]!
+                    13, 15, 17,
+                    15, 15, 23,  # row[0, 1]!
+                    25, 27, 29,
+                    27, 27, 35  # row[[0, 1]]!
+                ]
+            ),
+            # test_test_groups
+            [np.array([5]), np.array([11]), np.array([17])]
+        ),
+        (
+            # bars_timestamp_end
+            np.array(
+                [
+                    0, 2, 4,
+                    6, 8, 10,
+                    12, 14, 16,
+                    18, 20, 22,
+                    24, 26, 28,
+                    30, 32, 34
+                ]
+            ),
+            # bars_timestamp_start
+            np.array(
+                [
+                    1, 3, 5,
+                    7, 9, 11,
+                    13, 15, 17,
+                    19, 21, 23,
+                    25, 27, 29,
+                    31, 33, 35
+                ]
+            ),
+            # test_test_groups
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])]
+        ),
+
+    ],
+    ids=['purge-case-1', 'purge-case-1', 'without-purge']
+)
+def test_purge(bars_timestamp_end, bars_timestamp_start, test_test_groups):
+    groups = np.array_split(np.arange(18), 6)
+    train_groups = groups[::2]
+    test_groups = groups[1::2]
+
+    cv = CombinatorialPurgedCV(
+        n_folds=6,
+        k_tests=3,
+        bars_timestamp_start=bars_timestamp_start,
+        bars_timestamp_end=bars_timestamp_end
+    )
+
+    res_test_groups, res_train_groups = cv.purge(test_groups, train_groups)
+
+    # check test groups
+    assert len(res_test_groups) == len(test_test_groups)
+    for res, test in zip(res_test_groups, test_test_groups):
+        assert np.array_equal(res, test)
+
+    # check train groups
+    assert len(res_train_groups) == len(train_groups)
+    for res, train in zip(res_train_groups, train_groups):
+        assert np.array_equal(res, train)
+
+
+@pytest.mark.parametrize(
+    'test_groups, train_groups, test_folds, train_folds, params, test_train_groups',
+    [
+        (
+            [np.array([0, 1, 2]), np.array([6, 7, 8]), np.array([12, 13, 14])],
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_bars=2),
+            [np.array([5]), np.array([11]), np.array([17])]
+        ),
+        (
+            [np.array([0, 1, 2]), np.array([6, 7, 8]), np.array([12, 13, 14])],
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_pct=0.9),
+            [np.array([5]), np.array([11]), np.array([17])]
+        ),
+        (
+            [np.array([0, 1, 2]), np.array([6, 7, 8]), np.array([12, 13, 14])],
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_pct=0.9, embargo_bars=1),
+            [np.array([5]), np.array([11]), np.array([17])]
+        ),
+        (
+            [np.array([0, 1, 2]), np.array([6, 7, 8]), np.array([12, 13, 14])],
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_pct=0.5),
+            [np.array([4, 5]), np.array([10, 11]), np.array([16, 17])]
+        ),
+        (
+            [np.array([2, 3]), np.array([8, 9, 10, 11]), np.array([19])],
+            [np.array([4, 5, 6, 7]), np.array([12, 13, 14, 15]), np.array([20, 21, 22, 23])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_pct=0.5, embargo_bars=1),
+            [np.array([5, 6, 7]), np.array([14, 15]), np.array([21, 22, 23])]
+        ),
+        (
+            [np.array([3, 4, 5]), np.array([9, 10, 11]), np.array([15, 16, 17])],
+            [np.array([0, 1, 2]), np.array([6, 7, 8]), np.array([12, 13, 14])],
+            [1, 3, 5], [0, 2, 4], dict(embargo_pct=0.9),
+            [np.array([0, 1, 2]), np.array([8]), np.array([14])]
+        ),
+        (
+            [np.array([2, 3]), np.array([8, 9, 10, 11]), np.array([19])],
+            [np.array([0, 1]), np.array([4, 5, 6, 7]), np.array([12, 13, 14, 15]), np.array([20, 21, 22, 23])],
+            [0, 2, 4], [1, 3, 5], dict(embargo_pct=0.5, embargo_bars=1),
+            [np.array([0, 1]), np.array([5, 6, 7]), np.array([14, 15]), np.array([21, 22, 23])]
+        ),
+
+    ]
+)
+def test_embargo(test_groups, train_groups, test_folds, train_folds, params, test_train_groups):
+    cv = CombinatorialCV(n_folds=6, k_tests=3, **params)
+    res_test_groups, res_train_groups = cv.apply_embargo(test_groups, train_groups, test_folds, train_folds)
+
+    # check test groups
+    assert len(res_test_groups) == len(test_groups)
+    for res, test in zip(res_test_groups, test_groups):
+        assert np.array_equal(res, test)
+
+    # check train groups
+    assert len(res_train_groups) == len(test_train_groups)
+    for res, train in zip(res_train_groups, test_train_groups):
+        assert np.array_equal(res, train)
+
+
+def test_base_flow_CombinatorialPurgedCV():
+    bars_timestamp_end = np.array(
+        [
+            0, 2, 4,
+            6, 8, 10,
+            12, 14, 16,
+            18, 20, 22,
+            24, 26, 28,
+            30, 32, 34,
+        ]
+    )
+    bars_timestamp_start = np.array(
+        [
+            1, 3, 5,
+            7, 9, 11,
+            13, 15, 17,
+            15, 15, 23,  # row[[0, 1]]!
+            25, 27, 29,
+            27, 33, 35,  # row[[0]]!
+        ]
+    )
+
+    X = pd.DataFrame(np.arange(18))
+    y = pd.Series(-np.arange(18), index=X.index)
+
+    cv = CombinatorialPurgedCV(
+        n_folds=5,
+        k_tests=2,
+        bars_timestamp_start=bars_timestamp_start,
+        bars_timestamp_end=bars_timestamp_end,
+        embargo_pct=0.5,
+        embargo_bars=1
+    )
+
+    splits = cv.split(X)
+    test_splits = [
+        (
+            np.arange(12, 18),
+            np.arange(8)
+        ),
+        (
+            np.array([6, 7, 14, 15, 16, 17]),
+            np.array([0, 1, 2, 3, 8, 9, 10, 11])
+        ),
+        (
+            np.array([6, 7, 8, 9, 10, 11, 16, 17]),
+            np.array([0, 1, 2, 3, 12, 13, 14]),
+        ),
+        (
+            np.array([6, 7, 8, 9, 10, 11, 12, 13, 14]),
+            np.array([0, 1, 2, 3, 16, 17]),
+        ),
+        (
+            np.array([0, 1, 2, 3, 16, 17]),
+            np.array([4, 5, 6, 7, 8, 9, 10, 11])
+        ),
+        # 6
+        (
+            np.array([0, 1, 2, 3, 10, 11, 16, 17]),
+            np.array([4, 5, 6, 7, 12, 13, 14]),
+        ),
+        (
+            np.array([0, 1, 2, 3, 10, 11, 12, 13, 14]),
+            np.array([4, 5, 6, 7, 16, 17]),
+        ),
+        (
+            np.array([0, 1, 2, 3, 4, 5, 6, 7]),
+            np.array([8, 9, 10, 11, 12, 13, 14])
+        ),
+        (
+            np.array([0, 1, 2, 3, 4, 5, 6, 7, 14]),
+            np.array([8, 9, 10, 11, 16, 17]),
+        ),
+        (
+            np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
+            np.array([12, 13, 14, 15, 16, 17])
+        )
+    ]
+
+    assert len(splits) == len(test_splits)
+
+    for i, (split, t_split) in enumerate(zip(splits, test_splits)):
+        assert np.array_equal(split[0], t_split[0])
+        assert np.array_equal(split[1], t_split[1])
+
+    bars = split_indexes_to_bars(X, y, splits)
+    predicted_splits = predict_splits(DecisionTreeRegressor(), bars, n_jobs=2)
+    paths = predicts_to_paths(
+        predicted_splits,
+        k_tests=cv.k_tests,
+        n_folds=cv.n_folds,
+        test_folds_sizes=cv.test_folds_sizes
+    )
+    path_indexes = [
+        np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17]),
+        np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17]),
+        np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17]),
+        np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]),
+    ]
+    assert len(path_indexes) == len(paths)
+    for path, p_idx in zip(paths, path_indexes):
+        assert np.array_equal(path['index'], p_idx)
+        assert all(len(p_idx) == len(v) for v in path.values())
+
+
+@pytest.mark.parametrize(
+    'to_i, res',
+    [
+        (
+            0,
+            np.array([0, 1])
+        ),
+        (
+            1,
+            np.array([4, 5])
+        ),
+        (
+            2,
+            np.array([4, 5, 6, 7])
+        ),
+        (
+            3,
+            np.array([4, 5, 6, 7, 8, 9])
+        ),
+        (
+            4,
+            np.array([12, 13])
+        ),
+    ]
+)
+def test_find_consecutive_groups(to_i, res):
+    groups = [[0, 1], [4, 5], [6, 7], [8, 9], [12, 13]]
+    groups = [np.array(g) for g in groups]
+    folds = [0, 2, 3, 4, 6]
+
+    series = CombinatorialCV.find_consecutive_groups(groups, folds, to_i)
+    assert np.array_equal(series, res)

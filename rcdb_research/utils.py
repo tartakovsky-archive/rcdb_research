@@ -5,7 +5,7 @@ import inspect
 import importlib
 from itertools import chain, repeat
 from collections import defaultdict
-from typing import Callable, Union, List, Dict
+from typing import Callable, Union, List, Dict, Optional
 
 import pandas as pd
 import numpy as np
@@ -114,7 +114,8 @@ def generate_constraints_function(constraints_string):
 
 def split_dict_array_values(
     d: Dict[str, Union[List, np.ndarray]],
-    splits: int
+    splits: Optional[int] = None,
+    split_sizes: Optional[List[int]] = None
 ) -> List[Dict[str, Union[np.ndarray]]]:
     """
     Split dict with array values to list of dict
@@ -124,17 +125,33 @@ def split_dict_array_values(
     >>> split_dict_array_values(dict(a=[1,2,3,4], b=[-1, -2, -3, -4]), 2)
     [{'a': array([1, 2]), 'b': array([-1, -2])},
     {'a': array([3, 4]), 'b': array([-3, -4])}]
+    >>> split_dict_array_values(dict(a=[1,2,3,4], b=[-1, -2, -3, -4]), split_sizes=[1, 3])
+    [{'a': array([1]), 'b': array([-1])},
+    {'a': array([2, 3, 4]), 'b': array([-2, -3, -4])}]
 
     :param d: input dict
     :param splits: number of splits
+    :param split_sizes: size of each split
     :return:
     """
+    if splits is not None:
+        return [
+            dict(zip(*x))
+            for x in zip(
+                repeat(d.keys(), splits),
+                zip(*list(map(lambda v: np.array_split(v, splits), d.values())))
+            )
+        ]
+
+    if split_sizes is None:
+        raise ValueError('Provide splits or split_sizes')
+
+    ends = np.add.accumulate(split_sizes)
+    starts = ends - np.array(split_sizes)
+
     return [
-        dict(zip(*x))
-        for x in zip(
-            repeat(d.keys(), splits),
-            zip(*list(map(lambda v: np.array_split(v, splits), d.values())))
-        )
+        {k: v[start:end] for k, v in d.items()}
+        for start, end in zip(starts, ends)
     ]
 
 

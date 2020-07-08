@@ -60,8 +60,8 @@ def splits(
     train_start, test_start, train_size, test_size = get_train_test(splits)
 
     # calculate starts & sizes of embargo bars
-    if hasattr(cv, 'embargo') and cv.embargo:
-        embargo_start, embargo_size = get_custom_bars(get_embargo_start, splits, cv.embargo, X)
+    if hasattr(cv, 'embargo_bars') and (cv.embargo_bars or cv.embargo_pct):
+        embargo_start, embargo_size = cv._embargo_starts[::-1], cv._embargo_sizes[::-1]
     else:
         embargo_start, embargo_size = [], []
 
@@ -214,7 +214,12 @@ def get_paths(X: pd.DataFrame, cv: CombinatorialCV) -> List[List[Tuple[int, int,
     ]
 
     paths: List[List[Tuple[int, int, int]]] = []  # [[(y, start, width)..]..]
-    for p in predicts_to_paths(predicts_like, k_tests=cv.k_tests, n_folds=cv.n_folds):
+    for p in predicts_to_paths(
+            predicts_like,
+            k_tests=cv.k_tests,
+            n_folds=cv.n_folds,
+            test_folds_sizes=cv.test_folds_sizes if hasattr(cv, 'test_folds_sizes') and cv.test_folds_sizes else None
+    ):
         path = []
         idxs = p['idxs']
         split = p['split']
@@ -269,7 +274,18 @@ def get_train_test(splits):
 
 
 def get_stats(cv, X, tainted_size, num_paths, **kwargs):
-    embargo_size = getattr(cv, 'embargo', 0)
+    if hasattr(cv, 'embargo_bars'):
+        embargo_pct = cv.embargo_pct
+        embargo_bars = cv.embargo_bars
+        if embargo_pct and embargo_bars:
+            embargo_size = f'{embargo_bars} bars or {embargo_pct * 100}%'
+        elif embargo_bars:
+            embargo_size = embargo_bars
+        else:
+            embargo_size = f'{embargo_pct * 100}%'
+
+    else:
+        embargo_size = 0
     tainting_size = tainted_size[0] if len(tainted_size) else 0
 
     if hasattr(cv, 'n_folds') or isinstance(cv, KFold):
