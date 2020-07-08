@@ -13,7 +13,8 @@ from ..sampling import bootstrap as run_bootstrap
 from ..metrics import proximity
 
 # Checks
-from sklearn.utils import check_random_state, check_X_y
+from sklearn.utils import check_random_state
+from .checks import check_X_y_labels, check_clusters
 # ---
 
 from sklearn.base import BaseEstimator, MetaEstimatorMixin
@@ -43,23 +44,8 @@ class NMI(MetaEstimatorMixin, BaseEstimator):
         self.feature_importances_df_ = None
 
     def fit(self, X, y, clusters=None, labels=None, **fit_params):
-        if labels is None:
-            labels = X.columns if hasattr(X, 'columns') else list(range(X.shape[1]))
-        index = X.index if hasattr(X, 'index') else list(range(X.shape[0]))
-        X, y = check_X_y(X, y)
-        X = pd.DataFrame(X, index=index, columns=labels)
-        y = pd.Series(y, index=index)  # refactor if profiler shows it's too slow
-
-        # If either clusterer or clusters are set, then feature clustering would be performad
-        if self.clusterer is not None:
-            if clusters is not None:
-                logging.warning(f'`clusterer` param is set, overriding `clusters` param')
-            self.clusterer.fit(X.T)
-            self.clusters = cluster_labels_to_clusters(self.clusterer.labels_, X.columns)
-        elif clusters is not None:
-            self.clusters = clusters
-        else:
-            self.clusters = [dict(name=col, columns=[col]) for col in X.columns]
+        X, y, labels, index = check_X_y_labels(X, y, labels)
+        self.clusters = check_clusters(X, self.clusterer, clusters, labels)
 
         # If both clusters and poolin_fn are set, then feature agglomeration would be performed
         # Clusters would be merged into single features usign the pooling_fn

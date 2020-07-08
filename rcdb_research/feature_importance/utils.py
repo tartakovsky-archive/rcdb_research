@@ -1,3 +1,6 @@
+import pandas as pd
+import numpy as np
+
 from operator import itemgetter
 from itertools import groupby
 from typing import List
@@ -24,8 +27,9 @@ def cluster_labels_to_clusters(labels: List[int], columns: List[str]) -> List[di
 
 
 def feature_importances(fitted_estimator):
-    if isinstance(fitted_estimator, (LGBMClassifier, RandomForestClassifier)):
+    if hasattr(fitted_estimator, 'feature_importances_'):
         return fitted_estimator.feature_importances_
+
     if isinstance(fitted_estimator, (BaggingClassifier, CSBBClassifier)):
         rows = [
             dict(zip(fts, est.feature_importances_)) for fts, est in zip(fitted_estimator.estimators_features_,
