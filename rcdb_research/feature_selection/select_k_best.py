@@ -24,10 +24,10 @@ class SelectKBest(MetaEstimatorMixin, SelectorMixin, BaseEstimator):
 
     def fit(self, X, y, clusters=None, labels=None, **fit_params):
         X, y, labels, index = check_X_y_labels(X, y, labels)
-        self.clusters = check_clusters(X, self.clusterer, clusters, labels)
         self.labels = labels
+        self.clusters = check_clusters(X, self.clusterer, clusters, self.labels)
 
-        self.estimator.fit(X, y, clusters, labels, **fit_params)
+        self.estimator.fit(X, y, self.clusters, self.labels, **fit_params)
 
     def _get_support_mask(self):
         scores = feature_importances(self.estimator)
