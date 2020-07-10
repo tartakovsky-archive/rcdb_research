@@ -11,7 +11,7 @@ import numpy as np
 import logging
 
 from rcdb_research.sampling import sequential_bootstrap
-from rcdb_research.feature_importance.utils import cluster_labels_to_clusters
+from rcdb_research.feature_importance.utils import cluster_ids_to_clusters
 
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 import warnings
@@ -221,7 +221,7 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
                 logging.warning(f'`clusterer` param is set, ignoring `clusters` param')
             X_ = pd.DataFrame(X, columns=labels)
             self.clusterer.fit(X_.T)
-            clusters = cluster_labels_to_clusters(self.clusterer.labels_, X_.columns)
+            clusters = cluster_ids_to_clusters(self.clusterer.labels_, X_.columns)
         else:
             X_ = pd.DataFrame(X, columns=labels)
             clusters = clusters or [
