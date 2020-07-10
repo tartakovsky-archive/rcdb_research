@@ -295,7 +295,7 @@ def compute_MDA_refactored(X, y, clf, agglomeration, score, other_params, score_
     labels = agglomeration.labels_
     matrix = agglomeration.affinity(X.T)
 
-    cv = CombinatorialCV(n_folds=other_params['N'], k_tests=other_params['k'], embargo=other_params['embargo'],
+    cv = CombinatorialCV(n_folds=other_params['N'], k_tests=other_params['k'], embargo_bars=other_params['embargo_bars'],
                          tainted_up_to=None)
     indexes = cv.split(features)
     splits = split_indexes_to_bars(features, y, indexes)
