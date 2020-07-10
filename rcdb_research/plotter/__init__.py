@@ -11,10 +11,11 @@ from .primitives import hist_partitioned  # noqa
 from .reports import trading_report  # noqa
 from .reports import splits, splits_colors  # noqa
 from .reports import curves_and_outcomes  # noqa
+from .reports import clustered_importance  # noqa
 
 from .utils import second_index, configure_axis  # noqa
 
 from .style import fig_kwargs, ax_kwargs, line_kwargs, hist_kwargs, suptitle_kwargs  # noqa
 
 from .components import calibration, monte_carlo, distcomp, histcomp  # noqa
-from .components import importance, dendrogram, proximity, cluster_scores # noqa
+from .components import importance, dendrogram, proximity, cluster_scores  # noqa

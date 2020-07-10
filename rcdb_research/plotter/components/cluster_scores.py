@@ -59,7 +59,7 @@ def cluster_scores(scores: np.ndarray,
                 start = cum_cluster_sizes[cid] - cluster_sizes[cid]
                 matrix[start + f1id][start + f2id] = scores[cid]
 
-    clustered_labels = np.array(list(flatten([c['columns'] for c in clusters])), dtype=object)
+    clustered_labels = list(flatten([c['columns'] for c in clusters]))
 
     if 'vmin' not in heatmap_kwargs.keys() or 'vmax' not in heatmap_kwargs.keys():
         heatmap_kwargs['vmin'] = max(abs(scores))

@@ -1,8 +1,11 @@
+
 import numpy as np
 from typing import Optional
+import matplotlib.pyplot as plt
 from matplotlib import ticker
 
 from .. import style
+from ..utils import configure_axis
 from ..primitives import bars_pn
 
 
@@ -55,20 +58,24 @@ def importance(means: np.ndarray,
             maxes = np.array(sorted_lists[3])
         # ---
 
-    fig, axis = bars_pn(y=means,
-                        x=x,
-                        width=0.8,
-                        threshold=threshold,
-                        orientation=orientation,
-                        thr_orientation='v' if orientation == 'h' else 'h',
-                        title=title,
-                        xlabel=xlabel,
-                        ylabel=ylabel,
-                        fig_kwargs=fig_kwargs,
-                        ax_kwargs=ax_kwargs,
-                        pos_bar_kwargs=pos_bar_kwargs,
-                        neg_bar_kwargs=neg_bar_kwargs,
-                        ax=ax)
+    figax = bars_pn(y=means,
+                    x=x,
+                    width=0.8,
+                    threshold=threshold,
+                    orientation=orientation,
+                    thr_orientation='v' if orientation == 'h' else 'h',
+                    title=title,
+                    xlabel=xlabel,
+                    ylabel=ylabel,
+                    fig_kwargs=fig_kwargs,
+                    ax_kwargs=ax_kwargs,
+                    pos_bar_kwargs=pos_bar_kwargs,
+                    neg_bar_kwargs=neg_bar_kwargs,
+                    ax=ax)
+
+    # Configure axis. Set labels, fonts, formatters, grid, etc.
+    fig, axis = figax if ax is None else (plt.gcf(), ax)
+    configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
     axis.invert_yaxis()
 
