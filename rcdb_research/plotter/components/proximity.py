@@ -47,12 +47,8 @@ def proximity(matrix: np.ndarray,
 
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
-    mask = np.triu(np.ones(matrix.shape), k=1).astype(np.bool)
-
-    #     axis.yaxis.set_label_position('right')
-    #     axis.yaxis.set_ticks_position('right')
     cmap = sns.cm.rocket if distance else sns.cm.rocket_r
-    sns.heatmap(matrix, mask=mask, ax=ax, yticklabels=labels, annot=annotate, cmap=cmap, square=True,
+    sns.heatmap(matrix, ax=ax, yticklabels=labels, annot=annotate, cmap=cmap, square=True,
                 cbar_kws={"shrink": .75, 'location': 'bottom'}, annot_kws=annotate_kwargs, **heatmap_kwargs)
 
     if ax is None:
