@@ -8,8 +8,10 @@ from warnings import warn
 from abc import ABCMeta, abstractmethod
 import pandas as pd
 import numpy as np
+import logging
 
 from rcdb_research.sampling import sequential_bootstrap
+from rcdb_research.feature_importance.utils import cluster_labels_to_clusters
 
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 import warnings
@@ -138,6 +140,7 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
                  max_samples=1.0,
                  max_features=1.0,
                  bootstrap_features=False,
+                 clusterer=None,
                  oob_score=False,
                  warm_start=False,
                  n_jobs=None,
@@ -155,6 +158,7 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
             n_jobs=n_jobs,
             random_state=random_state,
             verbose=verbose)
+        self.clusterer = clusterer
 
         # pylint: disable=invalid-name
         #         self.samples_info_sets = samples_info_sets
@@ -167,26 +171,32 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
 
         # self.X_time_index = None  # Timestamp index of X_train
 
-    def fit(self, X, y, sample_weight=None, t1=None, bars_idx=None, clusters=None):
+    def fit(self, X, y, sample_weight=None, t1=None, bars_idx=None, clusters=None, labels=None):
         if (t1 is not None) ^ (bars_idx is not None):
             raise ValueError('both t1 and bars_idx must be specified')
         if clusters is not None:
-            if not isinstance(X, pd.DataFrame):
-                raise ValueError('when clusters is not None, X must be a pandas DataFrame instance')
             flattened_clusters = list(sorted([y for x in clusters for y in x['columns']]))
-            columns = list(sorted(X.columns))
-            if flattened_clusters != columns:
-                raise ValueError('clusters content doesn\'t match X.columns')
-
+            if isinstance(X, pd.DataFrame):
+                columns = list(sorted(X.columns))
+                if flattened_clusters != columns:
+                    raise ValueError('clusters content doesn\'t match X.columns')
+            elif isinstance(X, np.ndarray):
+                if labels is None:
+                    raise ValueError('X is np.ndarray and labels is None')
+                if flattened_clusters != list(sorted(labels)):
+                    raise ValueError('clusters content doesn\'t match labels')
+                if len(labels) != X.shape[1]:
+                    raise ValueError('labels content doesn\'t match X.shape[1]')
         return self._fit(
             X, y,
-            self.max_samples, sample_weight=sample_weight, t1=t1, bars_idx=bars_idx, clusters=clusters
+            self.max_samples, sample_weight=sample_weight, t1=t1, bars_idx=bars_idx, clusters=clusters, labels=labels
         )
 
-    def _fit(self, X, y, max_samples=None, max_depth=None, sample_weight=None, t1=None, bars_idx=None, clusters=None):
+    def _fit(self, X, y, max_samples=None, max_depth=None, sample_weight=None, t1=None, bars_idx=None, clusters=None,
+             labels=None):
         #         spans = encode(X[['t0', 't1']].values, self.bars_idx)
         #         X = X.drop(['t0', 't1'], axis=1)
-        column_names = deepcopy(X.columns)
+        column_names = deepcopy(X.columns) if isinstance(X, pd.DataFrame) else labels
 
         self.t1 = t1
         self.bars_idx = bars_idx
@@ -205,6 +215,19 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
         if sample_weight is not None:
             sample_weight = check_array(sample_weight, ensure_2d=False)
             check_consistent_length(y, sample_weight)
+
+        if self.clusterer is not None:
+            if clusters is not None:
+                logging.warning(f'`clusterer` param is set, ignoring `clusters` param')
+            X_ = pd.DataFrame(X, columns=labels)
+            self.clusterer.fit(X_.T)
+            clusters = cluster_labels_to_clusters(self.clusterer.labels_, X_.columns)
+        else:
+            X_ = pd.DataFrame(X, columns=labels)
+            clusters = clusters or [
+                dict(name=col, columns=[col])
+                for col in X_.columns
+            ]
 
         # Remap output
         n_samples, self.n_features_ = X.shape
@@ -374,6 +397,7 @@ class CSBBClassifier(CSBBBase, BaggingClassifier, ClassifierMixin):
                  max_samples=1.0,
                  max_features=1.0,
                  bootstrap_features=False,
+                 clusterer=None,
                  oob_score=False,
                  warm_start=False,
                  n_jobs=None,
@@ -386,6 +410,7 @@ class CSBBClassifier(CSBBBase, BaggingClassifier, ClassifierMixin):
             max_samples=max_samples,
             max_features=max_features,
             bootstrap_features=bootstrap_features,
+            clusterer=clusterer,
             oob_score=oob_score,
             warm_start=warm_start,
             n_jobs=n_jobs,

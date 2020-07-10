@@ -3,9 +3,6 @@ import numpy as np
 
 from natsort import natsorted
 
-from sklearn.ensemble import BaggingClassifier
-from ..models import CSBBClassifier
-
 
 def cluster_ids_to_clusters(cluster_ids, labels=None):
     if labels is None:
@@ -32,6 +29,8 @@ def feature_importances(fitted_estimator):
     if hasattr(fitted_estimator, 'feature_importances_'):
         return fitted_estimator.feature_importances_
 
+    from sklearn.ensemble import BaggingClassifier
+    from ..models import CSBBClassifier
     if isinstance(fitted_estimator, (BaggingClassifier, CSBBClassifier)):
         rows = [
             dict(zip(fts, est.feature_importances_)) for fts, est in zip(fitted_estimator.estimators_features_,
