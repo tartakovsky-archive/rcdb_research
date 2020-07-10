@@ -9,8 +9,8 @@ from ..utils import configure_axis
 
 
 def proximity(matrix: np.ndarray,
-              labels: Optional[List] = None,
               clusters: Optional[List[list]] = None,
+              labels: Optional[List] = None,
               distance=True,
               annotate: bool = True,
               title: Optional[str] = 'Proximity matrix',
