@@ -1,26 +1,29 @@
 import pandas as pd
 import numpy as np
 
-from operator import itemgetter
-from itertools import groupby
-from typing import List
+from natsort import natsorted
 
 from sklearn.ensemble import BaggingClassifier
 from ..models import CSBBClassifier
 
 
-def cluster_labels_to_clusters(labels: List[int], columns: List[str]) -> List[dict]:
-    tuples = list(zip(labels, columns))
-    groups = groupby(tuples, key=itemgetter(0))
-    column_groups = [[v for k, v in g] for k, g in groups]
+def cluster_ids_to_clusters(cluster_ids, labels=None):
+    if labels is None:
+        labels = np.arange(len(cluster_ids))
 
-    clusters = [
-        dict(
-            name=f'{columns[0]}+{len(columns) - 1}',
-            columns=columns
-        )
-        for columns in column_groups
-    ]
+    # pre-create cluster list
+    clusters = [dict(name=i, columns=[]) for i in np.unique(cluster_ids)]
+
+    # put each label into corresponding cluster
+    for i, cid in enumerate(cluster_ids):
+        clusters[cid]['columns'].append(labels[i])
+
+    # rename clusters
+    for c in clusters:
+        c['name'] = f"{c['columns'][0]}+{len(c['columns']) - 1}"
+
+    # natsort clusters by name
+    clusters = natsorted(clusters, key=lambda item: item['name'])
 
     return clusters
 

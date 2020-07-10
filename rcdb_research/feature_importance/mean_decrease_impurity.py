@@ -8,7 +8,7 @@ from scipy.stats import rankdata
 from sklearn.cluster import AgglomerativeClustering
 from tqdm.auto import tqdm
 
-from .utils import cluster_labels_to_clusters, feature_importances
+from .utils import cluster_ids_to_clusters, feature_importances
 
 from ..sampling import optimal_block_size
 from ..sampling import bootstrap as run_bootstrap
@@ -172,7 +172,7 @@ def mdi(estimator,
         if clusters is not None:
             logging.warning(f'`clusterer` param is set, ignoring `clusters` param')
         clusterer.fit(X.T)
-        clusters = cluster_labels_to_clusters(clusterer.labels_, X.columns)
+        clusters = cluster_ids_to_clusters(clusterer.labels_, X.columns)
     else:
         clusters = clusters or [
             dict(name=col, columns=[col])
