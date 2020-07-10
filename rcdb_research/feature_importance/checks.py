@@ -4,7 +4,7 @@ import pandas as pd
 
 from sklearn.utils import check_X_y
 
-from ..feature_importance.utils import cluster_labels_to_clusters
+from ..feature_importance.utils import cluster_ids_to_clusters
 
 
 def check_X_y_labels(X, y, labels):
@@ -23,7 +23,7 @@ def check_clusters(X, clusterer, clusters, labels):
         if clusters is not None:
             logging.warning(f'`clusterer` param is set, overriding `clusters` param')
         clusterer.fit(X.T)
-        clusters = cluster_labels_to_clusters(clusterer.labels_, labels)
+        clusters = cluster_ids_to_clusters(clusterer.labels_, labels)
     elif clusters is not None:
         clusters = clusters
     else:

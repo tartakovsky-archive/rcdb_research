@@ -4,6 +4,35 @@ from . import style
 
 from typing import Optional
 
+import matplotlib.colors as mcolors
+
+
+def make_cmap(seq):
+    """Return a LinearSegmentedColormap
+    seq: a sequence of floats and RGB-tuples. The floats should be increasing
+    and in the interval (0,1).
+    """
+    seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
+    cdict = {'red': [], 'green': [], 'blue': []}
+    for i, item in enumerate(seq):
+        if isinstance(item, float):
+            r1, g1, b1 = seq[i - 1]
+            r2, g2, b2 = seq[i + 1]
+            cdict['red'].append([item, r1, r2])
+            cdict['green'].append([item, g1, g2])
+            cdict['blue'].append([item, b1, b2])
+    return mcolors.LinearSegmentedColormap('CustomMap', cdict)
+
+
+def make_diverging_cmap(high=(0.565, 0.392, 0.173), center=(1.0, 1.0, 1.0), low=(0.094, 0.310, 0.635)):
+    # low and high are colors that will be used for the two
+    # ends of the spectrum. they can be either color strings
+    # or rgb color tuples
+
+    c = mcolors.ColorConverter().to_rgb
+    high, center, low = [(c(col) if isinstance(col, str) else col) for col in [high, center, low]]
+    return make_cmap([low, c('white'), 0.5, c('white'), high])
+
 
 def second_index(ax, x2: np.ndarray, x1: Optional[list] = None, xlabel: Optional[str] = None, ax_kwargs=None):
     ax_kwargs = ax_kwargs or style.ax_kwargs()

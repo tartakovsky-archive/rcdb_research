@@ -12,7 +12,7 @@ from sklearn.model_selection import BaseCrossValidator
 from .mean_decrease_accuracy import mda
 from .mutual_information import nmi
 from .mean_decrease_impurity import mdi
-from .utils import cluster_labels_to_clusters
+from .utils import cluster_ids_to_clusters
 from ..sampling.cv import CombinatorialCV
 
 # Checks
@@ -105,7 +105,7 @@ def efi(estimator,
         if clusters is not None:
             logging.warning(f'`clusterer` param is set, ignoring `clusters` param')
         clusterer.fit(X.T)
-        clusters = cluster_labels_to_clusters(clusterer.labels_, X.columns)
+        clusters = cluster_ids_to_clusters(clusterer.labels_, X.columns)
     else:
         clusters = clusters or [
             dict(name=col, columns=[col])
