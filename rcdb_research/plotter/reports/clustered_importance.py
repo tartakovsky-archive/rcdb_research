@@ -1,17 +1,8 @@
-import numpy as np
-from pandas.core.common import flatten
-
-from typing import Optional, List
+from typing import Optional
 
 import matplotlib.pyplot as plt
-from matplotlib import ticker
-from matplotlib.lines import Line2D
 from matplotlib.gridspec import GridSpec
-
 from .. import style
-from ..utils import configure_axis
-
-from .. import primitives as prim
 from .. import components as comp
 
 
@@ -37,8 +28,8 @@ def clustered_importance(proximity_matrix,
         fig.add_subplot(gs[1, 1:3]),
     ]
 
-    clustered_labels = list(flatten([c['columns'] for c in clusters]))
+    cluster_labels = [c['name'] for c in clusters]
 
     comp.proximity(proximity_matrix, clusters=clusters, labels=labels, ax=axes[0])
     comp.cluster_scores(scores, clusters=clusters, labels=labels, ax=axes[1])
-    comp.importance(scores, labels=[c['name'] for c in clusters], sort=True, ax=axes[2])
+    comp.importance(scores, labels=cluster_labels, sort=True, ax=axes[2])
