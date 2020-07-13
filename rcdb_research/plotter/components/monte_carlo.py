@@ -9,6 +9,7 @@ from ..primitives import line_pn
 
 
 def monte_carlo(curves: list,
+                x=None,
                 plot_mean=False,
                 plot_median=False,
                 threshold=None,
@@ -40,10 +41,12 @@ def monte_carlo(curves: list,
     fig, axis = plt.subplots(**fig_kwargs) if ax is None else (plt.gcf(), ax)
     configure_axis(axis, title, xlabel, ylabel, ax_kwargs=ax_kwargs)
 
+    x = np.arange(curves[0].size) if x is None else x
+
     # plot lines
     for c in curves:
         if threshold is None:
-            axis.plot(c, **line_kwargs)
+            axis.plot(x, c, **line_kwargs)
         else:
             line_pn(c, threshold=threshold, pos_line_kwargs=pos_line_kwargs,
                     neg_line_kwargs=neg_line_kwargs, ax=axis)
@@ -59,7 +62,8 @@ def monte_carlo(curves: list,
     axis.axhline(y=threshold or 0, linewidth=1, linestyle='--', color='black')
 
     if show_dates:
-        second_index(axis, datestring(curves[0].index), ax_kwargs=ax_kwargs)
+        axis.set_xlabel(None)
+        second_index(axis, datestring(curves[0].index), xlabel=xlabel, ax_kwargs=ax_kwargs)
 
     if ax is None:
         return fig, axis

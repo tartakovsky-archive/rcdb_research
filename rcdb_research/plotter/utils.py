@@ -53,8 +53,8 @@ def second_index(ax, x2: np.ndarray, x1: Optional[list] = None, xlabel: Optional
     ax2.spines['bottom'].set_position(('outward', 20))
 
     ax2.set_xlabel(xlabel, fontsize=ax_kwargs['labelsize'], labelpad=ax_kwargs['labelpad'])
-    ax2.tick_params(axis='both', which='major', labelsize=ax_kwargs['ticksize'])
-
+    if ax_kwargs.get('tick_params', None) is not None:
+        ax2.tick_params(**ax_kwargs['tick_params'])
     [lbl.set_rotation(ax_kwargs['xtickrotation']) for lbl in ax2.get_xticklabels()]
 
 

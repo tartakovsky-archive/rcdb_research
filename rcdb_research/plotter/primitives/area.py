@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from typing import Optional
 
 from .. import style
-from ..utils import configure_axis
+from ..utils import configure_axis, second_index, datestring
 
 
 def area(y1: np.array,
@@ -16,6 +16,7 @@ def area(y1: np.array,
          fig_kwargs: Optional[dict] = None,
          ax_kwargs: Optional[dict] = None,
          label: str = None,
+         show_dates=False,
          ax=None) -> Optional[tuple]:
     fig_kwargs = {**style.fig_kwargs(), **(fig_kwargs or {})}
     ax_kwargs = {**style.ax_kwargs(), **(ax_kwargs or {})}
@@ -30,6 +31,10 @@ def area(y1: np.array,
     axis.plot(x, y1, label=label, **line_kwargs)
     axis.plot(x, y2, **line_kwargs)
     axis.fill_between(x, y1, y2, facecolor=line_kwargs['color'], alpha=0.5)
+
+    if show_dates:
+        axis.set_xlabel(None)
+        second_index(axis, datestring(y1.index), xlabel=xlabel, ax_kwargs=ax_kwargs)
 
     if ax is None:
         return fig, axis

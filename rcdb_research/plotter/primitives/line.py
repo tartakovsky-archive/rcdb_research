@@ -32,7 +32,8 @@ def line(y,
         axis.fill_between(x, y, facecolor=line_kwargs['color'], alpha=0.65)
 
     if show_dates:
-        second_index(axis, datestring(y[0].index), ax_kwargs=ax_kwargs)
+        axis.set_xlabel(None)
+        second_index(axis, datestring(y.index), xlabel=xlabel, ax_kwargs=ax_kwargs)
 
     if ax is None:
         return fig, axis
