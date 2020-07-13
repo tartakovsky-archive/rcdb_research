@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 from typing import Optional
 
 from .. import style
-from ..utils import configure_axis
+from ..utils import configure_axis, second_index, datestring
 
 
-def line_pn(y: np.array,
-            x: np.array = None,
+def line_pn(y,
+            x=None,
             threshold: float = 0,
             title: Optional[str] = None,
             xlabel: Optional[str] = None,
@@ -16,7 +16,9 @@ def line_pn(y: np.array,
             ax_kwargs: Optional[dict] = None,
             pos_line_kwargs: Optional[dict] = None,
             neg_line_kwargs: Optional[dict] = None,
-            fill: bool = False, ax=None) -> Optional[tuple]:
+            fill: bool = False,
+            show_dates: bool = False,
+            ax=None) -> Optional[tuple]:
     fig_kwargs = {**style.fig_kwargs(), **(fig_kwargs or {})}
     ax_kwargs = {**style.ax_kwargs(), **(ax_kwargs or {})}
     pos_line_kwargs = {**style.line_kwargs(color='#49b4f2'), **(pos_line_kwargs or {})}
@@ -40,6 +42,9 @@ def line_pn(y: np.array,
         axis.plot(x, y_neg, **neg_line_kwargs)
         if fill:
             axis.fill_between(x, threshold, y_neg, facecolor=neg_line_kwargs['color'], alpha=0.65)
+
+    if show_dates:
+        second_index(axis, datestring(y[0].index), ax_kwargs=ax_kwargs)
 
     if ax is None:
         return fig, axis

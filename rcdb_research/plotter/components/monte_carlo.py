@@ -3,12 +3,12 @@ from matplotlib import ticker
 from typing import List, Optional
 import numpy as np
 
-from ..utils import configure_axis
+from ..utils import configure_axis, second_index, datestring
 from .. import style
 from ..primitives import line_pn
 
 
-def monte_carlo(curves: List[np.ndarray],
+def monte_carlo(curves: list,
                 plot_mean=False,
                 plot_median=False,
                 threshold=None,
@@ -22,6 +22,7 @@ def monte_carlo(curves: List[np.ndarray],
                 neg_line_kwargs: Optional[dict] = None,
                 mean_kwargs: Optional[dict] = None,
                 median_kwargs: Optional[dict] = None,
+                show_dates: bool = False,
                 ax=None) -> Optional[tuple]:
     fig_kwargs = {**style.fig_kwargs(figsize=(16, 7)), **(fig_kwargs or {})}
     ax_kwargs = {
@@ -56,6 +57,9 @@ def monte_carlo(curves: List[np.ndarray],
         axis.plot(median, **median_kwargs)
 
     axis.axhline(y=threshold or 0, linewidth=1, linestyle='--', color='black')
+
+    if show_dates:
+        second_index(axis, datestring(curves[0].index), ax_kwargs=ax_kwargs)
 
     if ax is None:
         return fig, axis
