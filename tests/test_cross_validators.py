@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.model_selection import cross_val_score
 
-from rcdb_research.cross_validation import \
+from rcdb_research.sampling.cv.walk_forward import \
     WalkForwardCV, cross_val_predict_timeseries_splits
 
 from rcdb_research.sampling.cv.combinatorial import \

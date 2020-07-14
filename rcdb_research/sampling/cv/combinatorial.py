@@ -475,6 +475,9 @@ def predicts_to_paths(
     else:
         raise ValueError('Unexpected value of k_tests')
 
+    if k_tests == 1:
+        return [utils.merge_dicts_array_values(predicts)]
+
     # place preds to folds
     preds_splits = [
         [None for _ in range(n_folds)]
