@@ -1,10 +1,28 @@
-from typing import List, Dict, Optional
-import numpy as np
+from typing import List, Optional, Dict
 import logging
+import numpy as np
 
-from .general import optimal_block_size, bootstrap
+from .wrappers import bootstrap, optimal_block_size
+
+# Bootstrap ndarrays
+
+bootstrap_1d = bootstrap
 
 
+def bootstrap_2d(data: List[np.ndarray],
+                 method: str,
+                 block_size: Optional[int] = None,
+                 subsample_size: int = None,
+                 repeats: int = 100,
+                 seed: int = None,
+                 verbose: bool = True) -> List[List[np.ndarray]]:
+    return [
+        bootstrap(array, method, block_size, subsample_size, repeats, seed, verbose)
+        for array in data
+    ]
+
+
+# Bootstrap {y_true, y_pred, index} dicts
 def bootstrap_path(data: Dict[str, np.ndarray],
                    method: str,
                    block_size: Optional[int] = None,
@@ -33,6 +51,9 @@ def bootstrap_path(data: Dict[str, np.ndarray],
     ]
 
     return resampled_paths
+
+
+bootstrap_path_1d = bootstrap_path
 
 
 def bootstrap_path_2d(data: List[Dict[str, np.ndarray]],
