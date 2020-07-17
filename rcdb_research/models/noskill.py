@@ -12,7 +12,8 @@ SCORE_CLASSIFIER_MAPPING = dict(
     f=partial(DummyClassifier, strategy='stratified'),
     roc_auc=partial(DummyClassifier, strategy='stratified'),
     avg_prec=partial(DummyClassifier, strategy='stratified'),
-    neg_log_loss=partial(DummyClassifier, strategy='prior')
+    neg_log_loss=partial(DummyClassifier, strategy='prior'),
+    bounded_log_loss=partial(DummyClassifier, startegy='prior')
 )
 
 
