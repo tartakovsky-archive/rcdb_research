@@ -14,7 +14,7 @@ def sequential_bootstrap(data: np.ndarray,
                          bars_idx: np.ndarray,
                          subsample_size: int = None,
                          repeats: int = 100,
-                         seed: int = None,
+                         seed: int = 0,
                          n_jobs=1,
                          verbose: bool = True):
     def run_seq_b(t1, bars_idx, subsample_size, seed):  # noqa
@@ -89,7 +89,8 @@ def bootstrap(data: np.ndarray,
         samples = stationary_bootstrap(data, block_size, repeats, subsample_size)
     elif method == 'seqb':
         samples = sequential_bootstrap(data=data, t1=kwargs['t1'], bars_idx=kwargs['bars_idx'],
-                                       repeats=repeats, subsample_size=subsample_size,
+                                       subsample_size=subsample_size, repeats=repeats,
+                                       seed=np.random.randint(2**32-1),
                                        n_jobs=kwargs.get('n_jobs', 1), verbose=verbose)
     else:  # iid
         samples = iid_bootstrap(data, repeats, subsample_size)
