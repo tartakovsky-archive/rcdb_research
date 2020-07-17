@@ -167,7 +167,7 @@ def average_uniqueness(t1, bars_idx, sample):
     return avg_uniq
 
 
-def perlabel_uniqueness(t1, bars_idx, sample):
+def per_label_uniqueness(t1, bars_idx, sample):
     spans = encode(t1, bars_idx)
     s = spans[sample]
     active = np.ones(s.max() + 2)
