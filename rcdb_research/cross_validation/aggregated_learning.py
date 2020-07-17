@@ -5,7 +5,7 @@ from sklearn.base import clone, BaseEstimator
 import numpy as np
 import pandas as pd
 
-from .timeseries import WalkForwardCV
+from ..sampling.cv import WalkForwardCV
 
 
 class MultiInputSplitter(WalkForwardCV):

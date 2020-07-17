@@ -14,6 +14,7 @@ from .. import style
 from .. import utils
 from ..primitives.legend import HandlerColormap
 from ...sampling.cv.combinatorial import CombinatorialCV, predicts_to_paths
+from ...sampling.cv.walk_forward import WalkForwardCV
 
 MAX_NUM_COLORS_OF_PATHS = 20
 
@@ -308,7 +309,7 @@ def get_stats(cv, X, tainted_size, num_paths, **kwargs):
     if not num_paths and hasattr(cv, 'get_n_paths'):
         num_paths = cv.get_n_paths(cv.k_tests, cv.n_folds)
 
-    return {
+    stats = {
         'paths': num_paths or 1,
         'fold size': fold_size,
         'folds': folds,
@@ -318,6 +319,11 @@ def get_stats(cv, X, tainted_size, num_paths, **kwargs):
         'tainting size': tainting_size,
         'splits': kwargs['splits_count']
     }
+    if isinstance(cv, WalkForwardCV):
+        for k in ['fold size', 'folds', 'trains folds', 'tests folds', 'embargo size', 'tainting size']:
+            del stats[k]
+
+    return stats
 
 
 def draw_barh(starts, sizes, label, color, axis, splits):
