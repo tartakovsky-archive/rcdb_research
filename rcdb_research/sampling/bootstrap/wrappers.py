@@ -90,7 +90,7 @@ def bootstrap(data: np.ndarray,
     elif method == 'seqb':
         samples = sequential_bootstrap(data=data, t1=kwargs['t1'], bars_idx=kwargs['bars_idx'],
                                        repeats=repeats, subsample_size=subsample_size,
-                                       n_jobs=kwargs['n_jobs'], verbose=verbose)
+                                       n_jobs=kwargs.get('n_jobs', 1), verbose=verbose)
     else:  # iid
         samples = iid_bootstrap(data, repeats, subsample_size)
 
