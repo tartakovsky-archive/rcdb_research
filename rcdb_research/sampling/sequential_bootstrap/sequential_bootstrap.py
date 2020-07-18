@@ -157,7 +157,7 @@ def sequential_bootstrap(t1, bars_idx, sample_size=None, seed=0):
 def average_uniqueness(t1, bars_idx, sample):
     spans = encode(t1, bars_idx)
     s = spans[sample]
-    active = np.ones(s.max() + 2)
+    active = np.zeros(s.max() + 2)
     uniq = np.ones(s.shape[0])
     for a, b in s:
         active[a:b + 1] += 1
@@ -170,7 +170,7 @@ def average_uniqueness(t1, bars_idx, sample):
 def per_label_uniqueness(t1, bars_idx, sample):
     spans = encode(t1, bars_idx)
     s = spans[sample]
-    active = np.ones(s.max() + 2)
+    active = np.zeros(s.max() + 2)
     uniq = np.ones(s.shape[0])
     for a, b in s:
         active[a:b + 1] += 1
