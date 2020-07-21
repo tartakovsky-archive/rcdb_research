@@ -1,7 +1,7 @@
 import pandas as pd
 import backtrader as bt
 
-from .wrappers import CommInfoFractional, bt_data_feed_factory, BtRcdbStrategy
+from .wrappers import CommInfoFractional, bt_data_feed_factory, BtRcdbStrategy, CommInfoRcdb
 from ..simulation.trades import Trades
 
 
@@ -29,11 +29,15 @@ def get_trading_simulation(
     :return:
     """
     cerebro = bt.Cerebro()
-    cerebro.broker.addcommissioninfo(CommInfoFractional())
-    cerebro.broker.setcommission(
-        commission=-exchange.costs.taker_fee - exchange.costs.impact - exchange.costs.drift,
-        leverage=1 / exchange.initial_margin
-    )
+    # cerebro.broker.addcommissioninfo(CommInfoFractional())
+    cerebro.broker.addcommissioninfo(
+        CommInfoRcdb(
+            leverage=1 / exchange.initial_margin,
+            limit_pct=0.001, market_pct=0.001))
+    # cerebro.broker.setcommission(
+    #     commission=-exchange.costs.taker_fee - exchange.costs.impact - exchange.costs.drift,
+    #     leverage=1 / exchange.initial_margin
+    # )
     cerebro.broker.setcash(initial_cash)
     data = bt_data_feed_factory(df_data)(dataname=df_data)
     cerebro.adddata(data)
@@ -54,9 +58,11 @@ def get_trading_simulation(
     strat = strategies[0]
 
     df = pd.DataFrame(strat.story)
+    pd_index = pd.DatetimeIndex(df.datetime)
+    df.index = pd_index
 
     trades_bt = Trades(
-        index=pd.DatetimeIndex(df.datetime),
+        index=pd_index,
         balance=df.balance.values,
         unrealized_pnl=df.unrealized_pnl.values,
         exposure=df.exposure_current.values,

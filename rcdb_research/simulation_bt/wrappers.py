@@ -67,6 +67,8 @@ class BtRcdbStrategy(bt.Strategy):
         self.entry_limit = entry_limit
         self.risk_management_pre_trade = risk_management_pre_trade if risk_management_pre_trade else []
 
+        self.i = -1
+
     def get_risk_adjusted_exposure(self, desired_exposure):
         exposure_arr = [desired_exposure]
         for cb in self.risk_management_pre_trade:
@@ -100,7 +102,13 @@ class BtRcdbStrategy(bt.Strategy):
         return False, False
 
     def next(self):
+        self.i += 1
+
         size_info = self.calc_size()
+
+        if self.i >= 6984:
+            print(size_info)
+
         self.story.append(size_info.__dict__)
         if not self.has_signal():
             return
@@ -221,3 +229,39 @@ class CommInfoFractional(bt.CommissionInfo):
         :return:
         """
         return self.p.leverage * (cash / price)
+
+
+# class CommInfoRcdb(bt.CommInfoBase):
+#     params = (
+#         ('leverage', 1),
+#         ('stocklike', False),  # Futures
+#         ('commtype', bt.CommInfoBase.COMM_PERC),  # Apply Commission
+#
+#         # Custom params for the discount
+#         ('limit_pct', 0.002),  # minimum contracts to achieve discount
+#         ('market_pct', 0.002),  #
+#     )
+#
+#     negotiated_volume = 0  # attribute to keep track of the actual volume
+#
+#     def getsize(self, price, cash):
+#         """
+#         Returns fractional size for cash operation @price
+#         :param price:
+#         :param cash:
+#         :return:
+#         """
+#         return self.p.leverage * (cash / price)
+#
+#     def _getcommission(self, size, price, pseudoexec):
+#         limit_pct = self.p.limit_pct
+#         market_pct = self.p.market_pct
+#
+#         commission = self.p.commission * (1.0 - actual_discount)
+#         commvalue = size * price * commission
+#
+#         if not pseudoexec:
+#             # keep track of actual real executed size for future discounts
+#             self.negotiated_volume += size
+#
+#         return commvalue
