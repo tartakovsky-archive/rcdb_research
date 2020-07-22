@@ -49,7 +49,7 @@ def time(df: pd.DataFrame, period: Union[str, pd.DateOffset, pd.Timedelta, int],
 
 
 @check_type
-def percent(df: pd.DataFrame, threshold: float, **kwargs) -> pd.DataFrame:
+def percent_o2c(df: pd.DataFrame, threshold: float, **kwargs) -> pd.DataFrame:
     """
     Price move (range) accumulation feature. Fixed % range.
 
@@ -68,6 +68,33 @@ def percent(df: pd.DataFrame, threshold: float, **kwargs) -> pd.DataFrame:
         Consolidated data
     """
     df['f'] = price_pct_threshold(df.open.values, df.close.values, threshold, None, None)
+    bars = consolidate(df, column_name="f", **kwargs).drop(columns=['f'])
+    df.drop(columns=['f'], inplace=True)
+    return bars
+
+
+@check_type
+def percent(df: pd.DataFrame, threshold: float, **kwargs) -> pd.DataFrame:
+    """
+    C-C consolidator. Fixed % range.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        input ohlcv dataframe
+    threshold : float
+        Event UP/DOWN is generated after price moves by more percent than this threshold
+    kwargs : dict
+        Additional data for `~rcdb_research.bars.functions.consolidate`
+
+    Returns
+    -------
+    pd.DataFrame
+        Consolidated data
+    """
+    prev_close = df.close.shift().copy()
+    prev_close[0] = df.open[0]
+    df['f'] = price_pct_threshold(prev_close.values, df.close.values, threshold, None, None)
     bars = consolidate(df, column_name="f", **kwargs).drop(columns=['f'])
     df.drop(columns=['f'], inplace=True)
     return bars

@@ -13,6 +13,7 @@ from rcdb_research.bars.functions import move_feature_by_nans
     'func, params',
     [
         (bars.facade.time, dict(period=5)),
+        (bars.facade.percent_o2c, dict(threshold=.5)),
         (bars.facade.percent, dict(threshold=.5)),
         (bars.facade.fixed, dict(threshold=.5, column='col')),
         (bars.facade.adaptive, dict(avg_per=3, window=5, column='col')),
@@ -128,9 +129,9 @@ def ohlcv_df_nans(request, ohlcv_df):
                 index=pd.to_datetime(['22/10/2019 12:00:00', '22/10/2019 12:00:03'])
             )
         ),
-        # percent
+        # percent_o2c
         (
-            bars.percent, dict(threshold=0.5),
+            bars.percent_o2c, dict(threshold=0.5),
             pd.DataFrame(
                 {
                     'open': [1, 3, 6],
@@ -147,6 +148,29 @@ def ohlcv_df_nans(request, ohlcv_df):
 
                 },
                 index=pd.to_datetime(['22/10/2019 12:00:00', '22/10/2019 12:00:02', '22/10/2019 12:00:05'])
+            )
+        ),
+        # percent
+        (
+            bars.percent, dict(threshold=0.5),
+            pd.DataFrame(
+                {
+                    'open': [1, 3, 4, 6],
+                    'high': [3, 4, 6, 7],
+                    'low': [1, 3, 4, 6],
+                    'close': [2, 3, 5, 6],
+                    'volume_buy': [30, 30, 90, 60],
+                    'volume_sell': [1, 2, 1, 3],
+                    'volume_quote_buy': [3, 3, 9, 6],
+                    'volume_quote_sell': [3, 3, 9, 6],
+                    'ticks_buy': [3, 3, 9, 6],
+                    'ticks_sell': [3, 3, 9, 6],
+                    'custom_col': [.1, .3, .4, .6]
+
+                },
+                index=pd.to_datetime(
+                    ['22/10/2019 12:00:00', '22/10/2019 12:00:02', '22/10/2019 12:00:04', '22/10/2019 12:00:05']
+                )
             )
         ),
         # fixed_volume
@@ -360,13 +384,14 @@ def test_bars(func, params, test_res_df, input_df):
 
     res_df = func(input_df, **params)
     res_df = res_df[sorted(res_df.columns)]
+    print(res_df.to_string())
     assert res_df.equals(test_res_df[sorted(test_res_df)])
 
 
 @pytest.mark.parametrize(
     'func, params',
     [
-        (bars.percent, dict(threshold=0.5)),
+        (bars.percent_o2c, dict(threshold=0.5)),
         (bars.fixed_volume, dict(threshold=20)),
         (bars.fixed_quote_volume, dict(threshold=600)),
         (bars.fixed_ticks, dict(threshold=30)),
@@ -378,7 +403,7 @@ def test_bars(func, params, test_res_df, input_df):
         (bars.adaptive_percent, dict(avg_per=1, window=3)),
     ],
     ids=[
-        'percent', 'fixed_volume', 'fixed_quote_volume', 'fixed_ticks',
+        'percent_o2c', 'fixed_volume', 'fixed_quote_volume', 'fixed_ticks',
         'adaptive_volume', 'adaptive_quote_volume', 'adaptive_ticks',
         'fixed_percent_fixed_ticks', 'fixed_percent_fixed_time', 'adaptive_percent'
     ]

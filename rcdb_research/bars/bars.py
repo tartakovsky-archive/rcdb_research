@@ -5,6 +5,7 @@ from . import facade
 
 # Fixed threshold
 time = facade.time
+percent_o2c = facade.percent_o2c
 percent = facade.percent
 all_possible_percent_bars = facade.all_possible_percent_bars
 fixed_volume = partial(facade.fixed, column='volume')
