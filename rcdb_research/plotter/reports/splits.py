@@ -23,7 +23,8 @@ def splits_colors(tainted='#414BB2',
                   train='#2D9BF0',
                   test='#FAC710',
                   embargo='#F24726',
-                  gap='lightcoral') -> dict:
+                  gap='lightcoral',
+                  purged='#E8E9EB') -> dict:
     return locals()
 
 
@@ -65,6 +66,18 @@ def splits(
         embargo_start, embargo_size = cv._embargo_starts[::-1], cv._embargo_sizes[::-1]
     else:
         embargo_start, embargo_size = [], []
+
+    # calculate starts & sizes of purged bars
+    purged_start, purged_size = [], []
+    if hasattr(cv, '_purged_bars') and any(len(x) for x in cv._purged_bars):
+        for dataset in reversed(cv._purged_bars):
+            if len(dataset):
+                bars = pieces(dataset)
+                purged_start.append(bars[0])
+                purged_size.append(bars[1])
+            else:
+                purged_start.append([])
+                purged_size.append([])
 
     # calculate starts & sizes of gap bars
     if hasattr(cv, 'last_n_gap_size') and cv.last_n_gap_size:
@@ -125,6 +138,7 @@ def splits(
     _draw_barh(embargo_start, embargo_size, 'embargo', colors['embargo'])
     _draw_barh(gap_start, gap_size, 'gap', colors['gap'])
     _draw_barh(tainted_start, tainted_size, 'tainted', colors['tainted'])
+    _draw_barh(purged_start, purged_size, 'purged', colors['purged'])
 
     if paths:
         draw_paths(paths, index, axis)

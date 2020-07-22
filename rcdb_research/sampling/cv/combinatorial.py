@@ -308,6 +308,8 @@ class CombinatorialPurgedCV(CombinatorialCV):
     ):
         super().__init__(n_folds, embargo_bars, embargo_pct, tainted_up_to, k_tests)
 
+        self._purged_bars = []
+
         if bars_timestamp_start.shape != bars_timestamp_end.shape:
             raise ValueError('bars_timestamp_start and bars_timestamp_end has different shape')
 
@@ -318,6 +320,7 @@ class CombinatorialPurgedCV(CombinatorialCV):
 
     def split(self, X: Union[PandasLike, np.ndarray], *args, **kwargs) -> List[Split]:
         self.test_folds_sizes.clear()
+        self._purged_bars.clear()
         return super().split(X, *args, **kwargs)
 
     def purge(
@@ -325,7 +328,7 @@ class CombinatorialPurgedCV(CombinatorialCV):
             test_groups: List[np.ndarray],
             train_groups: List[np.ndarray],
     ) -> Tuple[List[np.ndarray], List[np.array]]:
-
+        _test_groups = test_groups
         test_groups = copy.deepcopy(test_groups)
         groups_lasts = sorted(
             [
@@ -347,14 +350,19 @@ class CombinatorialPurgedCV(CombinatorialCV):
 
         for i, (train_idx, *_) in filter(lambda x: x[1][1], enumerate(grouped_groups_lasts)):
             for *_, test_group_i in takewhile(lambda g: not g[1], grouped_groups_lasts[i + 1:]):
+                print(i, test_group_i)
                 test_group = test_groups[test_group_i]
                 test_groups[test_group_i] = \
                     test_group[self.bars_timestamp_start[test_group] > self.bars_timestamp_end[train_idx]]
-
         self.test_folds_sizes.append(
             [len(g) for g in test_groups]
         )
 
+        self._purged_bars.append(
+            np.sort(
+                list(set(np.hstack(_test_groups)) - set(np.hstack(test_groups)))
+            )
+        )
         return test_groups, train_groups
 
 
