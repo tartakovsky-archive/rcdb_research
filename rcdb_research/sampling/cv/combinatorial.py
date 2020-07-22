@@ -350,7 +350,6 @@ class CombinatorialPurgedCV(CombinatorialCV):
 
         for i, (train_idx, *_) in filter(lambda x: x[1][1], enumerate(grouped_groups_lasts)):
             for *_, test_group_i in takewhile(lambda g: not g[1], grouped_groups_lasts[i + 1:]):
-                print(i, test_group_i)
                 test_group = test_groups[test_group_i]
                 test_groups[test_group_i] = \
                     test_group[self.bars_timestamp_start[test_group] > self.bars_timestamp_end[train_idx]]
