@@ -13,7 +13,9 @@ def get_trading_simulation(
         use_worst_pnl=False,
         bt_strategy=BtRcdbStrategy,
         risk_management_pre_trade=None,
-        entry_limit=False) -> (Trades, pd.DataFrame):
+        entry_limit=False,
+        limit_offset_pct=0,
+        limit_offset_min=0) -> (Trades, pd.DataFrame):
     """
     Do all the magic to configure backtrader, run simulation and get results.
 
@@ -26,6 +28,8 @@ def get_trading_simulation(
     :param bt_strategy: backtrader strategy class
     :param risk_management_pre_trade: pre trader callback (modifies desired exposure before execution)
     :param entry_limit: increase position with limit orders
+    :param limit_offset_pct: limit order price offset in percents
+    :param limit_offset_min: minimal absolute limit order price offset
     :return:
     """
     cerebro = bt.Cerebro()
@@ -44,7 +48,9 @@ def get_trading_simulation(
         sizing=sizing,
         use_worst_pnl=use_worst_pnl,
         risk_management_pre_trade=risk_management_pre_trade,
-        entry_limit=entry_limit
+        entry_limit=entry_limit,
+        limit_offset_pct=limit_offset_pct,
+        limit_offset_min=limit_offset_min
     )
 
     # Analyzer

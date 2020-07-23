@@ -66,9 +66,6 @@ def test_Backtrader_consolidation_2nd_dataset(datasets):  # noqa
     df_data = datasets[0]['bars']
     df_res = datasets[0]['addtitonal_datasets']['self']['bars']
 
-    print("ASDSDASDASDSADSDAS")
-    print(list(df_data['signal'].values))
-
     assert (df_data.open.values == df_res.open.values).all()
     assert (df_data.high.values == df_res.high.values).all()
     assert (df_data.low.values == df_res.low.values).all()
@@ -104,7 +101,7 @@ def test_Backtrader_Simulation_run(datasets):  # noqa
         use_worst_pnl=False
     )
 
-    assert df_sim.balance.values[-1] == 740793.2485289685
+    assert round(df_sim.balance.values[-1], 2) == 740793.25
 
 
 @pytest.mark.parametrize(
@@ -136,7 +133,7 @@ def test_Backtrader_Simulation_run_limit(datasets):  # noqa
         entry_limit=True
     )
 
-    assert df_sim.balance.values[-1] == 745700.9576640638
+    assert round(df_sim.balance.values[-1], 2) == 745700.96
 
 
 @pytest.mark.parametrize(
@@ -180,7 +177,7 @@ def test_Backtrader_Simulation_custom_sizing(datasets):  # noqa
         bt_strategy=BtCustom
     )
 
-    assert df_sim.balance.values[-1] == 801287.4259508352
+    assert round(df_sim.balance.values[-1], 2) == 801287.43
 
 
 @pytest.mark.parametrize(
@@ -228,7 +225,7 @@ def test_Backtrader_Simulation_risk_management(datasets):  # noqa
         risk_management_pre_trade=[max_dd_risk_manager(max_dd_allowed=0.3)]
     )
 
-    assert df_sim.balance.values[-1] == 740793.2485289685
+    assert round(df_sim.balance.values[-1], 2) == 740793.25
 
 
 @pytest.mark.parametrize(
@@ -285,4 +282,4 @@ def test_Backtrader_Simulation_run_2nd_exchange_sanity_check(datasets):  # noqa
         use_worst_pnl=False
     )
 
-    assert df_sim.balance.values[-1] == 740793.2485289685
+    assert round(df_sim.balance.values[-1], 2) == 740793.25

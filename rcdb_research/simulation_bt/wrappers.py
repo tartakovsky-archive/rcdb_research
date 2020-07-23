@@ -1,6 +1,7 @@
 import math
 import backtrader as bt
 import datetime
+from typing import List
 from dataclasses import dataclass
 
 
@@ -13,6 +14,7 @@ class SizeInfo:
     exposure_desired: float
     size_desired: float
     size_to_execute: float
+    target_price: float
 
 
 @dataclass
@@ -59,13 +61,19 @@ class BtRcdbStrategy(bt.Strategy):
                  use_worst_pnl=False,
                  verbose=False,
                  risk_management_pre_trade=None,
-                 entry_limit=False):
+                 entry_limit=False,
+                 limit_offset_pct=0,
+                 limit_offset_min=0):
         self.story = []
         self.sizing = sizing
         self.use_worst_pnl = use_worst_pnl
         self.verbose = verbose
         self.entry_limit = entry_limit
         self.risk_management_pre_trade = risk_management_pre_trade if risk_management_pre_trade else []
+        self.target_price = None
+        self.limit_offset_pct = limit_offset_pct
+        self.limit_offset_min = limit_offset_min
+        self.active_orders: List[bt.Order] = []
 
     def get_risk_adjusted_exposure(self, desired_exposure):
         exposure_arr = [desired_exposure]
@@ -102,18 +110,44 @@ class BtRcdbStrategy(bt.Strategy):
     def next(self):
         size_info = self.calc_size()
         self.story.append(size_info.__dict__)
+        self.target_price = None
+
+        # print("\r\n", self.data.datetime[0])
+        # print("init self.active_orders", [o.Status[o.status] for o in self.active_orders])
+        # print("position", self.position.size)
+
+        # cancel open orders
+        for o in self.active_orders:
+            self.cancel(o)
+        # self.active_orders = []
+
         if not self.has_signal():
             return
 
         is_position_increase, is_sign_change = self.is_position_increase(size_info)
 
+        # print("is_position_increase", is_position_increase)
+        # print("is_sign_change", is_sign_change)
+
         if is_sign_change:
-            self.order_target_size(target=0)
+            if size_info.size_desired > 0:
+                self.buy(size=size_info.size_to_execute - size_info.size_desired)
+            else:
+                self.sell(size=size_info.size_to_execute - size_info.size_desired)
+
             size_to_execute = size_info.size_desired
         else:
             size_to_execute = size_info.size_to_execute
 
+        # print("size_info.size_desired", size_info.size_desired)
+        # print("size_info.size_to_execute", size_info.size_to_execute)
+        # print("size_to_execute", size_to_execute)
+
         exec_type = bt.Order.Limit if self.entry_limit else bt.Order.Market
+        is_buy = size_to_execute > 0
+
+        # print("is_buy", is_buy)
+
         if size_to_execute != 0:
             order_kwargs = dict(
                 size=size_to_execute,
@@ -121,14 +155,24 @@ class BtRcdbStrategy(bt.Strategy):
             )
             if exec_type == bt.Order.Limit:
                 order_kwargs['exectype'] = exec_type
-                order_kwargs['price'] = self._close
+                price_base = self._close
+                price_offset = price_base * self.limit_offset_pct
+                price_offset = price_offset if price_offset > self.limit_offset_min else self.limit_offset_min
+                if is_buy:
+                    order_kwargs['price'] = price_base - price_offset
+                else:
+                    order_kwargs['price'] = price_base + price_offset
 
-            if size_to_execute > 0:
+                self.target_price = order_kwargs['price']
+
+            if is_buy:
                 o = self.buy(**order_kwargs)
             else:
                 o = self.sell(**order_kwargs)
 
-            return o
+            self.active_orders.append(o)
+
+        # print("scheduled self.active_orders", [o.Status[o.status] for o in self.active_orders])
 
     @property
     def max_long_lev(self):
@@ -195,6 +239,7 @@ class BtRcdbStrategy(bt.Strategy):
 
         return SizeInfo(
             datetime=self.data.num2date(self.data.datetime[0]),
+            target_price=self.target_price,
             balance=portfolio_value - position_pnl_close,
             unrealized_pnl=position_pnl_worst if self.use_worst_pnl else position_pnl_close,
             exposure_current=exposure_curr,
