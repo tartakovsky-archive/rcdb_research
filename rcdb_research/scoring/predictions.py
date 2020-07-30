@@ -1,6 +1,7 @@
 from sklearn.calibration import calibration_curve
 from typing import List, Dict, Callable, Tuple
 import numpy as np
+from joblib import Parallel, delayed
 
 
 def score_path(data: Dict[str, np.ndarray],
@@ -32,28 +33,24 @@ def calibrate_path(path, n_bins=20, strategy='quantile') -> Tuple[np.ndarray, np
     return true, pred
 
 
-def calibrate_path_2d(list2d, n_bins=20, strategy='quantile') -> Tuple[np.ndarray, np.ndarray]:
-    trues = []
-    preds = []
+def calibrate_path_2d(list2d, n_bins=20, strategy='quantile', n_jobs=1) -> Tuple[np.ndarray, np.ndarray]:
+    tasks = []
     for path in list2d:
-        true, pred = calibration_curve(
+        tasks.append(delayed(calibration_curve)(
             path['y_true'], path['y_pred'], n_bins=n_bins, strategy=strategy
-        )
-        trues.append(true)
-        preds.append(pred)
-
+        ))
+    results = Parallel(n_jobs)(tasks)
+    trues, preds = zip(*results)
     return np.hstack(trues), np.hstack(preds)
 
 
-def calibrate_path_3d(list3d, n_bins=20, strategy='quantile') -> Tuple[np.ndarray, np.ndarray]:
-    trues = []
-    preds = []
+def calibrate_path_3d(list3d, n_bins=20, strategy='quantile', n_jobs=1) -> Tuple[np.ndarray, np.ndarray]:
+    tasks = []
     for list2d in list3d:
         for path in list2d:
-            true, pred = calibration_curve(
+            tasks.append(delayed(calibration_curve)(
                 path['y_true'], path['y_pred'], n_bins=n_bins, strategy=strategy
-            )
-            trues.append(true)
-            preds.append(pred)
-
+            ))
+    results = Parallel(n_jobs)(tasks)
+    trues, preds = zip(*results)
     return np.hstack(trues), np.hstack(preds)
