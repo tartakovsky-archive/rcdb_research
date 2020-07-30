@@ -198,7 +198,7 @@ def fixed(df: pd.DataFrame, threshold: float, column: str, **kwargs) -> pd.DataF
 
 
 @check_type
-def adaptive(df: pd.DataFrame, avg_per: int, window: int, column: str, **kwargs):
+def adaptive(df: pd.DataFrame, avg_per: int, window: int, column: str, n: int = None, **kwargs):
     """
     Adaptive Threshold
     Adaptive accumulating feature. Create new bar when threshold reaches "weekly average for year".
@@ -213,6 +213,8 @@ def adaptive(df: pd.DataFrame, avg_per: int, window: int, column: str, **kwargs)
         Series should aggregate window amount of averaged (by avg_per) series
     column : str
          The name of the aggregated column
+    n : int, optional
+        Calculate threshold every n bars instead of each bar
     kwargs : dict
         Additional data for `~rcdb_research.bars.functions.consolidate`
 
@@ -223,7 +225,7 @@ def adaptive(df: pd.DataFrame, avg_per: int, window: int, column: str, **kwargs)
     """
     not_null_rows = ~pd.isnull(df[column])
     df['f'] = 0
-    df.loc[not_null_rows, 'f'] = adaptive_threshold(df[not_null_rows][column].values, avg_per, window)
+    df.loc[not_null_rows, 'f'] = adaptive_threshold(df[not_null_rows][column].values, avg_per, window, n)
 
     nan_end_index = df.f[pd.isnull(df.f)].index[-1]
     df.loc[:nan_end_index, 'f'] = np.nan

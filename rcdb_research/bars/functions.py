@@ -5,7 +5,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from numba import njit
-from numpy_ext import rolling_apply
+from numpy_ext import rolling_apply, nans
 
 
 DEFAULT_AGGREGATE_MAPPING = {
@@ -251,7 +251,7 @@ def fixed_threshold(series: np.ndarray, threshold: float) -> np.ndarray:
     return feature
 
 
-def adaptive_threshold(series: np.ndarray, avg_per: int, window: int) -> np.ndarray:
+def adaptive_threshold(series: np.ndarray, avg_per: int, window: int, n: int = None) -> np.ndarray:
     """
     Adaptive Threshold
     Adaptive accumulating feature. Create new bar when threshold reaches "weekly average for year".
@@ -264,6 +264,8 @@ def adaptive_threshold(series: np.ndarray, avg_per: int, window: int) -> np.ndar
         Get rolling avg_per count series avg
     window : int
         Series should aggregate window amount of averaged (by avg_per) series
+    n : int, optional
+        Calculate threshold every n bars instead of each bar
 
     Returns
     -------
@@ -275,11 +277,11 @@ def adaptive_threshold(series: np.ndarray, avg_per: int, window: int) -> np.ndar
     >>> adaptive_threshold(np.array([100, 200, 300, 1000, 600, 200, 300, 1, 20]), 2, 5)
     array([nan, nan, nan, nan,  0.,  0.,  1.,  0.,  0.])
     """
-    series_threshold = rolling_apply(
-        (lambda s: np.sum(s) / (len(s) / avg_per)),
-        window,
-        series
-    )
+    if n:
+        series_threshold = calculate_adaptive_threshold_n_bars(series, avg_per, window, n)
+    else:
+        series_threshold = calculate_adaptive_threshold_rolling_window(series, avg_per, window)
+
     bars = []
     agg_sum = 0
     for [v_series, v_threshold] in np.column_stack([series, series_threshold]):
@@ -297,6 +299,33 @@ def adaptive_threshold(series: np.ndarray, avg_per: int, window: int) -> np.ndar
     feature = np.array(bars)
     assert feature.shape == series.shape
     return feature
+
+
+def calculate_adaptive_threshold_n_bars(series: np.ndarray, avg_per: int, window: int, n: int):
+    size = len(series)
+    end_range = np.arange(n, size, n)
+    end_range = np.hstack((end_range, [size]))
+    start_range = end_range - n
+
+    range_filter = start_range >= window
+    start_range = start_range[range_filter]
+    end_range = end_range[range_filter]
+
+    res = nans(size)
+
+    for start, end in zip(start_range, end_range):
+        s = series[start - window:start + 1]
+        res[start:end] = np.sum(s) / (len(s) / avg_per)
+
+    return res
+
+
+def calculate_adaptive_threshold_rolling_window(series: np.ndarray, avg_per: int, window: int):
+    return rolling_apply(
+        (lambda s: np.sum(s) / (len(s) / avg_per)),
+        window,
+        series
+    )
 
 
 def price_pct__series_fixed(open: np.ndarray, close: np.ndarray, price_threshold: float,
