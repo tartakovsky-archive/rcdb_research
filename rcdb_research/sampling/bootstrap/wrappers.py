@@ -109,7 +109,7 @@ def bootstrap(data: np.ndarray,
             tasks.append(delayed(with_seed(seed_)(sequential_bootstrap))(
                 data=data, t1=kwargs['t1'], bars_idx=kwargs['bars_idx'],
                 repeats=chunksize, subsample_size=subsample_size,
-                n_jobs=kwargs.get('n_jobs', 1), verbose=verbose
+                n_jobs=1, verbose=verbose
             ))
         else:  # iid
             tasks.append(delayed(with_seed(seed_)(iid_bootstrap))(data, chunksize, subsample_size))
