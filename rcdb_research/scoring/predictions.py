@@ -26,7 +26,7 @@ def score_path_3d(data: List[List[Dict[str, np.ndarray]]],
         for d in dicts:
             tasks.append(delayed(fn)(d['y_true'], d['y_pred']))
     n_jobs_ = int(n_jobs if n_jobs > 0 else multiprocessing.cpu_count())
-    result = Parallel(n_jobs, batch_size=int(np.ceil(len(tasks)/n_jobs_)))(tasks)
+    result = Parallel(n_jobs)(tasks)
 
     # restore the nested structure:
     i = 0
