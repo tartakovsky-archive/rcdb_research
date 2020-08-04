@@ -9,6 +9,7 @@ SCORE_CLASSIFIER_MAPPING = dict(
     roc_auc=partial(DummyClassifier, strategy='stratified'),
     avg_prec=partial(DummyClassifier, strategy='stratified'),
     log_loss=partial(DummyClassifier, strategy='prior'),
+    brier=partial(DummyClassifier, strategy='prior'),
 )
 
 
