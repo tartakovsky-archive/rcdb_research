@@ -15,9 +15,10 @@ def bootstrap_2d(data: List[np.ndarray],
                  subsample_size: int = None,
                  repeats: int = 100,
                  seed: int = None,
-                 verbose: bool = True) -> List[List[np.ndarray]]:
+                 verbose: bool = True,
+                 n_jobs: int = 1) -> List[List[np.ndarray]]:
     return [
-        bootstrap(array, method, block_size, subsample_size, repeats, seed, verbose)
+        bootstrap(array, method, block_size, subsample_size, repeats, seed, verbose, n_jobs)
         for array in data
     ]
 
@@ -29,7 +30,8 @@ def bootstrap_path(data: Dict[str, np.ndarray],
                    subsample_size: int = None,
                    repeats: int = 100,
                    seed: int = None,
-                   verbose: bool = True) -> List[Dict[str, np.ndarray]]:
+                   verbose: bool = True,
+                   n_jobs: int = 1) -> List[Dict[str, np.ndarray]]:
     if block_size is None and method in ['mbb', 'cbb', 'sbb']:
         block_size = optimal_block_size(data['y_pred'], method)
         if verbose:
@@ -40,7 +42,7 @@ def bootstrap_path(data: Dict[str, np.ndarray],
 
     indices = np.arange(data['y_pred'].size)
     samples = bootstrap(indices, method=method, block_size=block_size,
-                        subsample_size=subsample_size, repeats=repeats, seed=seed, verbose=verbose)
+                        subsample_size=subsample_size, repeats=repeats, seed=seed, verbose=verbose, n_jobs=n_jobs)
     resampled_paths = [
         {
             'y_true': data['y_true'][sample],
@@ -62,8 +64,9 @@ def bootstrap_path_2d(data: List[Dict[str, np.ndarray]],
                       subsample_size: int = None,
                       repeats: int = 100,
                       seed: int = None,
-                      verbose: bool = True) -> List[List[Dict[str, np.ndarray]]]:
+                      verbose: bool = True,
+                      n_jobs: int = True) -> List[List[Dict[str, np.ndarray]]]:
     return [
-        bootstrap_path(path, method, block_size, subsample_size, repeats, seed, verbose)
+        bootstrap_path(path, method, block_size, subsample_size, repeats, seed, verbose, n_jobs)
         for path in data
     ]

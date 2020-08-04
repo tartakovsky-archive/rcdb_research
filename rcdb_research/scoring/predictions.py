@@ -1,3 +1,5 @@
+import multiprocessing
+
 from sklearn.calibration import calibration_curve
 from typing import List, Dict, Callable, Tuple
 import numpy as np
@@ -10,19 +12,32 @@ def score_path(data: Dict[str, np.ndarray],
 
 
 def score_path_2d(data: List[Dict[str, np.ndarray]],
-                  fn: Callable[[np.ndarray, np.ndarray], float]) -> List[float]:
-    return [
-        fn(d['y_true'], d['y_pred'])
-        for d in data
-    ]
+                  fn: Callable[[np.ndarray, np.ndarray], float], n_jobs: int = 1) -> List[float]:
+    tasks = []
+    for d in data:
+        tasks.append(delayed(fn)(d['y_true'], d['y_pred']))
+    return Parallel(n_jobs)(tasks)
 
 
 def score_path_3d(data: List[List[Dict[str, np.ndarray]]],
-                  fn: Callable[[np.ndarray, np.ndarray], float]) -> List[List[float]]:
-    return [
-        [fn(d['y_true'], d['y_pred']) for d in dicts]
-        for dicts in data
-    ]
+                  fn: Callable[[np.ndarray, np.ndarray], float], n_jobs: int = 1) -> List[List[float]]:
+    tasks = []
+    for dicts in data:
+        for d in dicts:
+            tasks.append(delayed(fn)(d['y_true'], d['y_pred']))
+    n_jobs_ = int(n_jobs if n_jobs > 0 else multiprocessing.cpu_count())
+    result = Parallel(n_jobs, batch_size=int(np.ceil(len(tasks)/n_jobs_)))(tasks)
+
+    # restore the nested structure:
+    i = 0
+    ret = []
+    for dicts in data:
+        tmp = []
+        for d in dicts:
+            tmp.append(result[i])
+            i += 1
+        ret.append(tmp)
+    return ret
 
 
 def calibrate_path(path, n_bins=20, strategy='quantile') -> Tuple[np.ndarray, np.ndarray]:
