@@ -65,7 +65,7 @@ def bootstrap_path_2d(data: List[Dict[str, np.ndarray]],
                       repeats: int = 100,
                       seed: int = None,
                       verbose: bool = True,
-                      n_jobs: int = True) -> List[List[Dict[str, np.ndarray]]]:
+                      n_jobs: int = 1) -> List[List[Dict[str, np.ndarray]]]:
     return [
         bootstrap_path(path, method, block_size, subsample_size, repeats, seed, verbose, n_jobs)
         for path in data
