@@ -10,6 +10,7 @@ import pandas as pd
 from sklearn.base import clone, BaseEstimator
 from sklearn.model_selection import BaseCrossValidator
 from joblib import Parallel, delayed
+from tqdm.auto import tqdm
 
 from ... import utils
 
@@ -401,7 +402,8 @@ def predict_splits(
         labels: Optional[List[str]] = None,
         fit_params: Optional[dict] = None,
         predict_params: Optional[dict] = None,
-        n_jobs: int = -1
+        n_jobs: int = -1,
+        progress_bar: bool = False
 ) -> List[Dict[str, np.ndarray]]:
     """
     Aggregated splits prediction
@@ -414,6 +416,7 @@ def predict_splits(
     :param fit_params: params for clf.fit
     :param predict_params: params for clf.predict
     :param n_jobs: count of jobs for joblib.Parallel
+    :param progress_bar: whether to use tqdm (only for n_jobs=1)
     :return: (y_true, y_pred, y_train_pred) if predict_train else (y_true, y_pred)
     """
 
@@ -423,11 +426,14 @@ def predict_splits(
     def predict_split(clf, split, predict_proba, predict_train, fit_params, predict_params, clusters, labels):
         X_train, y_train, X_test, y_test = itemgetter('X_train', 'y_train', 'X_test', 'y_test')(split)
 
+        fit_params = fit_params.copy()
+        t1 = fit_params.pop('t1', None)
         clf.fit(
             X_train, y_train,
             **{
                 **({'clusters': clusters} if 'clusters' in inspect.getfullargspec(clf.fit).args else {}),
                 **({'labels': labels} if 'labels' in inspect.getfullargspec(clf.fit).args else {}),
+                **({'t1': t1[X_train.index]} if t1 is not None else {}),
                 **fit_params
             }
         )
@@ -457,14 +463,17 @@ def predict_splits(
             }
         return res
 
+    tqdm_ = lambda x: x
     if n_jobs == 1:
         parallel, fn = list, predict_split
+        if progress_bar:
+            tqdm_ = lambda x: tqdm(x, desc='splits processed')
     else:
         parallel, fn = Parallel(n_jobs=n_jobs), delayed(predict_split)
 
     return parallel(
         fn(clone(clf), split, predict_proba, predict_train, fit_params, predict_params, clusters, labels)
-        for split in splits
+        for split in tqdm_(splits)
     )
 
 
