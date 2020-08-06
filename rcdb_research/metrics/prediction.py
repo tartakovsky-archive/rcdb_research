@@ -28,6 +28,7 @@ bounded_log_loss_scorer = make_scorer(bounded_log_loss, needs_proba=True)
 # Bounded Relative Log Loss
 ##################
 
+
 def bounded_relative_log_loss(y_true, y_proba, no_skill_score=None, bounds=(0.0015, 0.013), sample_weight=None):
     if no_skill_score is None:
         X = np.zeros((y_true.size, 2))

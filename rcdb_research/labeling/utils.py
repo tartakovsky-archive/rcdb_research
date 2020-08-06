@@ -65,7 +65,7 @@ def calculate_daily_volatility(close: pd.Series, span0: int = 100) -> pd.DataFra
     return df0
 
 
-@numba.jit(nopython=True, parallel=True)
+@numba.jit(parallel=True)
 def triple_barrier(
     close: np.array,
     daily_volatility: np.array,

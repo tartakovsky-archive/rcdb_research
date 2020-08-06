@@ -28,7 +28,7 @@ def datasets():
                 "self": dict(bars=df)
             },
             'consolidators': [
-                dict(type='percent', kwargs=dict(threshold=0.005)),
+                dict(type='percent_o2c', kwargs=dict(threshold=0.005)),
             ],
             'date_range': {
                 'start': '2010-01-01',
