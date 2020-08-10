@@ -222,12 +222,12 @@ class CSBBBase(BaseBagging, metaclass=ABCMeta):
             X_ = pd.DataFrame(X, columns=labels)
             self.clusterer.fit(X_.T)
             clusters = cluster_ids_to_clusters(self.clusterer.labels_, X_.columns)
-        else:
-            X_ = pd.DataFrame(X, columns=labels)
-            clusters = clusters or [
-                dict(name=col, columns=[col])
-                for col in X_.columns
-            ]
+        # else:
+        #     X_ = pd.DataFrame(X, columns=column_names)
+        #     clusters = clusters or [
+        #         dict(name=col, columns=[col])
+        #         for col in X_.columns
+        #     ]
 
         # Remap output
         n_samples, self.n_features_ = X.shape
