@@ -9,6 +9,7 @@ from joblib import Parallel, delayed
 from .functions import consolidate, price_pct_threshold, \
     fixed_threshold, adaptive_threshold, price_pct__series_fixed, \
     time_fixed, adaptive_percent_dynamic_threshold, fixed_percent_fixed_time_feature, \
+    imbalance_feature, imbalance_feature_const, \
     DEFAULT_AGGREGATE_MAPPING
 
 
@@ -335,6 +336,78 @@ def fixed_percent_fixed_time(
         indexes=df.index.values,
         values=df[column].values,
         period=pd.Timedelta(period).to_timedelta64(),
+        threshold=threshold
+    )
+    bars = consolidate(df, column_name='f', **kwargs).drop(columns=['f'])
+    df.drop(columns=['f'], inplace=True)
+    return bars
+
+
+@check_type
+def imbalance(
+    df: pd.DataFrame,
+    ema_window: int,
+    column: str = 'volume',
+    **kwargs
+) -> pd.DataFrame:
+    """
+    Imbalance
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input ohlcv dataframe
+    ema_window : float
+        window value for ewma func
+    column : str
+        Column`s name
+    kwargs : dict
+        Additional data for `~rcdb_research.bars.functions.consolidate`
+
+    Returns
+    -------
+    pd.DataFrame
+        Consolidated data
+    """
+    df['f'] = imbalance_feature(
+        close=df.close.values,
+        volume=df[column].values,
+        ema_window=ema_window
+    )
+    bars = consolidate(df, column_name='f', **kwargs).drop(columns=['f'])
+    df.drop(columns=['f'], inplace=True)
+    return bars
+
+
+@check_type
+def imbalance_fixed(
+    df: pd.DataFrame,
+    threshold: float,
+    column: str = 'volume',
+    **kwargs
+) -> pd.DataFrame:
+    """
+    Imbalance
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input ohlcv dataframe
+    threshold : float
+        Threshold value
+    column : str
+        Column`s name
+    kwargs : dict
+        Additional data for `~rcdb_research.bars.functions.consolidate`
+
+    Returns
+    -------
+    pd.DataFrame
+        Consolidated data
+    """
+    df['f'] = imbalance_feature_const(
+        close=df.close.values,
+        volume=df[column].values,
         threshold=threshold
     )
     bars = consolidate(df, column_name='f', **kwargs).drop(columns=['f'])

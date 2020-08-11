@@ -22,3 +22,4 @@ natsort==7.0.1
 llvmlite==0.32.1
 
 tulipindicators
+mlfinlab==0.12.3

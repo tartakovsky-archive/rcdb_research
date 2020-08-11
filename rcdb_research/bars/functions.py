@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from numba import njit
 from numpy_ext import rolling_apply, nans
+from mlfinlab.util import get_bvc_buy_volume, ewma
 
 
 DEFAULT_AGGREGATE_MAPPING = {
@@ -512,3 +513,72 @@ def adaptive_percent_dynamic_threshold(open: pd.Series, close: pd.Series, avg_pe
     feature = np.array(bars) * 1
     assert feature.shape == close.shape
     return feature
+
+
+def calculate_expected_imbalance(imbalances, window):
+    if len(imbalances) < window:
+        return np.nan
+
+    expected_imbalance = ewma(imbalances[-window:], window=window)[-1]
+    return expected_imbalance
+
+
+def bvc_imbalance(volume: np.ndarray, close: np.ndarray):
+    bvc_buy_volume = get_bvc_buy_volume(pd.Series(close), pd.Series(volume)).to_numpy()
+    bvc_sell_volume = volume - bvc_buy_volume
+    imbalance = bvc_buy_volume - bvc_sell_volume
+    return imbalance
+
+
+def get_nan_offset(series: np.nan) -> int:
+    nan_offset = 0
+    for elm in series:
+        if np.isnan(elm):
+            nan_offset += 1
+        else:
+            break
+    return nan_offset
+
+
+def imbalance_feature(volume: np.ndarray, close: np.ndarray, ema_window: int):
+    imbalance = bvc_imbalance(volume, close)
+    theta = 0.
+    expected_imbalance = np.nan
+    bars = np.zeros(len(close))
+
+    nan_offset = get_nan_offset(imbalance)
+    bars[:nan_offset] = np.nan
+
+    for i in range(nan_offset, len(bars)):
+        if np.isnan(imbalance[i]):
+            continue
+
+        theta += imbalance[i]
+
+        if np.isnan(expected_imbalance):
+            expected_imbalance = calculate_expected_imbalance(imbalance[:i + 1], window=ema_window)
+
+        if np.abs(theta) >= np.abs(expected_imbalance):
+            bars[i] = 1
+            theta = 0
+            expected_imbalance = calculate_expected_imbalance(imbalance[:i + 1], window=ema_window)
+
+    return bars
+
+
+def imbalance_feature_const(volume: np.ndarray, close: np.ndarray, threshold: float):
+    imbalance = bvc_imbalance(volume, close)
+    bars = np.zeros(len(close))
+    theta = 0.
+
+    nan_offset = get_nan_offset(imbalance)
+    bars[:nan_offset] = np.nan
+
+    for i in range(nan_offset, len(bars)):
+        theta += imbalance[i]
+
+        if np.abs(theta) >= threshold:
+            bars[i] = 1
+            theta = 0.
+
+    return bars
