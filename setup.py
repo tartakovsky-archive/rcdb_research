@@ -46,9 +46,7 @@ setup(
     name=module_name,
     packages=find_packages(include=[f"{module_name}*"]),
     package_data={
-        f'{module_name}.sizing.mc_sizing': ['*.so'],
         f'{module_name}.sampling.sequential_bootstrap': ['*.so'],
-        f'{module_name}.labeling.triple_barrier': ['*.so']
     },
     include_package_data=True,
     install_requires=INSTALL_REQUIREMENTS,
