@@ -1,19 +1,14 @@
-# rcdb_research
-
 ## Installation/upgrade from inside of Jupyter
 
-Run the following in the terminal, you'll be prompted for github credentials:
-
 ```bash
-$ pip install -U --extra-index-url https://pypi-private:***TOKEN***@pkgs.dev.azure.com/rcdb/_packaging/pypi-private/pypi/simple/e/ git+https://github.com/tartakovsky-archive/rcdb_research
+$ pip install -U git+https://github.com/tartakovsky-archive/rcdb_research
 ```
 
 ## Installation for development
 
-`$ pip install --extra-index-url $(cat extra-index-url) .` - install requirements from source  
-`$ pip install --extra-index-url $(cat extra-index-url) -e .[dev]` - install requirements from source for development  
-`$ pip install --extra-index-url $(cat extra-index-url) -e <git url>` - install requirements from git  
-`$ jupyter notebook` - start jupyter  
+`$ pip install .` - install requirements from source  
+`$ pip install -e .[dev]` - install requirements from source for development  
+`$ pip install -e <git url>` - install requirements from git  
 
 For installation another branch into current pip use environment variable `DEV_PREFIX` with prefix name 
 e.g. install lib from `dev` branch to `development_rcdb_research`:

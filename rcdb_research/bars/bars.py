@@ -24,11 +24,3 @@ adaptive_percent = facade.adaptive_percent
 
 # Fixed time fixed percent
 fixed_percent_fixed_time = facade.fixed_percent_fixed_time
-
-
-# Imbalance
-imbalance = partial(facade.imbalance, column='volume')
-imbalance_quote = partial(facade.imbalance, column='volume_quote')
-
-imbalance_fixed = partial(facade.imbalance_fixed, column='volume')
-imbalance_fixed_quote = partial(facade.imbalance_fixed, column='volume_quote')

@@ -1,12 +1,11 @@
 import uuid
 import logging
-from typing import Union
+from typing import Union, Optional
 
 import numpy as np
 import pandas as pd
 from numba import njit
 from numpy_ext import rolling_apply, nans
-from mlfinlab.util import get_bvc_buy_volume, ewma
 
 
 DEFAULT_AGGREGATE_MAPPING = {
@@ -29,10 +28,10 @@ DEFAULT_AGGREGATE_MAPPING = {
 def consolidate(
     df: pd.DataFrame,
     column_name: str,
-    aggregate: dict = None,
-    aggregate_default='first',
-    verbose=False
-):
+    aggregate: Optional[dict] = None,
+    aggregate_default: str = 'first',
+    verbose: bool = False
+) -> pd.DataFrame:
     """
     Consolidate dataframe by `column_name` column values
 
@@ -130,26 +129,23 @@ def consolidate(
     df_new = df_new.set_index(index_tmp_name)
     df_new.index.rename(index_prev_name, inplace=True)
 
-    # if drop_first_bar:
-    #     df_new = df_new[1:]
-
     if pd.isnull(df_new.iloc[-1, :]).any():
         return df_new.iloc[:-1, :]
     return df_new
 
 
 def move_feature_by_nans(feature: pd.Series, series: pd.Series) -> pd.Series:
-    df = pd.DataFrame({'a': series, 'f': feature})
+    df = pd.DataFrame({'series': series, 'f': feature})
     df['_f'] = df.f
     df['x'] = df.f
-    df.loc[df.a.isna(), 'x'] = None
+    df.loc[df.series.isna(), 'x'] = None
     if np.isnan(df.x[0]):
         df.x[0] = 0
 
     df.x = df.x.fillna(method='ffill')
     df['r'] = (
         (df.x == 1) & (
-            (((df.f == 1) | df.a.isna()) & ~(np.hstack((df.a.shift(-1).isna().values[:-1], [False]))))
+            (((df.f == 1) | df.series.isna()) & ~(np.hstack((df.series.shift(-1).isna().values[:-1], [False]))))
         )
     ) * 1
     df.loc[df._f.isna(), 'r'] = None
@@ -157,9 +153,13 @@ def move_feature_by_nans(feature: pd.Series, series: pd.Series) -> pd.Series:
 
 
 @njit
-def price_pct_threshold(open: np.ndarray, close: np.ndarray,
-                        threshold_up: float, threshold_down: float = None,
-                        n_bars: int = None) -> np.ndarray:
+def price_pct_threshold(
+    open: np.ndarray,
+    close: np.ndarray,
+    threshold_up: float,
+    threshold_down: float = None,
+    n_bars: int = None
+) -> np.ndarray:
     """
     Fixed Range
     Price move (range) accumulation feature. Fixed % range.
@@ -266,7 +266,7 @@ def adaptive_threshold(series: np.ndarray, avg_per: int, window: int, n: int = N
     window : int
         Series should aggregate window amount of averaged (by avg_per) series
     n : int, optional
-        Calculate threshold every n bars instead of each bar
+        Calculate threshold every n bars instead of each bar (faster version)
 
     Returns
     -------
@@ -303,6 +303,25 @@ def adaptive_threshold(series: np.ndarray, avg_per: int, window: int, n: int = N
 
 
 def calculate_adaptive_threshold_n_bars(series: np.ndarray, avg_per: int, window: int, n: int):
+    """
+    Calculates adaptive threshold for every n bars instead of each bar (calculate_adaptive_threshold_rolling_window)
+
+    Parameters
+    ----------
+    series : np.ndarray
+        Input series
+    avg_per : int
+        Average period
+    window : int
+        Window size
+    n : int
+        Count of bars for thresholds calculation
+
+    Returns
+    -------
+    np.ndarray
+        Array with calculated thresholds
+    """
     size = len(series)
     end_range = np.arange(n, size, n)
     end_range = np.hstack((end_range, [size]))
@@ -322,6 +341,23 @@ def calculate_adaptive_threshold_n_bars(series: np.ndarray, avg_per: int, window
 
 
 def calculate_adaptive_threshold_rolling_window(series: np.ndarray, avg_per: int, window: int):
+    """
+    Calculates adaptive threshold for each bar (calculate_adaptive_threshold_rolling_window)
+
+    Parameters
+    ----------
+    series : np.ndarray
+        Input series
+    avg_per : int
+        Average period
+    window : int
+        Window size
+
+    Returns
+    -------
+    np.ndarray
+        Array with calculated thresholds
+    """
     return rolling_apply(
         (lambda s: np.sum(s) / (len(s) / avg_per)),
         window,
@@ -329,8 +365,13 @@ def calculate_adaptive_threshold_rolling_window(series: np.ndarray, avg_per: int
     )
 
 
-def price_pct__series_fixed(open: np.ndarray, close: np.ndarray, price_threshold: float,
-                            series: np.ndarray, series_threshold: float) -> np.ndarray:
+def price_pct__series_fixed(
+    open: np.ndarray,
+    close: np.ndarray,
+    price_threshold: float,
+    series: np.ndarray,
+    series_threshold: float
+) -> np.ndarray:
     """
     Percent price threshold combined with any fixed threshold series feature
     Price move (range) and ticks accumulation feature. Fixed % range, fixed n ticks.
@@ -477,6 +518,25 @@ def fixed_percent_fixed_time_feature(
     period: np.timedelta64,
     threshold: float
 ) -> np.ndarray:
+    """
+    Calculates feature for consolidator with fixed time period and fixed percent period
+
+    Parameters
+    ----------
+    indexes : np.ndarray
+        Array of np.datetime64 indices
+    values : np.ndarray
+        Input series
+    period : np.timedelta64
+        Period threshold
+    threshold : float
+        Percent threshold
+
+    Returns
+    -------
+    np.ndarray
+        Array of consolidation points
+    """
     bars = np.zeros(values.shape[0], dtype=np.int8)
 
     # find first not nan
@@ -503,6 +563,25 @@ def fixed_percent_fixed_time_feature(
 
 
 def adaptive_percent_dynamic_threshold(open: pd.Series, close: pd.Series, avg_per: int, window: int) -> np.ndarray:
+    """
+    Calculates adaptive percent dynamic threshold feature
+
+    Parameters
+    ----------
+    open : pd.Series
+        Open series
+    close : pd.Series
+        Close series
+    avg_per : int
+        Average period
+    window : int
+        Window size
+
+    Returns
+    -------
+    np.ndarray
+        Array of consolidation points
+    """
     change_per_period = close.pct_change().rolling(avg_per).sum().abs()
     dynamic_threshold = change_per_period.rolling(window).mean()
     bars = [
@@ -513,72 +592,3 @@ def adaptive_percent_dynamic_threshold(open: pd.Series, close: pd.Series, avg_pe
     feature = np.array(bars) * 1
     assert feature.shape == close.shape
     return feature
-
-
-def calculate_expected_imbalance(imbalances, window):
-    if len(imbalances) < window:
-        return np.nan
-
-    expected_imbalance = ewma(imbalances[-window:], window=window)[-1]
-    return expected_imbalance
-
-
-def bvc_imbalance(volume: np.ndarray, close: np.ndarray):
-    bvc_buy_volume = get_bvc_buy_volume(pd.Series(close), pd.Series(volume)).to_numpy()
-    bvc_sell_volume = volume - bvc_buy_volume
-    imbalance = bvc_buy_volume - bvc_sell_volume
-    return imbalance
-
-
-def get_nan_offset(series: np.nan) -> int:
-    nan_offset = 0
-    for elm in series:
-        if np.isnan(elm):
-            nan_offset += 1
-        else:
-            break
-    return nan_offset
-
-
-def imbalance_feature(volume: np.ndarray, close: np.ndarray, ema_window: int):
-    imbalance = bvc_imbalance(volume, close)
-    theta = 0.
-    expected_imbalance = np.nan
-    bars = np.zeros(len(close))
-
-    nan_offset = get_nan_offset(imbalance)
-    bars[:nan_offset] = np.nan
-
-    for i in range(nan_offset, len(bars)):
-        if np.isnan(imbalance[i]):
-            continue
-
-        theta += imbalance[i]
-
-        if np.isnan(expected_imbalance):
-            expected_imbalance = calculate_expected_imbalance(imbalance[:i + 1], window=ema_window)
-
-        if np.abs(theta) >= np.abs(expected_imbalance):
-            bars[i] = 1
-            theta = 0
-            expected_imbalance = calculate_expected_imbalance(imbalance[:i + 1], window=ema_window)
-
-    return bars
-
-
-def imbalance_feature_const(volume: np.ndarray, close: np.ndarray, threshold: float):
-    imbalance = bvc_imbalance(volume, close)
-    bars = np.zeros(len(close))
-    theta = 0.
-
-    nan_offset = get_nan_offset(imbalance)
-    bars[:nan_offset] = np.nan
-
-    for i in range(nan_offset, len(bars)):
-        theta += imbalance[i]
-
-        if np.abs(theta) >= threshold:
-            bars[i] = 1
-            theta = 0.
-
-    return bars

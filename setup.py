@@ -22,11 +22,6 @@ def parse_reqs(path):
 
 INSTALL_REQUIREMENTS = parse_reqs(os.path.join(REQUIREMENTS_DIR, "requirements.txt"))
 DEV_REQUIREMENTS = parse_reqs(os.path.join(REQUIREMENTS_DIR, "requirements.dev.txt"))
-SETUP_REQUIREMENTS = parse_reqs(os.path.join(REQUIREMENTS_DIR, "requirements.pre.txt"))
-
-for build_req in SETUP_REQUIREMENTS:
-    print(f'{build_req} installation...')
-    cmd([sys.executable, '-m', 'pip', 'install', build_req])
 
 module_name = 'rcdb_research'
 prefix_dev = os.environ.get('DEV_PREFIX')
@@ -56,7 +51,7 @@ setup(
         f'{module_name}.labeling.triple_barrier': ['*.so']
     },
     include_package_data=True,
-    install_requires=INSTALL_REQUIREMENTS + SETUP_REQUIREMENTS,
+    install_requires=INSTALL_REQUIREMENTS,
     extras_require={
         "dev": DEV_REQUIREMENTS
     },

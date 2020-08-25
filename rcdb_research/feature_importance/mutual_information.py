@@ -8,7 +8,7 @@ from sklearn.cluster import AgglomerativeClustering
 
 from ..sampling import optimal_block_size
 from ..sampling import bootstrap as run_bootstrap
-from ..metrics import proximity
+from . import proximity
 
 # Checks
 from sklearn.utils import check_random_state

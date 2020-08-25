@@ -9,11 +9,25 @@ from joblib import Parallel, delayed
 from .functions import consolidate, price_pct_threshold, \
     fixed_threshold, adaptive_threshold, price_pct__series_fixed, \
     time_fixed, adaptive_percent_dynamic_threshold, fixed_percent_fixed_time_feature, \
-    imbalance_feature, imbalance_feature_const, \
     DEFAULT_AGGREGATE_MAPPING
 
 
 def check_type(func=None, type_patterns=('int', 'float')):
+    """
+    Decorator which check input dataframe columns types
+
+    Parameters
+    ----------
+    func : Callable
+        Function
+    type_patterns : Iterable[str]
+        List of type patterns
+
+    Returns
+    -------
+    Callable
+        Decorated function
+    """
     if func is None:
         return functools.partial(check_type, type_patterns=type_patterns)
 
@@ -77,7 +91,7 @@ def percent_o2c(df: pd.DataFrame, threshold: float, **kwargs) -> pd.DataFrame:
 @check_type
 def percent(df: pd.DataFrame, threshold: float, **kwargs) -> pd.DataFrame:
     """
-    C-C consolidator. Fixed % range.
+    Close-Close consolidator. Fixed % range.
 
     Parameters
     ----------
@@ -103,12 +117,12 @@ def percent(df: pd.DataFrame, threshold: float, **kwargs) -> pd.DataFrame:
 
 @check_type
 def all_possible_percent_bars(
-        df: pd.DataFrame,
-        threshold: float,
-        n_bars: int,
-        n_jobs: int = None,
-        verbose: int = 0,
-        **kwargs
+    df: pd.DataFrame,
+    threshold: float,
+    n_bars: int,
+    n_jobs: int = None,
+    verbose: int = 0,
+    **kwargs
 ) -> Union[Generator[Optional[pd.DataFrame], None, None], List[Optional[pd.DataFrame]]]:
     """
     Consolidates n percent bars back from each input bar.
@@ -336,78 +350,6 @@ def fixed_percent_fixed_time(
         indexes=df.index.values,
         values=df[column].values,
         period=pd.Timedelta(period).to_timedelta64(),
-        threshold=threshold
-    )
-    bars = consolidate(df, column_name='f', **kwargs).drop(columns=['f'])
-    df.drop(columns=['f'], inplace=True)
-    return bars
-
-
-@check_type
-def imbalance(
-    df: pd.DataFrame,
-    ema_window: int,
-    column: str = 'volume',
-    **kwargs
-) -> pd.DataFrame:
-    """
-    Imbalance
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input ohlcv dataframe
-    ema_window : float
-        window value for ewma func
-    column : str
-        Column`s name
-    kwargs : dict
-        Additional data for `~rcdb_research.bars.functions.consolidate`
-
-    Returns
-    -------
-    pd.DataFrame
-        Consolidated data
-    """
-    df['f'] = imbalance_feature(
-        close=df.close.values,
-        volume=df[column].values,
-        ema_window=ema_window
-    )
-    bars = consolidate(df, column_name='f', **kwargs).drop(columns=['f'])
-    df.drop(columns=['f'], inplace=True)
-    return bars
-
-
-@check_type
-def imbalance_fixed(
-    df: pd.DataFrame,
-    threshold: float,
-    column: str = 'volume',
-    **kwargs
-) -> pd.DataFrame:
-    """
-    Imbalance
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input ohlcv dataframe
-    threshold : float
-        Threshold value
-    column : str
-        Column`s name
-    kwargs : dict
-        Additional data for `~rcdb_research.bars.functions.consolidate`
-
-    Returns
-    -------
-    pd.DataFrame
-        Consolidated data
-    """
-    df['f'] = imbalance_feature_const(
-        close=df.close.values,
-        volume=df[column].values,
         threshold=threshold
     )
     bars = consolidate(df, column_name='f', **kwargs).drop(columns=['f'])
