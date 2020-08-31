@@ -1,13 +1,11 @@
-import numpy as np
-
 from typing import Optional
 
+import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.feature_selection import SelectorMixin
 
 from ..feature_importance.checks import check_X_y_labels, check_clusters
-
 from .select_k_best import SelectKBest
 
 

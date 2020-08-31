@@ -1,5 +1,6 @@
-from typing import List, Optional, Dict
 import logging
+from typing import List, Optional, Dict
+
 import numpy as np
 
 from .wrappers import bootstrap, optimal_block_size

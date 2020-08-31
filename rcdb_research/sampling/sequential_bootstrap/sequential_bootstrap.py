@@ -1,13 +1,11 @@
 # flake8: noqa
-
-
+import os
 from ctypes import *
 from ctypes import ARRAY
 
 import numpy as np
-import os
-from numba import njit
 import pandas as pd
+from numba import njit
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
 lib = cdll.LoadLibrary(os.path.join(dir_path, 'lib.so'))

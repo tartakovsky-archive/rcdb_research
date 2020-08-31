@@ -1,17 +1,13 @@
-import pandas as pd
-import numpy as np
-
 from typing import Optional
 
+import pandas as pd
+import numpy as np
 from scipy.stats import rankdata
-from sklearn.cluster import AgglomerativeClustering
-
-# Checks
-from sklearn.utils import check_random_state
-from .checks import check_X_y_labels, check_clusters
-# ---
-
 from sklearn.base import BaseEstimator
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.utils import check_random_state
+
+from .checks import check_X_y_labels, check_clusters
 
 
 class EFI(BaseEstimator):

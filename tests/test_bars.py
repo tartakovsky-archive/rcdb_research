@@ -6,7 +6,18 @@ import pandas as pd
 
 from numpy_ext import nans
 from rcdb_research import bars
-from rcdb_research.bars.functions import move_feature_by_nans
+from rcdb_research.bars.functions import move_feature_by_nans, price_pct_threshold
+from rcdb_research.bars.facade import check_type
+
+
+def test_check_type():
+
+    @check_type(type_patterns=('str',))
+    def func(df):
+        return df
+
+    with pytest.raises(ValueError):
+        func(pd.DataFrame([1, 2, 3]))
 
 
 @pytest.mark.parametrize(
@@ -110,7 +121,7 @@ def ohlcv_df_nans(request, ohlcv_df):
     [
         # time
         (
-            bars.time, dict(period=3),
+            bars.time, dict(period=3, verbose=True),
             pd.DataFrame(
                 {
                     'open': [1, 4],
@@ -262,6 +273,27 @@ def ohlcv_df_nans(request, ohlcv_df):
                 },
                 index=pd.to_datetime(['22/10/2019 12:00:02', '22/10/2019 12:00:04',
                                       '22/10/2019 12:00:05', '22/10/2019 12:00:05'])
+            )
+        ),
+        # adaptive_volume n bars
+        (
+            bars.adaptive_volume, dict(avg_per=1, window=2, n=3, verbose=True),
+            pd.DataFrame(
+                {
+                    'open': [5, 6],
+                    'high': [6, 7],
+                    'low': [5, 6],
+                    'close': [5, 6],
+                    'volume_buy': [50, 60],
+                    'volume_sell': [1, 3],
+                    'volume_quote_buy': [5, 6],
+                    'volume_quote_sell': [5, 6],
+                    'ticks_buy': [5, 6],
+                    'ticks_sell': [5, 6],
+                    'volume': [51, 63],
+                    'custom_col': [.5, .6]
+                },
+                index=pd.to_datetime(['22/10/2019 12:00:05', '22/10/2019 12:00:05'])
             )
         ),
         # adaptive_quote_volume
@@ -476,3 +508,45 @@ def test_all_possible_percent_bars_shapes(ohlcv_df, n_bars=5, threshold=0.005):
 
     assert item is None
     assert size == len(ohlcv_df)
+
+    res = bars.all_possible_percent_bars(ohlcv_df, threshold=threshold, n_bars=n_bars, n_jobs=2)
+    assert len(res) == size
+
+
+@pytest.mark.parametrize(
+    'params, result',
+    [
+        (
+            dict(
+                open=np.array([1, 2, 3, 4, 5]),
+                close=np.array([2, 1, 3, 4, 6]),
+                threshold_up=0.1
+            ),
+            np.array([1, 1, 0, 1, 1])
+        ),
+        (
+            dict(
+                open=np.array([1, 2, 3, 4, 5]),
+                close=np.array([2, 1, 3, 4, 6]),
+                threshold_up=0.1,
+                threshold_down=1
+            ),
+            np.array([1, 0, 1, 0, 1])
+        ),
+        (
+            dict(
+                open=np.array([1, 2, 3, 4, 5]),
+                close=np.array([2, 1, 3, 4, 6]),
+                threshold_up=0.1,
+                threshold_down=1,
+                n_bars=2
+            ),
+            np.array([1, 0, 1])
+        )
+    ]
+)
+def test_price_pct_threshold(params, result):
+    assert np.array_equal(
+        price_pct_threshold(**params),
+        result
+    )

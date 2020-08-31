@@ -1,21 +1,17 @@
+from typing import Callable, Optional
+
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
-from typing import Callable, Optional
-
 from scipy.stats import rankdata
+from sklearn.utils import check_random_state
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.base import BaseEstimator, MetaEstimatorMixin
 
+from . import proximity
 from ..sampling import optimal_block_size
 from ..sampling import bootstrap as run_bootstrap
-from . import proximity
-
-# Checks
-from sklearn.utils import check_random_state
 from .checks import check_X_y_labels, check_clusters
-# ---
-
-from sklearn.base import BaseEstimator, MetaEstimatorMixin
 
 
 class NMI(MetaEstimatorMixin, BaseEstimator):

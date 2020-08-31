@@ -1,7 +1,8 @@
+import logging
+
 import numpy as np
 import scipy.stats as ss
 from sklearn.metrics import mutual_info_score
-import logging
 
 
 def nid(x, y) -> float:

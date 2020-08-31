@@ -7,8 +7,8 @@ from itertools import chain, repeat
 from collections import defaultdict
 from typing import Callable, Union, List, Dict, Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def store_df_to_hdf_bytes(df: pd.DataFrame, key: str = "table") -> bytes:

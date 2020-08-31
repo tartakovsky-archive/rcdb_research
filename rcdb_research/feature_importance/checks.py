@@ -1,7 +1,6 @@
 import logging
 
 import pandas as pd
-
 from sklearn.utils import check_X_y
 
 from ..feature_importance.utils import cluster_ids_to_clusters

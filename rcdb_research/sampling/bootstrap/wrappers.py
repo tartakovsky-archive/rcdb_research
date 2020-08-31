@@ -1,14 +1,16 @@
-from joblib import delayed, Parallel
-from typing import List, Optional
-import numpy as np
-from functools import wraps
+import logging
 import multiprocessing
 
-import logging
-from ..sequential_bootstrap import sequential_bootstrap as seqb
+from functools import wraps
+from typing import List, Optional
+
+import numpy as np
+from joblib import delayed, Parallel
 from recombinator.optimal_block_length import optimal_block_length
 from recombinator.block_bootstrap import moving_block_bootstrap, circular_block_bootstrap, stationary_bootstrap
 from recombinator.iid_bootstrap import iid_bootstrap
+
+from ..sequential_bootstrap import sequential_bootstrap as seqb
 
 
 def sequential_bootstrap(data: np.ndarray,

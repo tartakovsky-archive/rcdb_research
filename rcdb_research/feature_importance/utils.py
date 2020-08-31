@@ -1,7 +1,7 @@
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 from natsort import natsorted
+from sklearn.ensemble import BaggingClassifier
 
 
 def cluster_ids_to_clusters(cluster_ids, labels=None):
@@ -29,9 +29,7 @@ def feature_importances(fitted_estimator):
     if hasattr(fitted_estimator, 'feature_importances_'):
         return fitted_estimator.feature_importances_
 
-    from sklearn.ensemble import BaggingClassifier
-    from ..models import CSBBClassifier
-    if isinstance(fitted_estimator, (BaggingClassifier, CSBBClassifier)):
+    if isinstance(fitted_estimator, BaggingClassifier):
         rows = [
             dict(zip(fts, est.feature_importances_)) for fts, est in zip(fitted_estimator.estimators_features_,
                                                                          fitted_estimator.estimators_)
@@ -39,4 +37,5 @@ def feature_importances(fitted_estimator):
         result = pd.DataFrame(rows).mean().sort_index()
         result = result.reindex(np.arange(fitted_estimator.n_features_)).values
         return result
-    raise ValueError('estimator type not supported: {}'.format(type(fitted_estimator)))
+
+    raise ValueError(f'estimator type not supported: {type(fitted_estimator)}')

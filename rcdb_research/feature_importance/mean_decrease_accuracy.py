@@ -1,21 +1,17 @@
-import pandas as pd
-import numpy as np
 import inspect
-
 from typing import Callable, Optional
 
-# Checks
+import numpy as np
+import pandas as pd
+from tqdm.auto import tqdm
+from scipy.stats import rankdata
 from sklearn.metrics import check_scoring
 from sklearn.utils import check_random_state
 from sklearn.model_selection import check_cv
-# ---
-from scipy.stats import rankdata
 from sklearn.cluster import AgglomerativeClustering
-from tqdm.auto import tqdm
+from sklearn.base import BaseEstimator, MetaEstimatorMixin
 
 from .checks import check_X_y_labels, check_clusters
-
-from sklearn.base import BaseEstimator, MetaEstimatorMixin
 
 
 class MDA(MetaEstimatorMixin, BaseEstimator):

@@ -1,23 +1,17 @@
-import pandas as pd
-import numpy as np
-
 from typing import Callable, Optional
 
+import pandas as pd
+import numpy as np
+from tqdm.auto import tqdm
 from scipy.stats import rankdata
 from sklearn.cluster import AgglomerativeClustering
-from tqdm.auto import tqdm
+from sklearn.utils import check_random_state
+from sklearn.base import BaseEstimator, MetaEstimatorMixin
 
 from .utils import feature_importances
-
 from ..sampling import optimal_block_size
 from ..sampling import bootstrap as run_bootstrap
-
-# Checks
-from sklearn.utils import check_random_state
 from .checks import check_X_y_labels, check_clusters
-# ---
-
-from sklearn.base import BaseEstimator, MetaEstimatorMixin
 
 
 class MDI(MetaEstimatorMixin, BaseEstimator):

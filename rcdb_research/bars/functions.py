@@ -159,7 +159,7 @@ def price_pct_threshold(
     threshold_up: float,
     threshold_down: float = None,
     n_bars: int = None
-) -> np.ndarray:
+) -> np.ndarray:  # pragma: no cover
     """
     Fixed Range
     Price move (range) accumulation feature. Fixed % range.
@@ -210,6 +210,7 @@ def price_pct_threshold(
             bars.append(1)
             if n_bars is not None:
                 bars_count += 1
+                print(bars_count)
                 if n_bars == bars_count:
                     return np.array(bars)
         else:
@@ -500,7 +501,7 @@ def time_fixed(
     for col in (aggregate_set - columns_set):
         del aggregate[col]
 
-    if verbose:
+    if verbose and unexpected_columns:
         logging.warning(
             f'WARNING: mapping rule has not been found for columns {unexpected_columns}. '
             f'Using the default rule: "{aggregate_default}".'
@@ -517,7 +518,7 @@ def fixed_percent_fixed_time_feature(
     values: np.ndarray,
     period: np.timedelta64,
     threshold: float
-) -> np.ndarray:
+) -> np.ndarray:  # pragma: no cover
     """
     Calculates feature for consolidator with fixed time period and fixed percent period
 
