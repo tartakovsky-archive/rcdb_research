@@ -5,24 +5,6 @@ import scipy.stats as ss
 from sklearn.metrics import mutual_info_score
 
 
-def nid(x, y) -> float:
-    """
-    Source:
-    Information Theoretic Measures for Clusterings Comparison, Vinh et al, doi: 10.1145/1553374.1553511
-
-    Parameters
-    ----------
-    x: np.ndarray
-    y: np.ndarray
-
-    Returns
-    -------
-    float: Normalized Information Distance
-
-    """
-    return variation_of_information(x, y, None, True, 'max')
-
-
 def nmi(x, y) -> float:
     """
     Source:
@@ -43,34 +25,6 @@ def optimal_bins(x: np.ndarray, y: np.ndarray) -> int:
         logging.warning(f'optimal bins size not computed (b={b}), defaulting to b=20')
         b = 20
     return int(b)
-
-
-def variation_of_information(x, y, bins=None, normalized=True, method='max'):
-    if (np.array(x) == np.array(y)).all():
-        return 0
-
-    if bins is None:
-        bins = optimal_bins(x, y)
-
-    cXY = np.histogram2d(x, y, bins)[0]
-    iXY = mutual_info_score(None, None, contingency=cXY)
-    hX = ss.entropy(np.histogram(x, bins)[0])  # marginal
-    hY = ss.entropy(np.histogram(y, bins)[0])  # marginal
-    hXY = hX + hY - iXY
-
-    numerator = {
-        'max': max(hX, hY) - iXY,
-        'joint': hXY - iXY
-    }.get(method)
-
-    denominator = {
-        'max': max(hX, hY),
-        'joint': hXY
-    }.get(method)
-
-    if normalized:
-        return numerator / denominator
-    return numerator
 
 
 def mutual_info(x, y, bins=None, normalized=False, method='joint'):
