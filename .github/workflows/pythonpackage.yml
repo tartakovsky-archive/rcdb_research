@@ -29,4 +29,4 @@ jobs:
 #        pytest --doctest-modules $(find rcdb_research/bars rcdb_research/features -type f ! -name '*.pyc' ! -name 'tulip.py' ! -name 'alphas101.py' ! -name '__init__.py' -printf './%p ')
     - name: Test with pytest
       run: |
-        pytest --log-cli-level INFO
+        pytest --doctest-modules --log-cli-level INFO
