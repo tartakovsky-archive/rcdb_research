@@ -15,6 +15,48 @@ from .checks import check_X_y_labels, check_clusters
 
 
 class MDI(MetaEstimatorMixin, BaseEstimator):
+    """
+    Mean descrease impurity
+
+    Parameters
+    ----------
+    estimator : sklearn.base.BaseEstimator
+        Instance of sklearn estimator
+    clusterer : Optional[AgglomerativeClustering]
+        Instance of AgglomerativeClustering or None
+    pooling_fn : Optional[Callable]
+        Pooling function
+    bootstrap : Optional[str]
+        Bootstrap method, e.g 'iid', 'mbb', 'cbb', 'sbb'
+    n_bootstraps : int
+        Bootstrap repeats
+    subsample_size : int
+        Bootstrap subsample size
+    random_state : int
+        Seed for boostrap
+    verbose : bool
+        Show progress bar
+
+    Examples
+    --------
+    >>> from sklearn.cluster import AgglomerativeClustering
+    >>> from sklearn.ensemble import RandomForestClassifier
+    >>> from sklearn.metrics._scorer import neg_log_loss_scorer
+    >>> from sklearn.model_selection import KFold
+    >>> from rcdb_research.feature_importance import cluster_ids_to_clusters, MDA, MDI, NMI
+    >>> X = pd.DataFrame(dict(a=np.arange(100), b=-np.arange(100), c=[0.5, 0] * 50))
+    >>> y = np.array([1, 0] * 50)
+    >>> clusterer = AgglomerativeClustering(n_clusters=None, linkage='complete', distance_threshold=0.75).fit(X.T)
+    >>> clusters = cluster_ids_to_clusters(clusterer.labels_, X.columns)
+    >>> m1_clf = RandomForestClassifier(random_state=1)
+    >>> imp = MDI(m1_clf)
+    >>> _ = imp.fit(X, y, clusters=clusters)
+    >>> imp.feature_importances_df_
+             mean       std  rank
+    a+0  0.076220  0.004408   2.0
+    b+0  0.073760  0.007177   3.0
+    c+0  0.850021  0.010577   1.0
+    """
     def __init__(self,
                  estimator,
                  clusterer: Optional[AgglomerativeClustering] = None,
@@ -40,6 +82,24 @@ class MDI(MetaEstimatorMixin, BaseEstimator):
         self.feature_importances_df_ = None
 
     def fit(self, X, y, clusters=None, labels=None, **fit_params):
+        """
+        Fit method
+
+        X : np.ndarray
+            Input parameters with shape (n_samples, n_features)
+        y : np.ndarray
+            Input targets with shape (n_samples,)
+        clusters : np.ndarray
+            Array of clusters data
+        labels : np.ndarray
+            Array of labels
+        fit_params : dict
+            fit parameters
+
+        Returns
+        -------
+        Fitted estimator
+        """
         X, y, labels, index = check_X_y_labels(X, y, labels)
         self.clusters = check_clusters(X, self.clusterer, clusters, labels)
 

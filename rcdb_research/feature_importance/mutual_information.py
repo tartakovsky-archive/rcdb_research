@@ -15,6 +15,41 @@ from .checks import check_X_y_labels, check_clusters
 
 
 class NMI(MetaEstimatorMixin, BaseEstimator):
+    """
+    Mutual Information
+
+    Parameters
+    ----------
+    clusterer : Optional[AgglomerativeClustering]
+        Instance of AgglomerativeClustering or None
+    pooling_fn : Optional[Callable]
+        Pooling function
+    bootstrap : Optional[str]
+        Bootstrap method, e.g 'iid', 'mbb', 'cbb', 'sbb'
+    n_bootstraps : int
+        Bootstrap repeats
+    subsample_size : int
+        Bootstrap subsample size
+    random_state : int
+        Seed for boostrap
+    verbose : bool
+        Show progress bar
+
+    Examples
+    --------
+    >>> from sklearn.cluster import AgglomerativeClustering
+    >>> from sklearn.ensemble import RandomForestClassifier
+    >>> from sklearn.metrics._scorer import neg_log_loss_scorer
+    >>> from sklearn.model_selection import KFold
+    >>> from rcdb_research.feature_importance import cluster_ids_to_clusters, NMI
+    >>> X = pd.DataFrame(dict(a=np.arange(100), b=-np.arange(100), c=[0.5, 0] * 50))
+    >>> y = np.array([1, 0] * 50)
+    >>> clusterer = AgglomerativeClustering(n_clusters=None, linkage='complete', distance_threshold=0.75).fit(X.T)
+    >>> clusters = cluster_ids_to_clusters(clusterer.labels_, X.columns)
+    >>> imp = NMI()
+    >>> _ = imp.fit(X, y, clusters=clusters)
+    >>> imp.feature_importances_df_
+    """
     def __init__(self,
                  clusterer: Optional[AgglomerativeClustering] = None,
                  pooling_fn: Optional[Callable] = None,
@@ -38,6 +73,25 @@ class NMI(MetaEstimatorMixin, BaseEstimator):
         self.feature_importances_df_ = None
 
     def fit(self, X, y, clusters=None, labels=None, **fit_params):
+        """
+        Fit method
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Input parameters with shape (n_samples, n_features)
+        y : np.ndarray
+            Input targets with shape (n_samples,)
+        clusters : np.ndarray
+            Array of clusters data
+        labels : np.ndarray
+            Array of labels
+
+        Returns
+        -------
+        Fitted estimator
+
+        """
         X, y, labels, index = check_X_y_labels(X, y, labels)
         self.clusters = check_clusters(X, self.clusterer, clusters, labels)
 

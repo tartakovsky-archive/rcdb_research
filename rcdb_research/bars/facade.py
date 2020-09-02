@@ -53,7 +53,7 @@ def time(df: pd.DataFrame, period: Union[str, pd.DateOffset, pd.Timedelta, int],
         if type is int then used as seconds
         resample frequency https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
     kwargs : dict
-        Additional parameters for `~rcdb_research.bars.functions.time_fixed`
+        Additional parameters for :func:`~rcdb_research.bars.functions.time_fixed`
 
     Returns
     -------
@@ -75,7 +75,7 @@ def percent_o2c(df: pd.DataFrame, threshold: float, **kwargs) -> pd.DataFrame:
     threshold : float
         Event UP/DOWN is generated after price moves by more percent than this threshold
     kwargs : dict
-        Additional data for `~rcdb_research.bars.functions.consolidate`
+        Additional data for :func:`~rcdb_research.bars.functions.consolidate`
 
     Returns
     -------
@@ -100,7 +100,7 @@ def percent(df: pd.DataFrame, threshold: float, **kwargs) -> pd.DataFrame:
     threshold : float
         Event UP/DOWN is generated after price moves by more percent than this threshold
     kwargs : dict
-        Additional data for `~rcdb_research.bars.functions.consolidate`
+        Additional data for :func:`~rcdb_research.bars.functions.consolidate`
 
     Returns
     -------
@@ -141,7 +141,7 @@ def all_possible_percent_bars(
     verbose : int
         joblib verbose parameter. Default is 0
     kwargs : dict
-        Additional data for `~rcdb_research.bars.functions.consolidate`
+        Additional data for :func:`~rcdb_research.bars.functions.consolidate`
 
     Returns
     -------
@@ -197,7 +197,7 @@ def fixed(df: pd.DataFrame, threshold: float, column: str, **kwargs) -> pd.DataF
     column : str
         The name of the aggregated column
     kwargs : dict
-        Additional data for `~rcdb_research.bars.functions.consolidate`
+        Additional data for :func:`~rcdb_research.bars.functions.consolidate`
 
     Returns
     -------
@@ -231,7 +231,7 @@ def adaptive(df: pd.DataFrame, avg_per: int, window: int, column: str, n: int = 
     n : int, optional
         Calculate threshold every n bars instead of each bar
     kwargs : dict
-        Additional data for `~rcdb_research.bars.functions.consolidate`
+        Additional data for :func:`~rcdb_research.bars.functions.consolidate`
 
     Returns
     -------
@@ -265,7 +265,7 @@ def adaptive_percent(df: pd.DataFrame, avg_per: int, window: int, **kwargs):
     window : int
         Rolling window size
     kwargs : dict
-        Additional data for `~rcdb_research.bars.functions.consolidate`
+        Additional data for :func:`~rcdb_research.bars.functions.consolidate`
 
     Returns
     -------
@@ -297,7 +297,7 @@ def fixed_percent_fixed_series(df: pd.DataFrame, percent_threshold: float,
     series_column : str
         The name of the aggregated column
     kwargs : dict
-        Additional data for `~rcdb_research.bars.functions.consolidate`
+        Additional data for :func:`~rcdb_research.bars.functions.consolidate`
 
     Returns
     -------
@@ -339,7 +339,7 @@ def fixed_percent_fixed_time(
     column : str
         Column`s name
     kwargs : dict
-        Additional data for `~rcdb_research.bars.functions.consolidate`
+        Additional data for :func:`~rcdb_research.bars.functions.consolidate`
 
     Returns
     -------

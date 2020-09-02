@@ -15,4 +15,3 @@ e.g. install lib from `dev` branch to `development_rcdb_research`:
 ```bash
 $ DEV_PREFIX=development pip install -U git+https://github.com/tartakovsky-archive/rcdb_research@dev
 ```
-

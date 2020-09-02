@@ -15,6 +15,48 @@ from .checks import check_X_y_labels, check_clusters
 
 
 class MDA(MetaEstimatorMixin, BaseEstimator):
+    """
+    Mean Decrease Accuracy
+
+    Parameters
+    ----------
+    estimator : sklearn.base.BaseEstimator
+        Instance of sklearn estimator
+    scorer : Callable
+        Sklearn scorer
+    cv : sklearn.base.BaseCrossValidator
+        Instance of cross validator
+    clusterer : Optional[AgglomerativeClustering]
+        Instance of AgglomerativeClustering or None
+    pooling_fn : Optional[Callable]
+        Pooling function
+    n_permutations : int
+        Count of feature permutation in each cluster
+    random_state : int
+        Random state for shuffle function
+    verbose : bool
+        Show progress bar
+
+    Examples
+    --------
+    >>> from sklearn.cluster import AgglomerativeClustering
+    >>> from sklearn.ensemble import RandomForestClassifier
+    >>> from sklearn.metrics._scorer import neg_log_loss_scorer
+    >>> from sklearn.model_selection import KFold
+    >>> from rcdb_research.feature_importance import cluster_ids_to_clusters, MDA, MDI, NMI
+    >>> X = pd.DataFrame(dict(a=np.arange(100), b=-np.arange(100), c=[0.5, 0] * 50))
+    >>> y = np.array([1, 0] * 50)
+    >>> clusterer = AgglomerativeClustering(n_clusters=None, linkage='complete', distance_threshold=0.75).fit(X.T)
+    >>> clusters = cluster_ids_to_clusters(clusterer.labels_, X.columns)
+    >>> m1_clf = RandomForestClassifier(random_state=1)
+    >>> imp = MDA(m1_clf, neg_log_loss_scorer, KFold(n_splits=2), random_state=1)
+    >>> _ = imp.fit(X, y, clusters=clusters)
+    >>> imp.feature_importances_df_
+             mean       std  rank
+    a+0  0.000000  0.000000   2.0
+    b+0  0.000000  0.000000   2.0
+    c+0  0.842368  0.134668   1.0
+    """
     def __init__(self,
                  estimator,
                  scorer,  # sklearn.make_scorer
@@ -40,6 +82,28 @@ class MDA(MetaEstimatorMixin, BaseEstimator):
         self.feature_importances_df_ = None
 
     def fit(self, X, y, clusters=None, labels=None, score_params=None, **fit_params):
+        """
+        Fit method
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Input parameters with shape (n_samples, n_features)
+        y : np.ndarray
+            Input targets with shape (n_samples,)
+        clusters : np.ndarray
+            Array of clusters data
+        labels : np.ndarray
+            Array of labels
+        score_params : Optional[dict]
+            Dict of score parameters
+        fit_params : dict
+            fit parameters
+
+        Returns
+        -------
+        Fitted estimator
+        """
         score_params = score_params or {}
 
         X, y, labels, index = check_X_y_labels(X, y, labels)
