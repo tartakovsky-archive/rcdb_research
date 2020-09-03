@@ -27,15 +27,19 @@ class EFI(BaseEstimator):
     >>> from sklearn.ensemble import RandomForestClassifier
     >>> from sklearn.metrics._scorer import neg_log_loss_scorer
     >>> from sklearn.model_selection import KFold
-    >>> from rcdb_research.feature_importance import cluster_ids_to_clusters, MDA, MDI, NMI
+    >>> from rcdb_research.feature_importance import cluster_ids_to_clusters, MDA, MDI, NMI, EFI
     >>> X = pd.DataFrame(dict(a=np.arange(100), b=-np.arange(100), c=[0.5, 0] * 50))
     >>> y = np.array([1, 0] * 50)
     >>> clusterer = AgglomerativeClustering(n_clusters=None, linkage='complete', distance_threshold=0.75).fit(X.T)
     >>> clusters = cluster_ids_to_clusters(clusterer.labels_, X.columns)
     >>> m1_clf = RandomForestClassifier(random_state=1)
-    >>> imp = EFI([MDA(m1_clf, neg_log_loss_scorer, KFold(n_splits=2)), MDI(m1_clf), NMI()])
+    >>> imp = EFI([MDA(m1_clf, neg_log_loss_scorer, KFold(n_splits=2)), MDI(m1_clf)])
     >>> _ = imp.fit(X, y, clusters=clusters)
     >>> imp.feature_importances_df_
+             mean       std  rank
+    a+0  0.500000  0.000000   2.0
+    b+0  0.416667  0.117851   3.0
+    c+0  1.000000  0.000000   1.0
     """
     def __init__(self,
                  estimators: list,

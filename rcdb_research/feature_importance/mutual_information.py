@@ -38,17 +38,18 @@ class NMI(MetaEstimatorMixin, BaseEstimator):
     Examples
     --------
     >>> from sklearn.cluster import AgglomerativeClustering
-    >>> from sklearn.ensemble import RandomForestClassifier
-    >>> from sklearn.metrics._scorer import neg_log_loss_scorer
-    >>> from sklearn.model_selection import KFold
     >>> from rcdb_research.feature_importance import cluster_ids_to_clusters, NMI
     >>> X = pd.DataFrame(dict(a=np.arange(100), b=-np.arange(100), c=[0.5, 0] * 50))
-    >>> y = np.array([1, 0] * 50)
+    >>> y = np.array([1] * 50 + [0] * 50)
     >>> clusterer = AgglomerativeClustering(n_clusters=None, linkage='complete', distance_threshold=0.75).fit(X.T)
     >>> clusters = cluster_ids_to_clusters(clusterer.labels_, X.columns)
-    >>> imp = NMI()
+    >>> imp = NMI(verbose=False)
     >>> _ = imp.fit(X, y, clusters=clusters)
     >>> imp.feature_importances_df_
+             mean       std  rank
+    a+0  0.326018  0.032444   2.0
+    b+0  0.327955  0.031599   1.0
+    c+0  0.000164  0.000309   3.0
     """
     def __init__(self,
                  clusterer: Optional[AgglomerativeClustering] = None,
@@ -99,7 +100,6 @@ class NMI(MetaEstimatorMixin, BaseEstimator):
         # Clusters would be merged into single features usign the pooling_fn
         shouldAgglomerate = self.clusters is not None and self.pooling_fn is not None
         if shouldAgglomerate:
-
             agg_X = pd.DataFrame(index=X.index)
             for i, cluster in enumerate(self.clusters):
                 agg_X[cluster['name']] = self.pooling_fn(X[cluster['columns']])
