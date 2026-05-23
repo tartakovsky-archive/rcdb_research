@@ -1,6 +1,6 @@
 # rcdb_research
 
-> Quantitative research framework for the RCDB multi-exchange automated trading platform. End-to-end pipeline from tick data to deployable strategy configs.
+> Quant research stack for the RCDB trading platform. From raw ticks to a ready-to-ship strategy config.
 
 [![Python](https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![NumPy](https://img.shields.io/badge/NumPy-1.18-013243?logo=numpy&logoColor=white)](https://numpy.org/)
@@ -9,7 +9,7 @@
 [![Numba](https://img.shields.io/badge/Numba-0.47-00A3E0)](https://numba.pydata.org/)
 [![Status](https://img.shields.io/badge/Status-Archived-lightgrey)](#lineage)
 
-**Archived** - cloned from `hcmc-project/rcdb_research` for posterity. Part of the **RCDB** automated trading platform, later merged into [3Jane Technologies](https://github.com/3jane).
+**Archived.** Cloned from `hcmc-project/rcdb_research`. Part of the **RCDB** trading stack. Later folded into [3Jane](https://github.com/3jane).
 
 ---
 
@@ -29,11 +29,11 @@
 
 ## What this was
 
-`rcdb_research` was the **quantitative research engine** behind RCDB's multi-exchange systematic trading platform. It carried a signal from raw exchange ticks all the way to a backtested, sized, risk-managed strategy config ready for the live execution layer. Every stage - bar construction, feature generation, labeling, cross-validation, importance, backtest, sizing - lives in this repo as a composable Python module with a strong bias toward de Prado's *Advances in Financial Machine Learning* methodology.
+This was RCDB's quant research stack. It took raw ticks. It shipped a sized, risk-aware config to live trading. Each stage is a Python module you can swap.
 
-The **bar layer** (`rcdb_research/bars`) turns tick streams into information-driven bars - time, fixed-threshold and adaptive tick/volume/quote-volume bars, percent-move bars, and hybrid sampling schemes. The **feature layer** (`rcdb_research/features`) produces hundreds of derived signals (rolling statistics, technical indicators via `tulipindicators`, microstructure features, Alpha101, entropy and fractal-dimension measures, stationarity tests) and is driven by a **combinatorial parameter grid with a sandboxed predicate DSL** (`p.a < p.b and p.c != -1`) that prunes the cross-product before computation.
+Stages: bars, features, labels, CV, importance, backtest, sizing. The design tracks de Prado.
 
-The **modeling stack** ties it together: **triple-barrier labels** with dynamic widths (`rcdb_research/labeling`, with a C++ inner loop), **walk-forward and combinatorially-purged-with-embargo CV** (`rcdb_research/sampling/cv`), **ensemble feature importance** combining MDI, MDA (permutation), and mutual information (`rcdb_research/feature_importance`), sequential-bootstrap resampling (`rcdb_research/sampling/sequential_bootstrap`, also C++), a `backtrader`-backed simulator with commissions, slippage, leverage and pluggable risk management (`rcdb_research/simulation_bt`), and Kelly / fractional-Kelly / drawdown-bounded Monte-Carlo sizing (`rcdb_research/sizing`).
+See the [module map](#module-map) and [techniques](#techniques) tables for the full set.
 
 ## Tech stack
 
@@ -67,38 +67,44 @@ flowchart LR
 
 ## Module map
 
-- `rcdb_research/bars/` - time, fixed and adaptive tick / volume / quote-volume / percent-move bars, plus hybrid samplers (`facade.py`, `functions.py`); Numba-accelerated thresholding
-- `rcdb_research/features/` - feature library (`alphas101`, `tulip`, `entropy`, `fracdim`, `highlow`, `stats`, `stattests`, `momentum`, `datetime`) with declarative configs under `features/configs/`
-- `rcdb_research/job_manager/` - parallel feature-computation runner (`parallel_calc_all.py`), parameter-grid expansion, predicate-based constraint pruning (`utils.generate_constraints_function`)
-- `rcdb_research/labeling/triple_barrier/` - triple-barrier method with C++ inner loop (`tb.cc`) and Python wrapper (`triple_barrier.py`)
-- `rcdb_research/sampling/cv/` - `WalkForwardCV` (expanding or fixed, with gap), `CombinatorialCV` with **purging + embargo**
-- `rcdb_research/sampling/bootstrap/` and `sampling/sequential_bootstrap/` - block bootstrap (via `recombinator`) and de Prado's sequential bootstrap (C++)
-- `rcdb_research/feature_importance/` - `MDI`, `MDA` (permutation), `MutualInformation`, and `EFI` (ensemble feature importance with agglomerative clustering)
-- `rcdb_research/feature_selection/` - `SelectKBest`-style and ensemble-driven selectors
-- `rcdb_research/cross_validation/aggregated_learning.py` - aggregated learning across folds
-- `rcdb_research/models/` - classifier wrappers (`classifiers.py`), no-skill baseline (`noskill.py`), sequentially bootstrapped bagging (`sbb.py`)
-- `rcdb_research/simulation_bt/` - `backtrader` integration (`wrappers.py`, `glue.py`) with fractional commissions, configurable leverage, intrabar worst-case PnL, pre-trade risk hooks, and limit-order entry
-- `rcdb_research/simulation/` - prediction / probability / trade simulators and voting ensembles
-- `rcdb_research/sizing/` - Kelly, fractional Kelly, drawdown-bounded `RiskAdjustedKelly` backed by a Monte-Carlo sizing extension (`sizing/mc_sizing`)
-- `rcdb_research/monte_carlo/coin_toss.py` - coin-toss Monte-Carlo equity-curve generator for sizing and robustness experiments
-- `rcdb_research/metrics/`, `scoring/` - trading metrics (`trading.py`), prediction metrics, proximity, scoring helpers
-- `rcdb_research/compute/`, `rcdb_research/cacher/`, `rcdb_research/plotter/` - compute orchestration, on-disk caching, plotting utilities
-- `rcdb_research/datasets/`, `rcdb_research/rcdb_data.py` - dataset loaders for the RCDB tick warehouse
-- `notebooks/`, `tests/` - research notebooks and a pytest suite (`tests/test_bars.py`, `test_cross_validators.py`, `test_triple_barrier.py`, `test_aggregated_learning.py`, etc.)
+| Path | Role |
+|---|---|
+| `bars/` | Time, tick, volume, quote-volume, percent-move bars. Fixed and live. Numba-tuned |
+| `features/` | `alphas101`, `tulip`, `entropy`, `fracdim`, `highlow`, `stats`, `stattests`, `momentum`, `datetime` |
+| `job_manager/` | Grid-sweep runner, grid expansion, predicate-based pruning |
+| `labeling/triple_barrier/` | Triple-barrier method. C++ inner loop (`tb.cc`), Python wrapper |
+| `sampling/cv/` | `WalkForwardCV` (expanding or fixed, with gap), `CombinatorialCV` (purge + embargo) |
+| `sampling/bootstrap/` | Block bootstrap via `recombinator` |
+| `sampling/sequential_bootstrap/` | de Prado sequential bootstrap (C++) |
+| `feature_importance/` | `MDI`, `MDA`, `MutualInformation`, `EFI` (ensemble + clustering) |
+| `feature_selection/` | `SelectKBest`-style and ensemble-driven picks |
+| `cross_validation/aggregated_learning.py` | Folded fits with aggregated outputs |
+| `models/` | Wrapped classifiers, no-skill base, seq-bootstrap bagging (`sbb.py`) |
+| `simulation_bt/` | `backtrader` engine: fees, slippage, margin, risk hooks, limit entries |
+| `simulation/` | Pred, proba, trade sims and voting ensembles |
+| `sizing/` | Kelly, half-Kelly, drawdown-capped `RiskAdjustedKelly` over `mc_sizing` |
+| `monte_carlo/coin_toss.py` | Coin-toss equity curves for sizing tests |
+| `metrics/`, `scoring/` | Trading metrics, pred metrics, scoring helpers |
+| `compute/`, `cacher/`, `plotter/` | Compute glue, on-disk cache, plots |
+| `datasets/`, `rcdb_data.py` | Loaders for the RCDB tick store |
+| `notebooks/`, `tests/` | Research notebooks plus a pytest suite |
 
 ## Techniques
 
-- **Information-driven bars** (`bars/`) - sample on transacted information, not the clock; supports fixed and adaptive thresholds on ticks / volume / quote-volume, plus percent-move and time bars and hybrids
-- **Triple-barrier labeling** (`labeling/triple_barrier/`) - upper / lower / vertical barriers with dynamic widths, implemented in C++ (`tb.cc`) and exposed via `ctypes`
-- **Purged + embargoed CV** (`sampling/cv/combinatorial.py`) - `CombinatorialCV` purges train samples that overlap test labels and applies a configurable embargo (bars or percent); `WalkForwardCV` provides expanding or fixed-window walk-forward splits with a gap
-- **Sequential bootstrap** (`sampling/sequential_bootstrap/sb.cc`) - de Prado-style overlap-aware resampling, used to fit sequentially bootstrapped bagging classifiers (`models/sbb.py`)
-- **Ensemble feature importance** (`feature_importance/ensemble_feature_importance.py`) - `EFI` aggregates MDI, MDA and MI across multiple estimators, with optional agglomerative clustering of correlated features
-- **Backtesting** (`simulation_bt/`) - `backtrader`-based simulator with fractional commissions, leverage, intrabar worst-case PnL, pluggable pre-trade risk management, and limit-order entry
-- **Sizing and robustness** (`sizing/`, `monte_carlo/`) - Kelly / fractional Kelly, drawdown-constrained `RiskAdjustedKelly` solved over Monte-Carlo equity paths
+| Block | Notes |
+|---|---|
+| Info-driven bars (`bars/`) | Sample on flow, not the clock. Fixed and live modes |
+| Triple-barrier labels (`labeling/triple_barrier/`) | Up, down, time barriers. C++ (`tb.cc`), via `ctypes` |
+| Purged + embargo CV (`sampling/cv/combinatorial.py`) | `CombinatorialCV` purges train rows that touch test labels |
+| Walk-forward CV (`sampling/cv/`) | Expanding or fixed window, with a gap |
+| Seq bootstrap (`sampling/sequential_bootstrap/sb.cc`) | de Prado overlap-aware resample. Feeds `models/sbb.py` |
+| Ensemble importance (`feature_importance/`) | `EFI` blends MDI, MDA, MI. Optional clustering of correlated cols |
+| Backtest (`simulation_bt/`) | `backtrader` with fees, slippage, margin, risk hooks, limit entries |
+| Sizing (`sizing/`, `monte_carlo/`) | Kelly, half-Kelly, drawdown-capped Kelly over Monte-Carlo paths |
 
 ## Parameter-grid constraint DSL
 
-`rcdb_research/job_manager` expands feature configs over a combinatorial parameter grid (`pg`) and prunes the cross-product with a string predicate (`cn`). The predicate is compiled with `generate_constraints_function` (`job_manager/utils.py`) into a sandboxed lambda evaluated against an `AttrDict` of the candidate parameter set, so authors can write natural Python expressions like `p.short_period < p.long_period`.
+`job_manager/` sweeps a param grid (`pg`). A string rule (`cn`) prunes it. The rule is built by `generate_constraints_function` in `job_manager/utils.py`. It runs as a safe lambda on the param set. You can write plain Python, like `p.short_period < p.long_period`.
 
 ```python
 test_config = dict(
@@ -123,7 +129,7 @@ Result parameter sets after pruning:
 ]
 ```
 
-Real-world usage lives in `rcdb_research/features/configs/tulip.py`, e.g. `cn='p.short_period < p.medium_period < p.long_period'` for triple-period indicators.
+Live usage is in `features/configs/tulip.py`, for example `cn='p.short_period < p.medium_period < p.long_period'`.
 
 ## Installation
 
@@ -144,7 +150,7 @@ $ pip install --extra-index-url $(cat extra-index-url) -e <git url> # install fr
 $ jupyter notebook                                                  # start jupyter
 ```
 
-The native extensions (`labeling/triple_barrier/tb.cc`, `sampling/sequential_bootstrap/sb.cc`, `sizing/mc_sizing`) are built by per-module `Makefile` during `egg_info` - a C++ toolchain is required.
+The C++ parts (`labeling/triple_barrier/tb.cc`, `sampling/sequential_bootstrap/sb.cc`, `sizing/mc_sizing`) build via a `Makefile` at `egg_info` time. You need a C++ toolchain.
 
 ## Lineage
 
